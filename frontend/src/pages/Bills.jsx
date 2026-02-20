@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { DollarSign, FileText, Download, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 
 const Bills = () => {
+  const { user: currentUser } = useAuth();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,7 +16,8 @@ const Bills = () => {
 
   const fetchBills = async () => {
     try {
-      const response = await api.get('/patient/bills');
+      const endpoint = currentUser.role === 'patient' ? '/patient/bills' : '/receptionist/bills';
+      const response = await api.get(endpoint);
       if (response.data.success) {
         setBills(response.data.data.bills);
       }
@@ -28,7 +31,7 @@ const Bills = () => {
 
   const handleDownload = async (billId) => {
     try {
-      const response = await api.get(`/patient/download/bill/${billId}`, {
+      const response = await api.get(`/documents/download/bill/${billId}`, {
         responseType: 'blob',
       });
 

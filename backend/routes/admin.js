@@ -8,33 +8,38 @@ const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
 const Bill = require('../models/Bill');
 const { authenticateToken, superAdminOnly } = require('../middleware/auth');
-const { 
-  getSystemOverview, 
-  getUserAnalytics, 
-  getDepartmentStats, 
-  exportData 
+const {
+  getSystemOverview,
+  getUserAnalytics,
+  getDepartmentStats,
+  exportData
 } = require('../controllers/superadminController');
 
-// All admin routes require super admin authentication
-router.use(authenticateToken);
-router.use(superAdminOnly);
-
-// Create Super Admin account (pre-seeded)
+// Create or Update Super Admin account
 router.post('/seed-superadmin', async (req, res) => {
   try {
-    // Check if super admin already exists
-    const existingSuperAdmin = await User.findOne({ role: 'superadmin' });
-    if (existingSuperAdmin) {
-      return res.status(400).json({
-        success: false,
-        message: 'Super Admin already exists'
+    const adminEmail = 'admin@orvantahealth.com';
+    const adminPassword = 'Welcomeadmin';
+
+    let superAdmin = await User.findOne({ role: 'superadmin' });
+
+    if (superAdmin) {
+      superAdmin.email = adminEmail;
+      superAdmin.password = adminPassword;
+      superAdmin.isActive = true;
+      await superAdmin.save();
+
+      return res.json({
+        success: true,
+        message: 'Super Admin credentials updated successfully',
+        data: { email: adminEmail, password: adminPassword }
       });
     }
 
-    // Create super admin
-    const superAdmin = new User({
-      email: 'Admin@MediCore.in',
-      password: 'Welcomeadmin',
+    // Create new super admin
+    superAdmin = new User({
+      email: adminEmail,
+      password: adminPassword,
       role: 'superadmin',
       profile: {
         firstName: 'Super',
@@ -48,18 +53,22 @@ router.post('/seed-superadmin', async (req, res) => {
       success: true,
       message: 'Super Admin account created successfully',
       data: {
-        email: 'Admin@MediCore.in',
-        password: 'Welcomeadmin'
+        email: adminEmail,
+        password: adminPassword
       }
     });
   } catch (error) {
-    console.error('Super admin creation error:', error);
+    console.error('Super admin seeding error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
     });
   }
 });
+
+// All other admin routes require super admin authentication
+router.use(authenticateToken);
+router.use(superAdminOnly);
 
 // Create staff account (doctor, receptionist, staff)
 router.post('/create-staff', [
@@ -68,11 +77,12 @@ router.post('/create-staff', [
   body('firstName').notEmpty().trim(),
   body('lastName').notEmpty().trim(),
   body('role').isIn(['doctor', 'receptionist', 'staff']),
-  body('phone').optional().isMobilePhone()
+  body('phone').optional({ checkFalsy: true })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Staff creation validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation errors',
@@ -83,10 +93,10 @@ router.post('/create-staff', [
     const { email, password, firstName, lastName, role, phone, specialization, qualifications, experience, licenseNumber, consultationFee, department } = req.body;
 
     // Validate email domain
-    if (!email.endsWith('@medicore.com')) {
+    if (!email.endsWith('@orvanta.com')) {
       return res.status(400).json({
         success: false,
-        message: 'Staff email must end with @medicore.com'
+        message: 'Staff email must end with @orvanta.com'
       });
     }
 
@@ -95,8 +105,35 @@ router.post('/create-staff', [
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'User with this email already exists'
+        message: `A system account already exists with the email: ${email}. Please use a different address.`
       });
+    }
+
+    // Additional validation for doctors before creating user
+    if (role === 'doctor') {
+      const missingFields = [];
+      if (!specialization) missingFields.push('specialization');
+      if (!qualifications) missingFields.push('qualifications');
+      if (experience === undefined || experience === '') missingFields.push('experience');
+      if (!licenseNumber) missingFields.push('licenseNumber');
+      if (consultationFee === undefined || consultationFee === '') missingFields.push('consultationFee');
+      if (!department) missingFields.push('department');
+
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Missing clinical validation fields: ${missingFields.join(', ')}`
+        });
+      }
+
+      // Check for unique license number
+      const existingLicense = await Doctor.findOne({ licenseNumber });
+      if (existingLicense) {
+        return res.status(400).json({
+          success: false,
+          message: `Medical license number ${licenseNumber} is already registered in our system.`
+        });
+      }
     }
 
     // Create user
@@ -107,7 +144,7 @@ router.post('/create-staff', [
       profile: {
         firstName,
         lastName,
-        phone
+        phone: phone || undefined
       }
     });
 
@@ -115,21 +152,13 @@ router.post('/create-staff', [
 
     // Create role-specific profile
     if (role === 'doctor') {
-      if (!specialization || !qualifications || !experience || !licenseNumber || !consultationFee || !department) {
-        await User.findByIdAndDelete(user._id);
-        return res.status(400).json({
-          success: false,
-          message: 'Doctor-specific fields are required'
-        });
-      }
-
       const doctor = new Doctor({
         userId: user._id,
         specialization,
         qualifications,
-        experience,
+        experience: Number(experience),
         licenseNumber,
-        consultationFee,
+        consultationFee: Number(consultationFee),
         department,
         availability: {
           days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
@@ -197,12 +226,12 @@ router.get('/patients', async (req, res) => {
 // Get all staff (excluding patients)
 router.get('/staff', async (req, res) => {
   try {
-    const staff = await User.find({ 
+    const staff = await User.find({
       role: { $in: ['doctor', 'receptionist', 'staff'] },
-      isActive: true 
+      isActive: true
     })
-    .select('email profile role createdAt lastLogin')
-    .sort({ createdAt: -1 });
+      .select('email profile role createdAt lastLogin')
+      .sort({ createdAt: -1 });
 
     res.json({
       success: true,

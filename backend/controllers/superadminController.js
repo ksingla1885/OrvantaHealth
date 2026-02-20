@@ -141,13 +141,22 @@ const getDepartmentStats = async (req, res) => {
   try {
     const departmentStats = await Doctor.aggregate([
       {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userDetails'
+        }
+      },
+      { $unwind: '$userDetails' },
+      {
         $group: {
           _id: '$department',
           count: { $sum: 1 },
           doctors: {
             $push: {
               name: {
-                $concat: ['$userId.profile.firstName', ' ', '$userId.profile.lastName']
+                $concat: ['$userDetails.profile.firstName', ' ', '$userDetails.profile.lastName']
               },
               experience: '$experience',
               consultationFee: '$consultationFee'
@@ -214,7 +223,7 @@ const exportData = async (req, res) => {
     }
 
     const filename = `${type}_export_${new Date().toISOString().split('T')[0]}.${format || 'json'}`;
-    
+
     if (format === 'csv') {
       // Convert to CSV format
       const csv = convertToCSV(data);
@@ -238,19 +247,19 @@ const exportData = async (req, res) => {
 // Helper function to convert JSON to CSV
 const convertToCSV = (data) => {
   if (!data || data.length === 0) return '';
-  
+
   const headers = Object.keys(data[0]);
   const csvHeaders = headers.join(',');
-  
+
   const csvRows = data.map(row => {
     return headers.map(header => {
       const value = row[header];
-      return typeof value === 'string' && value.includes(',') 
-        ? `"${value}"` 
+      return typeof value === 'string' && value.includes(',')
+        ? `"${value}"`
         : value;
     }).join(',');
   });
-  
+
   return [csvHeaders, ...csvRows].join('\n');
 };
 

@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
-const User = require('./models/User');
-require('dotenv').config();
+const User = require('../models/User');
+require('dotenv').config({ path: '../.env' });
 
 const verify = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('Connected');
-        const adminEmail = 'admin@medicore.in';
+        const adminEmail = 'admin@orvantahealth.com';
         const user = await User.findOne({ email: adminEmail }).select('+password');
         if (!user) {
             console.log('User NOT found');

@@ -51,7 +51,7 @@ api.interceptors.response.use(
         // Refresh failed, logout user
         localStorage.removeItem('tokens');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        window.location.href = '/';
         return Promise.reject(refreshError);
       }
     }

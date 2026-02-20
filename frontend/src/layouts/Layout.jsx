@@ -25,13 +25,8 @@ const Layout = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    const role = user?.role;
     logout();
-    if (role === 'superadmin' || role === 'patient') {
-      navigate('/');
-    } else {
-      navigate('/login');
-    }
+    navigate('/');
   };
 
   const getNavigationItems = () => {
@@ -201,7 +196,7 @@ const Layout = () => {
               <Building className="h-6 w-6 text-brand-dark" />
             </div>
             <span className="text-2xl font-bold tracking-tight text-white font-display">
-              MediCore
+              OrvantaHealth
             </span>
           </div>
         </div>
@@ -270,7 +265,7 @@ const Layout = () => {
                   {navigationItems.find(item => item.current)?.name || 'Dashboard'}
                 </h1>
                 <div className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                  <span>MediCore</span>
+                  <span>OrvantaHealth</span>
                   <span>/</span>
                   <span className="text-brand-teal">{navigationItems.find(item => item.current)?.name || 'Home'}</span>
                 </div>
@@ -278,7 +273,7 @@ const Layout = () => {
 
               {/* Mobile Page Title */}
               <h1 className="lg:hidden text-lg font-bold text-brand-dark">
-                {navigationItems.find(item => item.current)?.name || 'MediCore'}
+                {navigationItems.find(item => item.current)?.name || 'OrvantaHealth'}
               </h1>
             </div>
 

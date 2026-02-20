@@ -49,6 +49,7 @@ app.use('/api/patient', require('./routes/patient'));
 app.use('/api/appointments', require('./routes/appointments'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/chatbot', require('./routes/chatbot'));
+app.use('/api/documents', require('./routes/documents'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

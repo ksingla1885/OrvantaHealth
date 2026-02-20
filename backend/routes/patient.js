@@ -12,6 +12,28 @@ const LabReport = require('../models/LabReport');
 router.use(authenticateToken);
 router.use(patientOnly);
 
+// Middleware to attach patient record to request
+// This is necessary because some models store patientId (from Patient collection) 
+// instead of userId (from User collection)
+const attachPatient = async (req, res, next) => {
+  try {
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Patient profile record not found'
+      });
+    }
+    req.patient = patient;
+    next();
+  } catch (error) {
+    console.error('Attach patient error:', error);
+    res.status(500).json({ success: false, message: 'Server error resolving patient profile' });
+  }
+};
+
+router.use(attachPatient);
+
 // Get patient profile
 router.get('/profile', async (req, res) => {
   try {
@@ -46,11 +68,11 @@ router.patch('/profile', async (req, res) => {
 
     const patient = await Patient.findOneAndUpdate(
       { userId: req.user._id },
-      { 
-        bloodGroup, 
-        emergencyContact, 
-        insuranceInfo, 
-        allergies 
+      {
+        bloodGroup,
+        emergencyContact,
+        insuranceInfo,
+        allergies
       },
       { new: true }
     );
@@ -134,7 +156,7 @@ router.get('/doctor/:doctorId/availability', async (req, res) => {
 // Get patient appointments
 router.get('/appointments', async (req, res) => {
   try {
-    const appointments = await Appointment.find({ patientId: req.user._id })
+    const appointments = await Appointment.find({ patientId: req.patient._id })
       .populate('doctorId')
       .populate('doctorId.userId', 'profile')
       .sort({ date: -1 });
@@ -155,7 +177,7 @@ router.get('/appointments', async (req, res) => {
 // Get patient bills
 router.get('/bills', async (req, res) => {
   try {
-    const bills = await Bill.find({ patientId: req.user._id })
+    const bills = await Bill.find({ patientId: req.patient._id })
       .populate('createdBy', 'profile')
       .sort({ createdAt: -1 });
 
@@ -175,14 +197,24 @@ router.get('/bills', async (req, res) => {
 // Get patient prescriptions
 router.get('/prescriptions', async (req, res) => {
   try {
-    const prescriptions = await Prescription.find({ patientId: req.user._id })
+    const prescriptions = await Prescription.find({ patientId: req.patient._id })
       .populate('doctorId')
       .populate('doctorId.userId', 'profile')
       .sort({ createdAt: -1 });
 
+    // Map fields to match frontend expectations
+    const mappedPrescriptions = prescriptions.map(p => {
+      const obj = p.toObject();
+      return {
+        ...obj,
+        medications: obj.medicines, // map medicines to medications
+        instructions: obj.advice   // map advice to instructions
+      };
+    });
+
     res.json({
       success: true,
-      data: { prescriptions }
+      data: { prescriptions: mappedPrescriptions }
     });
   } catch (error) {
     console.error('Get prescriptions error:', error);
@@ -196,7 +228,7 @@ router.get('/prescriptions', async (req, res) => {
 // Get patient lab reports
 router.get('/lab-reports', async (req, res) => {
   try {
-    const labReports = await LabReport.find({ patientId: req.user._id })
+    const labReports = await LabReport.find({ patientId: req.patient._id })
       .populate('uploadedBy', 'profile')
       .sort({ reportDate: -1 });
 
@@ -223,7 +255,7 @@ router.get('/download/:type/:id', async (req, res) => {
     switch (type) {
       case 'prescription':
         const prescription = await Prescription.findById(id);
-        if (!prescription || prescription.patientId.toString() !== req.user._id.toString()) {
+        if (!prescription || prescription.patientId.toString() !== req.patient._id.toString()) {
           return res.status(403).json({
             success: false,
             message: 'Access denied'
@@ -232,10 +264,10 @@ router.get('/download/:type/:id', async (req, res) => {
         filePath = prescription.receipt;
         filename = `prescription_${id}.pdf`;
         break;
-      
+
       case 'bill':
         const bill = await Bill.findById(id);
-        if (!bill || bill.patientId.toString() !== req.user._id.toString()) {
+        if (!bill || bill.patientId.toString() !== req.patient._id.toString()) {
           return res.status(403).json({
             success: false,
             message: 'Access denied'
@@ -244,10 +276,10 @@ router.get('/download/:type/:id', async (req, res) => {
         filePath = bill.receipt;
         filename = `bill_${id}.pdf`;
         break;
-      
+
       case 'lab-report':
         const labReport = await LabReport.findById(id);
-        if (!labReport || labReport.patientId.toString() !== req.user._id.toString()) {
+        if (!labReport || labReport.patientId.toString() !== req.patient._id.toString()) {
           return res.status(403).json({
             success: false,
             message: 'Access denied'
@@ -256,7 +288,7 @@ router.get('/download/:type/:id', async (req, res) => {
         filePath = labReport.reportFile;
         filename = `lab_report_${id}.pdf`;
         break;
-      
+
       default:
         return res.status(400).json({
           success: false,
@@ -273,7 +305,7 @@ router.get('/download/:type/:id', async (req, res) => {
 
     const path = require('path');
     const fullPath = path.join(__dirname, '..', 'uploads', filePath);
-    
+
     res.download(fullPath, filename, (err) => {
       if (err) {
         console.error('Download error:', err);

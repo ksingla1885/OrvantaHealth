@@ -40,6 +40,79 @@ const upload = multer({
 router.use(authenticateToken);
 router.use(doctorOnly);
 
+// Get doctor dashboard stats
+router.get('/dashboard-stats', async (req, res) => {
+  try {
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found'
+      });
+    }
+
+    // Today's Patients
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const todayPatients = await Appointment.countDocuments({
+      doctorId: doctor._id,
+      date: { $gte: startOfToday, $lte: endOfToday }
+    });
+
+    // Total Network (Unique Patients)
+    const uniquePatients = await Appointment.distinct('patientId', {
+      doctorId: doctor._id
+    });
+    const totalNetwork = uniquePatients.length;
+
+    // Active Scripts (Total Prescriptions Issued)
+    const activeScripts = await Prescription.countDocuments({
+      doctorId: doctor._id
+    });
+
+    // Recent Interactions
+    const recentInteractions = await Appointment.find({
+      doctorId: doctor._id,
+      status: 'completed'
+    })
+      .populate({
+        path: 'patientId',
+        populate: {
+          path: 'userId',
+          select: 'profile'
+        }
+      })
+      .sort({ updatedAt: -1 })
+      .limit(5);
+
+    res.json({
+      success: true,
+      data: {
+        stats: {
+          todayPatients,
+          totalNetwork,
+          activeScripts
+        },
+        recentInteractions: recentInteractions.map(interaction => ({
+          id: interaction._id,
+          patientName: `${interaction.patientId?.userId?.profile?.firstName || 'Unknown'} ${interaction.patientId?.userId?.profile?.lastName || 'Patient'}`,
+          procedure: interaction.reason || 'Consultation',
+          time: interaction.updatedAt
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Get doctor dashboard stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching dashboard stats'
+    });
+  }
+});
+
 // Get doctor profile
 router.get('/profile', async (req, res) => {
   try {
@@ -126,7 +199,7 @@ router.get('/appointments', async (req, res) => {
       const startDate = new Date(req.query.date);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 1);
-      
+
       query.date = {
         $gte: startDate,
         $lt: endDate
@@ -354,13 +427,30 @@ router.get('/prescriptions', async (req, res) => {
     }
 
     const prescriptions = await Prescription.find({ doctorId: doctor._id })
-      .populate('patientId', 'userId profile')
+      .populate({
+        path: 'patientId',
+        populate: {
+          path: 'userId',
+          select: 'profile'
+        }
+      })
+      .populate('doctorId', 'userId profile')
       .populate('appointmentId', 'date timeSlot')
       .sort({ createdAt: -1 });
 
+    // Map fields to match frontend expectations
+    const mappedPrescriptions = prescriptions.map(p => {
+      const obj = p.toObject();
+      return {
+        ...obj,
+        medications: obj.medicines, // map medicines to medications
+        instructions: obj.advice   // map advice to instructions
+      };
+    });
+
     res.json({
       success: true,
-      data: { prescriptions }
+      data: { prescriptions: mappedPrescriptions }
     });
   } catch (error) {
     console.error('Get prescriptions error:', error);

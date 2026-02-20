@@ -1,7 +1,7 @@
 {
-  "name": "medicore-frontend",
+  "name": "orvantahealth-frontend",
   "version": "1.0.0",
-  "description": "MediCore Hospital Management System Frontend",
+  "description": "OrvantaHealth Hospital Management System Frontend",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",

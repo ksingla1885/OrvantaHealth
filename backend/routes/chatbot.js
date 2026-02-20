@@ -37,7 +37,7 @@ const generateGroqResponse = async (query, apiKey) => {
   const Groq = require('groq-sdk');
   const groq = new Groq({ apiKey });
 
-  const systemPrompt = `You are a helpful medical assistant chatbot for MediCore Hospital Management System. 
+  const systemPrompt = `You are a helpful medical assistant chatbot for OrvantaHealth Hospital Management System. 
   Your role is to provide general health information and guidance only. 
   Always include the following disclaimer: "I am an AI assistant and not a medical professional. Please consult with a qualified healthcare provider for medical advice, diagnosis, or treatment."
   
@@ -110,7 +110,7 @@ router.post('/chat', [
       response = await generateGroqResponse(message, process.env.GROQ_API_KEY_PRIMARY);
     } catch (primaryError) {
       console.error('Primary Groq API failed:', primaryError);
-      
+
       // Try backup API key
       try {
         if (process.env.GROQ_API_KEY_BACKUP) {

@@ -1,7 +1,51 @@
-import React from 'react';
-import { Calendar, Users, FileText, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, Users, FileText, Clock, AlertCircle } from 'lucide-react';
+import api from '../../services/api';
+import { formatDistanceToNow } from 'date-fns';
 
 const DoctorDashboard = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/doctor/dashboard-stats');
+        if (response.data.success) {
+          setData(response.data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard stats:', err);
+        setError('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="loading-spinner h-12 w-12"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-rose-50 border border-rose-100 p-8 rounded-[2rem] text-center">
+        <AlertCircle className="h-12 w-12 text-rose-500 mx-auto mb-4" />
+        <h3 className="text-xl font-bold text-slate-800 mb-2">{error}</h3>
+        <p className="text-slate-500">Please try refreshing the page or contact support.</p>
+      </div>
+    );
+  }
+
+  const { stats, recentInteractions } = data;
+
   return (
     <div className="space-y-10 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -27,7 +71,7 @@ const DoctorDashboard = () => {
             </div>
             <div className="ml-5">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Today's Schedule</p>
-              <p className="text-3xl font-black text-brand-dark font-display">8 Patients</p>
+              <p className="text-3xl font-black text-brand-dark font-display">{stats.todayPatients} Patients</p>
             </div>
           </div>
         </div>
@@ -39,7 +83,7 @@ const DoctorDashboard = () => {
             </div>
             <div className="ml-5">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Network</p>
-              <p className="text-3xl font-black text-brand-dark font-display">156 Files</p>
+              <p className="text-3xl font-black text-brand-dark font-display">{stats.totalNetwork} Patients</p>
             </div>
           </div>
         </div>
@@ -51,7 +95,7 @@ const DoctorDashboard = () => {
             </div>
             <div className="ml-5">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Active Scripts</p>
-              <p className="text-3xl font-black text-brand-dark font-display">42 Issued</p>
+              <p className="text-3xl font-black text-brand-dark font-display">{stats.activeScripts} Issued</p>
             </div>
           </div>
         </div>
@@ -64,16 +108,24 @@ const DoctorDashboard = () => {
           Recent Interactions
         </h2>
         <div className="space-y-6">
-          <div className="flex items-center gap-5 p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group">
-            <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-brand-dark group-hover:text-white transition-all">
-              <Users className="h-5 w-5" />
+          {recentInteractions.length > 0 ? (
+            recentInteractions.map((interaction) => (
+              <div key={interaction.id} className="flex items-center gap-5 p-4 rounded-2xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group">
+                <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-brand-dark group-hover:text-white transition-all">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-slate-800">Appointment finalized with <span className="text-brand-teal">{interaction.patientName}</span></p>
+                  <p className="text-xs text-slate-500 mt-1">Procedure: {interaction.procedure} • {formatDistanceToNow(new Date(interaction.time))} ago</p>
+                </div>
+                <button className="text-xs font-bold text-brand-teal uppercase tracking-widest hover:underline">View Case</button>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-10 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+              <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No recent completed interactions</p>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-slate-800">Appointment finalized with <span className="text-brand-teal">John Doe</span></p>
-              <p className="text-xs text-slate-500 mt-1">Procedure: General Consultation • 2 hours ago</p>
-            </div>
-            <button className="text-xs font-bold text-brand-teal uppercase tracking-widest hover:underline">View Case</button>
-          </div>
+          )}
         </div>
       </div>
     </div>

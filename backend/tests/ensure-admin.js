@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const User = require('./models/User');
-require('dotenv').config();
+const User = require('../models/User');
+require('dotenv').config({ path: '../.env' });
 
 async function run() {
     try {

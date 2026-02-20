@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 
 // Simple app to test connection and create superadmin
 const app = express();
@@ -16,7 +16,7 @@ app.get('/test', (req, res) => {
 app.post('/create-superadmin', async (req, res) => {
   try {
     console.log('Attempting to connect to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/medicore', {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/orvanta', {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
@@ -24,7 +24,7 @@ app.post('/create-superadmin', async (req, res) => {
 
     // Define User schema inline for this test
     const userSchema = new mongoose.Schema({
-      email: { type: String, required: true, unique: true },
+      email: { type: String, required: true, unique: true, lowercase: true },
       password: { type: String, required: true },
       role: { type: String, required: true },
       profile: {
@@ -35,21 +35,22 @@ app.post('/create-superadmin', async (req, res) => {
     });
 
     // Add password hashing
-    userSchema.pre('save', async function(next) {
+    userSchema.pre('save', async function (next) {
       if (!this.isModified('password')) return next();
       const salt = await bcrypt.genSalt(12);
       this.password = await bcrypt.hash(this.password, salt);
       next();
     });
 
-    const User = mongoose.model('User', userSchema);
+    // Check if model exists to avoid OverwriteModelError
+    const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-    const adminEmail = 'Admin@MediCore.in';
+    const adminEmail = 'admin@orvantahealth.com';
     const adminPassword = 'Welcomeadmin';
 
     console.log('Checking for existing admin...');
     const existingAdmin = await User.findOne({ email: adminEmail });
-    
+
     if (existingAdmin) {
       console.log('Admin already exists');
       return res.json({

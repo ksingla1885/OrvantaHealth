@@ -11,11 +11,10 @@ const doctorSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  qualifications: [{
-    degree: { type: String, required: true },
-    institution: { type: String, required: true },
-    year: { type: Number, required: true }
-  }],
+  qualifications: {
+    type: String,
+    required: true
+  },
   experience: {
     type: Number, // years of experience
     required: true

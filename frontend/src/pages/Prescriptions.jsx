@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { FileText, Download, User, Calendar, Pill, Search } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 
 const Prescriptions = () => {
+  const { user: currentUser } = useAuth();
   const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,9 +17,21 @@ const Prescriptions = () => {
 
   const fetchPrescriptions = async () => {
     try {
-      const response = await api.get('/patient/prescriptions');
+      const endpoint = currentUser.role === 'patient' ? '/patient/prescriptions' : '/doctor/prescriptions';
+      const response = await api.get(endpoint);
       if (response.data.success) {
-        setPrescriptions(response.data.data.prescriptions);
+        let data = response.data.data.prescriptions;
+
+        // Ensure data is mapped for doctor view if necessary
+        if (currentUser.role === 'doctor') {
+          data = data.map(p => ({
+            ...p,
+            medications: p.medicines,
+            instructions: p.advice
+          }));
+        }
+
+        setPrescriptions(data);
       }
     } catch (error) {
       console.error('Failed to fetch prescriptions:', error);
@@ -29,7 +43,7 @@ const Prescriptions = () => {
 
   const handleDownload = async (id) => {
     try {
-      const response = await api.get(`/patient/download/prescription/${id}`, {
+      const response = await api.get(`/documents/download/prescription/${id}`, {
         responseType: 'blob',
       });
 
@@ -46,10 +60,14 @@ const Prescriptions = () => {
     }
   };
 
-  const filteredPrescriptions = prescriptions.filter(p =>
-    p.doctorId?.userId?.profile?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.diagnosis?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPrescriptions = prescriptions.filter(p => {
+    const search = searchTerm.toLowerCase();
+    const doctorName = `${p.doctorId?.userId?.profile?.firstName || ''} ${p.doctorId?.userId?.profile?.lastName || ''}`.toLowerCase();
+    const patientName = `${p.patientId?.userId?.profile?.firstName || ''} ${p.patientId?.userId?.profile?.lastName || ''}`.toLowerCase();
+    const diagnosis = p.diagnosis?.toLowerCase() || '';
+
+    return doctorName.includes(search) || patientName.includes(search) || diagnosis.includes(search);
+  });
 
   if (loading) {
     return (
@@ -63,15 +81,21 @@ const Prescriptions = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Prescriptions</h1>
-          <p className="text-gray-600">Access and download your medical prescriptions</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {currentUser.role === 'patient' ? 'My Prescriptions' : 'Issued Prescriptions'}
+          </h1>
+          <p className="text-gray-600">
+            {currentUser.role === 'patient'
+              ? 'Access and download your medical prescriptions'
+              : 'View and manage prescriptions you have issued'}
+          </p>
         </div>
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by doctor or diagnosis..."
+            placeholder={currentUser.role === 'patient' ? "Search by doctor or diagnosis..." : "Search by patient or diagnosis..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none w-full sm:w-64"
@@ -96,7 +120,9 @@ const Prescriptions = () => {
                       <div className="flex items-center mt-1 text-sm text-gray-500 space-x-4">
                         <span className="flex items-center">
                           <User className="h-4 w-4 mr-1" />
-                          Dr. {prescription.doctorId?.userId?.profile?.name || 'Unknown'}
+                          {currentUser.role === 'patient'
+                            ? `Dr. ${prescription.doctorId?.userId?.profile?.firstName || ''} ${prescription.doctorId?.userId?.profile?.lastName || 'Unknown'}`
+                            : `Patient: ${prescription.patientId?.userId?.profile?.firstName || ''} ${prescription.patientId?.userId?.profile?.lastName || 'Unknown'}`}
                         </span>
                         <span className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />

@@ -8,34 +8,31 @@ const authenticateToken = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Access token required' 
+      return res.status(401).json({
+        success: false,
+        message: 'Access token required'
       });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password -refreshToken');
-    
+
     if (!user || !user.isActive) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Invalid token or user not active' 
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token or user not active'
       });
     }
 
     req.user = user;
     next();
   } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Token expired' 
-      });
-    }
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Invalid token' 
+    // All JWT verification errors (expired, malformed, bad signature) should
+    // return 401 so the frontend's Axios interceptor can attempt a token refresh.
+    // 403 is intentionally reserved for valid tokens that lack the required role.
+    return res.status(401).json({
+      success: false,
+      message: error.name === 'TokenExpiredError' ? 'Token expired' : 'Invalid token'
     });
   }
 };
@@ -44,9 +41,9 @@ const authenticateToken = async (req, res, next) => {
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Access denied. Insufficient permissions.' 
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Insufficient permissions.'
       });
     }
     next();

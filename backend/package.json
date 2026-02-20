@@ -1,7 +1,7 @@
 {
-  "name": "medicore-backend",
+  "name": "orvantahealth-backend",
   "version": "1.0.0",
-  "description": "MediCore Hospital Management System Backend",
+  "description": "OrvantaHealth Hospital Management System Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,7 +9,7 @@
     "test": "jest"
   },
   "keywords": ["hospital", "management", "mern", "healthcare"],
-  "author": "MediCore Team",
+  "author": "OrvantaHealth Team",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",

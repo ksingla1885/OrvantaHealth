@@ -6,7 +6,7 @@ const seedAdmin = async () => {
     try {
         console.log('Attempting to connect to MongoDB...');
         console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
-        
+
         await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/medicore', {
             useNewUrlParser: true,
             useUnifiedTopology: true,
@@ -15,7 +15,7 @@ const seedAdmin = async () => {
         });
         console.log('Connected to MongoDB successfully');
 
-        const adminEmail = 'Admin@MediCore.in';
+        const adminEmail = 'admin@orvantahealth.com';
         const adminPassword = 'Welcomeadmin';
 
         console.log('Checking for existing admin:', adminEmail);

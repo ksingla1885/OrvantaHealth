@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 
 const app = express();
 
@@ -16,8 +16,8 @@ app.get('/api/test', (req, res) => {
 // Test registration route
 app.post('/api/auth/register', (req, res) => {
   console.log('Test registration received:', req.body);
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'Test registration successful',
     data: {
       user: { email: req.body.email, role: 'patient' },

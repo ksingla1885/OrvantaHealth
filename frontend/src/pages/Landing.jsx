@@ -31,7 +31,7 @@ const Landing = () => {
                             <div className="h-10 w-10 bg-brand-dark rounded-xl flex items-center justify-center shadow-lg transform group-hover:rotate-6 transition-transform">
                                 <Activity className="h-6 w-6 text-white" />
                             </div>
-                            <span className="text-2xl font-black text-brand-dark tracking-tight font-display">MediCore</span>
+                            <span className="text-2xl font-black text-brand-dark tracking-tight font-display">OrvantaHealth</span>
                         </div>
                         <div className="flex items-center gap-8">
                             <Link to="/login" className="hidden sm:block text-slate-600 hover:text-brand-dark font-bold transition-colors">
@@ -181,7 +181,7 @@ const Landing = () => {
                                 Redefining the Standard of <span className="text-brand-teal italic">Medical Excellence.</span>
                             </h2>
                             <p className="text-lg text-slate-600 font-medium leading-relaxed mb-8">
-                                MediCore was born from a simple realization: medical professionals spend too much time on paperwork and not enough time on patients. Our mission is to bridge that gap with a unified operating system that handles the complexity of hospital management, so you can focus on what matters most—saving lives.
+                                OrvantaHealth was born from a simple realization: medical professionals spend too much time on paperwork and not enough time on patients. Our mission is to bridge that gap with a unified operating system that handles the complexity of hospital management, so you can focus on what matters most—saving lives.
                             </p>
                             <div className="grid grid-cols-2 gap-8">
                                 <div>
@@ -240,7 +240,7 @@ const Landing = () => {
                 <div className="max-w-4xl mx-auto text-center px-4 relative z-10">
                     <Activity className="h-16 w-16 text-brand-teal mx-auto mb-10 opacity-50" />
                     <h2 className="text-4xl md:text-6xl font-black font-display tracking-tighter mb-8 italic">
-                        "Healthcare is complex. MediCore makes it human."
+                        "Healthcare is complex. OrvantaHealth makes it human."
                     </h2>
                     <p className="text-teal-100/60 text-xl font-medium mb-12 max-w-2xl mx-auto uppercase tracking-widest">
                         Ready to elevate your facility?
@@ -286,7 +286,7 @@ const Landing = () => {
                                 </div>
                                 <h3 className="text-4xl font-black text-brand-dark font-display mb-6 tracking-tight">Ketan Kumar</h3>
                                 <p className="text-lg text-slate-600 font-medium leading-relaxed mb-8">
-                                    Passionate about bridging technology and healthcare. Ketan designed MediCore as a response to the technical hurdles faced by modern hospitals, focusing on creating a seamless, intuitive experience for both patients and practitioners.
+                                    Passionate about bridging technology and healthcare. Ketan designed OrvantaHealth as a response to the technical hurdles faced by modern hospitals, focusing on creating a seamless, intuitive experience for both patients and practitioners.
                                 </p>
                                 <div className="flex flex-wrap justify-center md:justify-start gap-4">
                                     <a href="https://github.com/Ksingla1885" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-6 py-3 bg-brand-dark text-white rounded-xl font-bold hover:bg-brand-teal transition-all shadow-lg hover:-translate-y-1">
@@ -314,10 +314,10 @@ const Landing = () => {
                     <div className="flex flex-col md:flex-row justify-between items-center gap-8">
                         <div className="flex items-center gap-3">
                             <Activity className="h-6 w-6 text-brand-teal" />
-                            <span className="text-xl font-black font-display tracking-tight text-brand-dark">MediCore</span>
+                            <span className="text-xl font-black font-display tracking-tight text-brand-dark">OrvantaHealth</span>
                         </div>
                         <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">
-                            &copy; 2024 MediCore OS. Crafted for Excellence.
+                            &copy; 2024 OrvantaHealth OS. Crafted for Excellence.
                         </p>
                         <div className="flex gap-6 text-slate-400">
                             <Github className="h-5 w-5 cursor-pointer hover:text-brand-dark transition-colors" />

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { TestTube, Download, Calendar, Activity, CheckCircle, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 
 const LabReports = () => {
+  const { user: currentUser } = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,7 +16,8 @@ const LabReports = () => {
 
   const fetchReports = async () => {
     try {
-      const response = await api.get('/patient/lab-reports');
+      const endpoint = currentUser.role === 'patient' ? '/patient/lab-reports' : '/receptionist/lab-reports';
+      const response = await api.get(endpoint);
       if (response.data.success) {
         setReports(response.data.data.labReports);
       }
@@ -28,7 +31,7 @@ const LabReports = () => {
 
   const handleDownload = async (id) => {
     try {
-      const response = await api.get(`/patient/download/lab-report/${id}`, {
+      const response = await api.get(`/documents/download/lab-report/${id}`, {
         responseType: 'blob',
       });
 

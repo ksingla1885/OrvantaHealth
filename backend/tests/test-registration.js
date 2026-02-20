@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 
 // Test database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/medicore')
   .then(() => {
     console.log('✅ Database connected successfully');
-    
+
     // Test creating a simple user
-    const User = require('./models/User');
-    
+    const User = require('../models/User');
+
     const testUser = {
       email: 'test@example.com',
       password: 'test123456',
@@ -18,9 +18,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/medicore'
         lastName: 'User'
       }
     };
-    
+
     console.log('Testing user creation...');
-    
+
     User.findOne({ email: testUser.email })
       .then(existing => {
         if (existing) {
@@ -29,7 +29,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/medicore'
         } else {
           console.log('User does not exist, creating new one...');
         }
-        
+
         const user = new User(testUser);
         return user.save();
       })
