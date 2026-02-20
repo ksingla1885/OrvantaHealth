@@ -1,0 +1,420 @@
+const express = require('express');
+const router = express.Router();
+const { body, validationResult } = require('express-validator');
+const multer = require('multer');
+const path = require('path');
+const { authenticateToken, doctorOnly } = require('../middleware/auth');
+const Doctor = require('../models/Doctor');
+const Patient = require('../models/Patient');
+const Appointment = require('../models/Appointment');
+const Prescription = require('../models/Prescription');
+
+// Configure multer for prescription uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/prescriptions/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `prescription-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|pdf/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only JPEG, JPG, PNG, and PDF files are allowed'));
+    }
+  }
+});
+
+// All doctor routes require doctor authentication
+router.use(authenticateToken);
+router.use(doctorOnly);
+
+// Get doctor profile
+router.get('/profile', async (req, res) => {
+  try {
+    const doctor = await Doctor.findOne({ userId: req.user._id })
+      .populate('userId', 'email profile');
+
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { doctor }
+    });
+  } catch (error) {
+    console.error('Get doctor profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Update doctor availability
+router.patch('/availability', [
+  body('days').isArray(),
+  body('timeSlots').isArray()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { days, timeSlots } = req.body;
+
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found'
+      });
+    }
+
+    doctor.availability = { days, timeSlots };
+    await doctor.save();
+
+    res.json({
+      success: true,
+      message: 'Availability updated successfully',
+      data: { doctor }
+    });
+  } catch (error) {
+    console.error('Update availability error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating availability'
+    });
+  }
+});
+
+// Get assigned appointments
+router.get('/appointments', async (req, res) => {
+  try {
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found'
+      });
+    }
+
+    let query = { doctorId: doctor._id };
+
+    // Add date filter if provided
+    if (req.query.date) {
+      const startDate = new Date(req.query.date);
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 1);
+      
+      query.date = {
+        $gte: startDate,
+        $lt: endDate
+      };
+    }
+
+    // Add status filter if provided
+    if (req.query.status) {
+      query.status = req.query.status;
+    }
+
+    const appointments = await Appointment.find(query)
+      .populate('patientId')
+      .populate('patientId.userId', 'profile')
+      .sort({ date: -1, 'timeSlot.start': -1 });
+
+    res.json({
+      success: true,
+      data: { appointments }
+    });
+  } catch (error) {
+    console.error('Get appointments error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching appointments'
+    });
+  }
+});
+
+// Get patient medical history
+router.get('/patient/:patientId/history', async (req, res) => {
+  try {
+    const { patientId } = req.params;
+
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found'
+      });
+    }
+
+    const patient = await Patient.findById(patientId)
+      .populate('userId', 'profile')
+      .populate('medicalHistory.doctor', 'profile');
+
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Patient not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { patient }
+    });
+  } catch (error) {
+    console.error('Get patient history error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching patient history'
+    });
+  }
+});
+
+// Create prescription
+router.post('/prescription', [
+  body('appointmentId').isMongoId(),
+  body('diagnosis').notEmpty().trim(),
+  body('medicines').isArray(),
+  body('medicines.*.name').notEmpty().trim(),
+  body('medicines.*.dosage').notEmpty().trim(),
+  body('medicines.*.frequency').notEmpty().trim(),
+  body('medicines.*.duration').notEmpty().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { appointmentId, diagnosis, medicines, tests, advice, followUpDate } = req.body;
+
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found'
+      });
+    }
+
+    // Get appointment
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found'
+      });
+    }
+
+    // Check if appointment belongs to this doctor
+    if (appointment.doctorId.toString() !== doctor._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    // Create prescription
+    const prescription = new Prescription({
+      appointmentId,
+      patientId: appointment.patientId,
+      doctorId: doctor._id,
+      diagnosis,
+      medicines,
+      tests: tests || [],
+      advice,
+      followUpDate: followUpDate ? new Date(followUpDate) : undefined
+    });
+
+    await prescription.save();
+
+    // Link prescription to appointment
+    appointment.prescription = prescription._id;
+    appointment.status = 'completed';
+    await appointment.save();
+
+    // Populate for response
+    await prescription.populate([
+      { path: 'patientId', populate: { path: 'userId', select: 'profile' } },
+      { path: 'doctorId', populate: { path: 'userId', select: 'profile' } }
+    ]);
+
+    res.status(201).json({
+      success: true,
+      message: 'Prescription created successfully',
+      data: { prescription }
+    });
+  } catch (error) {
+    console.error('Create prescription error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error creating prescription'
+    });
+  }
+});
+
+// Upload prescription receipt
+router.post('/prescription/:prescriptionId/receipt', upload.single('receipt'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    const { prescriptionId } = req.params;
+
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found'
+      });
+    }
+
+    const prescription = await Prescription.findById(prescriptionId);
+    if (!prescription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Prescription not found'
+      });
+    }
+
+    // Check if prescription belongs to this doctor
+    if (prescription.doctorId.toString() !== doctor._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    // Update prescription with file path
+    prescription.receipt = req.file.filename;
+    await prescription.save();
+
+    res.json({
+      success: true,
+      message: 'Prescription receipt uploaded successfully',
+      data: {
+        filename: req.file.filename,
+        prescription
+      }
+    });
+  } catch (error) {
+    console.error('Upload prescription receipt error:', error);
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File size too large. Maximum size is 5MB'
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: 'Server error uploading receipt'
+    });
+  }
+});
+
+// Get doctor's prescriptions
+router.get('/prescriptions', async (req, res) => {
+  try {
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found'
+      });
+    }
+
+    const prescriptions = await Prescription.find({ doctorId: doctor._id })
+      .populate('patientId', 'userId profile')
+      .populate('appointmentId', 'date timeSlot')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: { prescriptions }
+    });
+  } catch (error) {
+    console.error('Get prescriptions error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching prescriptions'
+    });
+  }
+});
+
+// Mark appointment as completed
+router.patch('/appointment/:appointmentId/complete', async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found'
+      });
+    }
+
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Appointment not found'
+      });
+    }
+
+    // Check if appointment belongs to this doctor
+    if (appointment.doctorId.toString() !== doctor._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    appointment.status = 'completed';
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: 'Appointment marked as completed',
+      data: { appointment }
+    });
+  } catch (error) {
+    console.error('Complete appointment error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error completing appointment'
+    });
+  }
+});
+
+module.exports = router;
