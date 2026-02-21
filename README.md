@@ -1,6 +1,23 @@
-# 🏥 MediCore - Hospital Management System
+# 🏥 OrvantaHealth - Hospital Management System
 
 A comprehensive, production-ready Hospital Management System built with the MERN stack, featuring role-based access control, Razorpay payment integration, and Groq AI chatbot.
+
+## 🚀 Quick Deployment
+
+Ready to deploy? Follow these quick steps:
+- **Frontend**: Deploy to Vercel in 2 minutes
+- **Backend**: Deploy to Render/Railway in 3 minutes
+
+👉 **[Quick Start Guide](./DEPLOYMENT_QUICK_START.md)** | **[Full Deployment Guide](./DEPLOYMENT.md)** | **[Pre-Launch Checklist](./PRODUCTION_CHECKLIST.md)**
+
+**Pre-deployment verification:**
+```bash
+# Windows
+build-production.bat
+
+# macOS/Linux
+bash build-production.sh
+```
 
 ## 🎯 Features
 
