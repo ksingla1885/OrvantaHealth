@@ -76,7 +76,7 @@ router.post('/create-staff', [
   body('password').isLength({ min: 6 }),
   body('firstName').notEmpty().trim(),
   body('lastName').notEmpty().trim(),
-  body('role').isIn(['doctor', 'receptionist', 'staff']),
+  body('role').isIn(['doctor', 'receptionist']),
   body('phone').optional({ checkFalsy: true })
 ], async (req, res) => {
   try {
@@ -227,7 +227,7 @@ router.get('/patients', async (req, res) => {
 router.get('/staff', async (req, res) => {
   try {
     const staff = await User.find({
-      role: { $in: ['doctor', 'receptionist', 'staff'] },
+      role: { $in: ['doctor', 'receptionist'] },
       isActive: true
     })
       .select('email profile role createdAt lastLogin')
@@ -260,7 +260,7 @@ router.get('/analytics', async (req, res) => {
     ] = await Promise.all([
       Patient.countDocuments(),
       Doctor.countDocuments(),
-      User.countDocuments({ role: { $in: ['doctor', 'receptionist', 'staff'] } }),
+      User.countDocuments({ role: { $in: ['doctor', 'receptionist'] } }),
       Appointment.countDocuments({
         date: {
           $gte: new Date(new Date().setHours(0, 0, 0, 0)),
@@ -295,6 +295,23 @@ router.get('/analytics', async (req, res) => {
             localField: '_id',
             foreignField: '_id',
             as: 'doctor'
+          }
+        },
+        {
+          $unwind: '$doctor'
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'doctor.userId',
+            foreignField: '_id',
+            as: 'doctor.userId'
+          }
+        },
+        {
+          $unwind: {
+            path: '$doctor.userId',
+            preserveNullAndEmptyArrays: true
           }
         }
       ])

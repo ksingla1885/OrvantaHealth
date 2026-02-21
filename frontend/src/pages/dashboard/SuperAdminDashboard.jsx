@@ -48,12 +48,6 @@ const SuperAdminDashboard = () => {
       color: 'bg-green-500',
     },
     {
-      name: 'Total Staff',
-      value: analytics?.totalStaff || 0,
-      icon: Users,
-      color: 'bg-purple-500',
-    },
-    {
       name: "Today's Appointments",
       value: analytics?.todayAppointments || 0,
       icon: Calendar,
@@ -232,8 +226,8 @@ const SuperAdminDashboard = () => {
                   <Users className="h-5 w-5 text-brand-dark" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-800">Staff Update</p>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1">Medical professional credentials have been successfully synchronized.</p>
+                  <p className="text-sm font-bold text-slate-800">Team Update</p>
+                  <p className="text-xs text-slate-500 leading-relaxed mt-1">Medical professionals and receptionists have been successfully synchronized.</p>
                 </div>
               </div>
             </div>

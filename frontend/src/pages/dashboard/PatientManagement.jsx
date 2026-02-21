@@ -135,8 +135,8 @@ const PatientManagement = () => {
                           <div className="text-sm font-black text-brand-dark">
                             {patient.userId.profile.firstName} {patient.userId.profile.lastName}
                           </div>
-                          <div className="text-xs font-medium text-slate-400 uppercase tracking-tighter">
-                            {patient.userId.email}
+                          <div className="text-xs font-medium text-slate-400 tracking-tighter">
+                            {patient.userId.email?.toLowerCase()}
                           </div>
                         </div>
                       </div>
@@ -207,7 +207,7 @@ const PatientManagement = () => {
                 <h2 className="text-4xl font-black font-display text-brand-dark mb-1">
                   {selectedPatient.userId.profile.firstName} {selectedPatient.userId.profile.lastName}
                 </h2>
-                <p className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">{selectedPatient.userId.email}</p>
+                <p className="text-slate-400 font-bold tracking-[0.2em] text-[10px]">{selectedPatient.userId.email?.toLowerCase()}</p>
               </div>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">

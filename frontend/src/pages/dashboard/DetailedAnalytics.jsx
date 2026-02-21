@@ -186,13 +186,13 @@ const DetailedAnalytics = () => {
         <div className="card group">
           <div className="flex items-center justify-between relative z-10">
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Staff</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Receptionists</p>
               <p className="text-3xl font-black text-brand-dark font-display">
                 {analytics?.totalStaff || 0}
               </p>
               <div className="flex items-center mt-3 gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse"></div>
-                <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest">Authority Unit</span>
+                <span className="text-[10px] font-black text-violet-600 uppercase tracking-widest">Reception Team</span>
               </div>
             </div>
             <div className="bg-brand-light p-4 rounded-2xl group-hover:translate-y-1 transition-transform">
@@ -299,13 +299,13 @@ const DetailedAnalytics = () => {
       {/* Top Performers */}
       <div className="card">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Doctor</h3>
-        {analytics?.mostConsultedDoctor ? (
+        {analytics?.mostConsultedDoctor?.userId?.profile ? (
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center">
               <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
                 <span className="text-lg font-medium text-blue-600">
-                  {analytics.mostConsultedDoctor.userId.profile.firstName.charAt(0)}
-                  {analytics.mostConsultedDoctor.userId.profile.lastName.charAt(0)}
+                  {analytics.mostConsultedDoctor.userId.profile.firstName?.charAt(0)}
+                  {analytics.mostConsultedDoctor.userId.profile.lastName?.charAt(0)}
                 </span>
               </div>
               <div className="ml-4">

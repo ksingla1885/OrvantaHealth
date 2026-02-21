@@ -5,7 +5,7 @@ The SuperAdmin module provides comprehensive administrative control over the Int
 
 ## Authentication
 - **Default SuperAdmin Account:**
-  - Email: `Admin@MediCore.in`
+  - Email: `admin@medicore.in`
   - Password: `Welcomeadmin`
   - Role: `superadmin`
 
@@ -19,21 +19,20 @@ The SuperAdmin module provides comprehensive administrative control over the Int
   - Recent activity feed
   - System health monitoring
 
-### 2. Staff Management
+### 2. Receptionist Management
 - **Location:** `/dashboard/staff`
 - **Features:**
-  - View all staff members (doctors, receptionists, staff)
+  - View all receptionists
   - Search and filter functionality
   - Activate/deactivate user accounts
   - View detailed user information
-  - Role-based filtering
 
 ### 3. Create Staff Account
 - **Location:** `/dashboard/create-staff`
 - **Features:**
-  - Create new staff accounts with role-specific fields
+  - Create new doctor and receptionist accounts with role-specific fields
   - Doctor-specific information (specialization, qualifications, license, etc.)
-  - Email validation (@medicore.com domain restriction)
+  - Email validation (@orvanta.com domain restriction)
   - Password strength requirements
   - Form validation and error handling
 
@@ -109,7 +108,7 @@ The SuperAdmin module provides comprehensive administrative control over the Int
 ## Database Models
 
 ### User Model Enhancements
-- Role-based access (superadmin, doctor, receptionist, staff, patient)
+- Role-based access (superadmin, doctor, receptionist, patient)
 - Active/inactive status management
 - Last login tracking
 - Profile information structure
@@ -163,9 +162,9 @@ npm start
    - Department
 5. Click "Create Doctor Account"
 
-### Managing Staff Status
+### Managing Receptionist Status
 1. Navigate to `/dashboard/staff`
-2. Find the staff member
+2. Find the receptionist
 3. Click the activate/deactivate button
 4. Confirm the action
 

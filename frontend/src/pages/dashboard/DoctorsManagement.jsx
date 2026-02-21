@@ -340,7 +340,7 @@ const DoctorsManagement = () => {
                   <div className="w-8 h-8 rounded-lg bg-brand-light flex items-center justify-center text-brand-teal">
                     <Mail className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-bold uppercase tracking-tight">{selectedDoctor.userId.email}</span>
+                  <span className="text-sm font-bold tracking-tight">{selectedDoctor.userId.email?.toLowerCase()}</span>
                 </div>
                 <div className="flex items-center gap-4 text-slate-600">
                   <div className="w-8 h-8 rounded-lg bg-brand-light flex items-center justify-center text-brand-teal">

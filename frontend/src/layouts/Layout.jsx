@@ -64,7 +64,7 @@ const Layout = () => {
             current: location.pathname.includes('/patients'),
           },
           {
-            name: 'Staff',
+            name: 'Receptionists',
             href: '/dashboard/staff',
             icon: Users,
             current: location.pathname.includes('/staff'),
@@ -108,6 +108,12 @@ const Layout = () => {
             href: '/receptionist/appointments',
             icon: Calendar,
             current: location.pathname.includes('/appointments'),
+          },
+          {
+            name: 'Doctor Availability',
+            href: '/receptionist/doctor-availability',
+            icon: Calendar,
+            current: location.pathname.includes('/doctor-availability'),
           },
           {
             name: 'Bills',

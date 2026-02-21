@@ -130,19 +130,13 @@ const ReceptionistDashboard = () => {
       </div>
 
       <div className="card">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Doctor Management</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <a href="/appointments" className="btn btn-primary text-left">
-            View All Appointments
+          <a href="/doctors" className="btn btn-primary text-left">
+            View Doctors
           </a>
-          <a href="/dashboard/doctors-management" className="btn btn-secondary text-left">
-            Manage Doctors
-          </a>
-          <a href="/bills" className="btn btn-secondary text-left">
-            View Bills
-          </a>
-          <a href="/lab-reports" className="btn btn-secondary text-left">
-            View Lab Reports
+          <a href="/receptionist/doctor-availability" className="btn btn-primary text-left">
+            Manage Availability
           </a>
         </div>
       </div>

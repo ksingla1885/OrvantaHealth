@@ -60,7 +60,7 @@ const CreateStaff = () => {
                     Create Staff Account
                 </h1>
                 <p className="text-slate-500 font-medium text-lg">
-                    Add a new doctor, receptionist, or staff member to the system
+                    Add a new doctor or receptionist to the system
                 </p>
             </div>
 
@@ -79,7 +79,6 @@ const CreateStaff = () => {
                         >
                             <option value="doctor">Doctor</option>
                             <option value="receptionist">Receptionist</option>
-                            <option value="staff">Staff</option>
                         </select>
                         {errors.role && (
                             <p className="mt-2 text-xs font-bold text-rose-500 uppercase tracking-tighter">{errors.role.message}</p>

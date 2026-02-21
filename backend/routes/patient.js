@@ -8,7 +8,27 @@ const Bill = require('../models/Bill');
 const Prescription = require('../models/Prescription');
 const LabReport = require('../models/LabReport');
 
-// All patient routes require patient authentication
+// Public endpoint - Get available doctors (no authentication required)
+router.get('/doctors', async (req, res) => {
+  try {
+    const doctors = await Doctor.find({ isAvailable: true })
+      .populate('userId', 'profile')
+      .sort({ 'rating.average': -1 });
+
+    res.json({
+      success: true,
+      data: { doctors }
+    });
+  } catch (error) {
+    console.error('Get doctors error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching doctors'
+    });
+  }
+});
+
+// All patient routes below require patient authentication
 router.use(authenticateToken);
 router.use(patientOnly);
 
@@ -87,26 +107,6 @@ router.patch('/profile', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error updating profile'
-    });
-  }
-});
-
-// Get available doctors
-router.get('/doctors', async (req, res) => {
-  try {
-    const doctors = await Doctor.find({ isAvailable: true })
-      .populate('userId', 'profile')
-      .sort({ 'rating.average': -1 });
-
-    res.json({
-      success: true,
-      data: { doctors }
-    });
-  } catch (error) {
-    console.error('Get doctors error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error fetching doctors'
     });
   }
 });

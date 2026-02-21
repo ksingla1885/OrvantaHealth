@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Search, MapPin, Star, Calendar, User, Filter, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, MapPin, Star, Calendar, User, Filter, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Doctors = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,6 +51,19 @@ const Doctors = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
+      {/* Back Button */}
+      <div className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            Go Back
+          </button>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="bg-primary-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -133,12 +149,21 @@ const Doctors = () => {
                   <p className="text-xs text-gray-500">Consultation Fee</p>
                   <p className="text-lg font-bold text-gray-900">₹{doctor.consultationFee || '500'}</p>
                 </div>
-                <Link
-                  to={`/patient/book-appointment`}
-                  className="inline-flex items-center px-6 py-2.5 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-all shadow-md shadow-primary-200"
-                >
-                  Book Now <ArrowRight className="h-4 w-4 ml-2" />
-                </Link>
+                {user?.role === 'receptionist' ? (
+                  <Link
+                    to="/receptionist/doctor-availability"
+                    className="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-200"
+                  >
+                    Edit Availability <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                ) : (
+                  <Link
+                    to={`/patient/book-appointment`}
+                    className="inline-flex items-center px-6 py-2.5 bg-primary-600 text-white font-bold rounded-xl hover:bg-primary-700 transition-all shadow-md shadow-primary-200"
+                  >
+                    Book Now <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
+                )}
               </div>
             </div>
           ))}

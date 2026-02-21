@@ -14,12 +14,6 @@ import { toast } from 'react-hot-toast';
 const DoctorProfile = ({ user }) => {
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isEditingAvailability, setIsEditingAvailability] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [availabilityForm, setAvailabilityForm] = useState({
-    days: [],
-    timeSlots: []
-  });
 
   useEffect(() => {
     const fetchDoctorProfile = async () => {
@@ -27,10 +21,6 @@ const DoctorProfile = ({ user }) => {
         const res = await api.get('/doctor/profile');
         if (res.data.success) {
           setDoctor(res.data.data.doctor);
-          setAvailabilityForm({
-            days: res.data.data.doctor?.availability?.days || [],
-            timeSlots: res.data.data.doctor?.availability?.timeSlots || []
-          });
         }
       } catch (err) {
         console.error('Doctor profile fetch error:', err);
@@ -42,66 +32,7 @@ const DoctorProfile = ({ user }) => {
     fetchDoctorProfile();
   }, []);
 
-  const handleSaveAvailability = async (e) => {
-    e.preventDefault();
-    if (availabilityForm.days.length === 0) {
-      toast.error('Please select at least one day');
-      return;
-    }
-    if (availabilityForm.timeSlots.length === 0) {
-      toast.error('Please add at least one time slot');
-      return;
-    }
 
-    try {
-      setSaving(true);
-      const response = await api.patch('/doctor/availability', {
-        days: availabilityForm.days,
-        timeSlots: availabilityForm.timeSlots
-      });
-      if (response.data.success) {
-        setDoctor(response.data.data.doctor);
-        setIsEditingAvailability(false);
-        toast.success('Availability updated successfully');
-      }
-    } catch (err) {
-      console.error('Update availability error:', err);
-      toast.error(err.response?.data?.message || 'Failed to update availability');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const toggleDay = (day) => {
-    setAvailabilityForm(prev => {
-      const days = prev.days.includes(day)
-        ? prev.days.filter(d => d !== day)
-        : [...prev.days, day];
-      return { ...prev, days };
-    });
-  };
-
-  const addTimeSlot = () => {
-    setAvailabilityForm(prev => ({
-      ...prev,
-      timeSlots: [...prev.timeSlots, { start: '09:00', end: '17:00' }]
-    }));
-  };
-
-  const removeTimeSlot = (index) => {
-    setAvailabilityForm(prev => ({
-      ...prev,
-      timeSlots: prev.timeSlots.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateTimeSlot = (index, field, value) => {
-    setAvailabilityForm(prev => {
-      const slots = [...prev.timeSlots];
-      slots[index] = { ...slots[index], [field]: value };
-      return { ...prev, timeSlots: slots };
-    });
-  };
 
   if (loading) {
     return (
@@ -190,138 +121,42 @@ const DoctorProfile = ({ user }) => {
               <h2 className="text-lg font-bold text-gray-900 flex items-center">
                 <Calendar className="h-5 w-5 mr-2 text-primary-600" /> Weekly Availability
               </h2>
-              {!isEditingAvailability && (
-                <button
-                  onClick={() => setIsEditingAvailability(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-primary-100 text-primary-600 hover:bg-primary-200 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <Edit2 className="h-4 w-4" />
-                  Edit
-                </button>
-              )}
             </div>
 
-            {isEditingAvailability ? (
-              <form onSubmit={handleSaveAvailability} className="space-y-6">
-                {/* Days Selection */}
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-3 block">Select Available Days</label>
-                  <div className="grid grid-cols-7 gap-2">
-                    {ALL_DAYS.map(day => (
-                      <button
-                        key={day}
-                        type="button"
-                        onClick={() => toggleDay(day)}
-                        className={`rounded-lg p-3 text-xs font-bold transition-all ${
-                          availabilityForm.days.includes(day)
-                            ? 'bg-primary-600 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {DAY_LABELS[day]}
-                      </button>
-                    ))}
+            {/* Day grid */}
+            <div className="grid grid-cols-7 gap-1.5 mb-5">
+              {ALL_DAYS.map(day => {
+                const active = doctor?.availability?.days?.includes(day);
+                return (
+                  <div
+                    key={day}
+                    className={`rounded-xl p-2 text-center text-xs font-bold transition-all ${
+                      active
+                        ? 'bg-primary-600 text-white shadow-md shadow-primary-200'
+                        : 'bg-gray-100 text-gray-400'
+                    }`}
+                  >
+                    {DAY_LABELS[day]}
                   </div>
-                </div>
+                );
+              })}
+            </div>
 
-                {/* Time Slots */}
-                <div>
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-3 block">Consultation Time Slots</label>
-                  <div className="space-y-3">
-                    {availabilityForm.timeSlots.map((slot, idx) => (
-                      <div key={idx} className="flex gap-2 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <div className="flex-1">
-                          <label className="text-xs text-gray-600 font-medium">Start Time</label>
-                          <input
-                            type="time"
-                            value={slot.start}
-                            onChange={(e) => updateTimeSlot(idx, 'start', e.target.value)}
-                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <label className="text-xs text-gray-600 font-medium">End Time</label>
-                          <input
-                            type="time"
-                            value={slot.end}
-                            onChange={(e) => updateTimeSlot(idx, 'end', e.target.value)}
-                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeTimeSlot(idx)}
-                          className="px-3 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-colors"
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={addTimeSlot}
-                    className="mt-3 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg font-medium text-sm transition-colors"
-                  >
-                    + Add Time Slot
-                  </button>
+            {/* Time slots */}
+            {doctor?.availability?.timeSlots?.length > 0 ? (
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Time Slots</p>
+                <div className="flex flex-wrap gap-2">
+                  {doctor.availability.timeSlots.map((slot, i) => (
+                    <span key={i} className="flex items-center bg-primary-50 text-primary-700 border border-primary-100 rounded-lg px-3 py-1.5 text-sm font-semibold">
+                      <Clock className="h-3.5 w-3.5 mr-1.5" />
+                      {slot.start} – {slot.end}
+                    </span>
+                  ))}
                 </div>
-
-                <div className="flex gap-3 pt-4 border-t">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white hover:bg-primary-700 rounded-lg font-medium transition-colors disabled:opacity-50"
-                  >
-                    <Save className="h-4 w-4" />
-                    {saving ? 'Saving...' : 'Save Availability'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingAvailability(false)}
-                    className="px-6 py-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg font-medium transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+              </div>
             ) : (
-              <>
-                {/* Day grid */}
-                <div className="grid grid-cols-7 gap-1.5 mb-5">
-                  {ALL_DAYS.map(day => {
-                    const active = doctor?.availability?.days?.includes(day);
-                    return (
-                      <div
-                        key={day}
-                        className={`rounded-xl p-2 text-center text-xs font-bold transition-all ${active
-                          ? 'bg-primary-600 text-white shadow-md shadow-primary-200'
-                          : 'bg-gray-100 text-gray-400'
-                          }`}
-                      >
-                        {DAY_LABELS[day]}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Time slots */}
-                {doctor?.availability?.timeSlots?.length > 0 ? (
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Time Slots</p>
-                    <div className="flex flex-wrap gap-2">
-                      {doctor.availability.timeSlots.map((slot, i) => (
-                        <span key={i} className="flex items-center bg-primary-50 text-primary-700 border border-primary-100 rounded-lg px-3 py-1.5 text-sm font-semibold">
-                          <Clock className="h-3.5 w-3.5 mr-1.5" />
-                          {slot.start} – {slot.end}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-400 italic">No time slots configured.</p>
-                )}
-              </>
+              <p className="text-sm text-gray-400 italic">No time slots configured.</p>
             )}
           </div>
 
@@ -329,7 +164,7 @@ const DoctorProfile = ({ user }) => {
           <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start space-x-3">
             <Shield className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
             <p className="text-sm text-blue-800">
-              <span className="font-bold">You can manage your availability.</span> To update your specialization, qualifications, fees, or other profile details, please contact the hospital administrator.
+              <span className="font-bold">Your availability is managed by the administration team.</span> Contact the hospital administrator to update your availability, specialization, qualifications, fees, or other profile details.
             </p>
           </div>
         </div>
@@ -824,7 +659,7 @@ const Profile = () => {
     return <PatientProfile user={user} />;
   }
 
-  // For staff roles (receptionist, superadmin, staff)
+  // For staff roles (receptionist, superadmin)
   return <StaffProfile user={user} />;
 };
 

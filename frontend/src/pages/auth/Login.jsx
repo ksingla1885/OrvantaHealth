@@ -197,7 +197,7 @@ const Login = () => {
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
                 <p className="text-slate-500 mb-0.5">Admin Email</p>
-                <p className="font-semibold text-brand-dark">Admin@OrvantaHealth.com</p>
+                <p className="font-semibold text-brand-dark">admin@orvantahealth.com</p>
               </div>
               <div>
                 <p className="text-slate-500 mb-0.5">Password</p>

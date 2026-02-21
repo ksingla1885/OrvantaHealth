@@ -15,6 +15,7 @@ import Landing from './pages/Landing';
 import SuperAdminDashboard from './pages/dashboard/SuperAdminDashboard';
 import DoctorDashboard from './pages/dashboard/DoctorDashboard';
 import ReceptionistDashboard from './pages/dashboard/ReceptionistDashboard';
+import DoctorAvailability from './pages/dashboard/DoctorAvailability';
 import PatientDashboard from './pages/dashboard/PatientDashboard';
 
 // Super Admin Pages
@@ -82,6 +83,7 @@ function App() {
                 <Route path="receptionist/appointments" element={<ProtectedRoute roles={['receptionist']}><Appointments /></ProtectedRoute>} />
                 <Route path="receptionist/bills" element={<ProtectedRoute roles={['receptionist']}><Bills /></ProtectedRoute>} />
                 <Route path="receptionist/lab-reports" element={<ProtectedRoute roles={['receptionist']}><LabReports /></ProtectedRoute>} />
+                <Route path="receptionist/doctor-availability" element={<ProtectedRoute roles={['receptionist']}><DoctorAvailability /></ProtectedRoute>} />
                 <Route path="receptionist/profile" element={<ProtectedRoute roles={['receptionist']}><Profile /></ProtectedRoute>} />
 
                 {/* Patient Routes */}

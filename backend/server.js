@@ -24,11 +24,15 @@ app.use(cors({
 // Enable trust proxy for rate limiting behind proxies
 app.set('trust proxy', 1);
 
-// Rate limiting
+// Rate limiting - more lenient in development
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  windowMs: NODE_ENV === 'production' ? 15 * 60 * 1000 : 60 * 60 * 1000, // 15 min in prod, 1 hour in dev
+  max: NODE_ENV === 'production' ? 100 : 1000, // 100 requests in prod, 1000 in dev
+  message: 'Too many requests from this IP, please try again later.',
+  skip: (req, res) => {
+    // Skip rate limiting for health check and static files
+    return req.path === '/health' || req.path.startsWith('/uploads');
+  }
 });
 app.use(limiter);
 

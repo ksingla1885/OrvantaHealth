@@ -7,7 +7,7 @@ const StaffManagement = () => {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
+  const [filterRole, setFilterRole] = useState('receptionist');
   const [showUserModal, setShowUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
@@ -47,15 +47,13 @@ const StaffManagement = () => {
     const matchesSearch = member.profile.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.profile.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = filterRole === 'all' || member.role === filterRole;
-    return matchesSearch && matchesRole;
+    const isReceptionist = member.role === 'receptionist';
+    return matchesSearch && isReceptionist;
   });
 
   const getRoleBadgeColor = (role) => {
     switch (role) {
-      case 'doctor': return 'bg-blue-100 text-blue-800';
       case 'receptionist': return 'bg-green-100 text-green-800';
-      case 'staff': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -77,8 +75,8 @@ const StaffManagement = () => {
             <Users className="h-3.5 w-3.5" />
             <span className="text-[10px] font-black uppercase tracking-widest">HR & Operations</span>
           </div>
-          <h1 className="text-4xl font-extrabold text-brand-dark tracking-tight font-display mb-2">Staff Management</h1>
-          <p className="text-slate-500 font-medium text-lg">Manage doctors, receptionists, and staff members</p>
+          <h1 className="text-4xl font-extrabold text-brand-dark tracking-tight font-display mb-2">Reception Management</h1>
+          <p className="text-slate-500 font-medium text-lg">Manage receptionists</p>
         </div>
         <button
           onClick={() => window.location.href = '/dashboard/create-staff'}
@@ -107,11 +105,9 @@ const StaffManagement = () => {
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
               className="input bg-white/10 border-white/10 text-white focus:bg-white/20"
+              disabled
             >
-              <option value="all" className="text-brand-dark">All Authorities</option>
-              <option value="doctor" className="text-brand-dark">Medical Doctors</option>
               <option value="receptionist" className="text-brand-dark">Receptionists</option>
-              <option value="staff" className="text-brand-dark">General Staff</option>
             </select>
           </div>
         </div>
@@ -170,8 +166,8 @@ const StaffManagement = () => {
                           <div className="text-sm font-black text-brand-dark">
                             {member.profile.firstName} {member.profile.lastName}
                           </div>
-                          <div className="text-xs font-medium text-slate-400 uppercase tracking-tighter">
-                            {member.email}
+                          <div className="text-xs font-medium text-slate-400 tracking-tighter">
+                            {member.email?.toLowerCase()}
                           </div>
                         </div>
                       </div>
@@ -250,7 +246,7 @@ const StaffManagement = () => {
                 <h2 className="text-3xl font-black font-display text-brand-dark leading-none mb-2">
                   {selectedUser.profile.firstName} {selectedUser.profile.lastName}
                 </h2>
-                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">{selectedUser.role} • {selectedUser.email}</p>
+                <p className="text-slate-400 font-bold tracking-widest text-xs">{selectedUser.role} • {selectedUser.email?.toLowerCase()}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-8 mb-10">

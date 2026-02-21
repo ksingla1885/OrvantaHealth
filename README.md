@@ -22,7 +22,7 @@ bash build-production.sh
 ## 🎯 Features
 
 ### 🔐 Authentication & Role System
-- **Super Admin** (Hardcoded: `Admin@MediCore.in` / `Welcomeadmin`)
+- **Super Admin** (Hardcoded: `admin@medicore.in` / `Welcomeadmin`)
 - **Staff Accounts** (Doctor, Receptionist, Staff) - Created by Super Admin only
 - **Patient Registration** (Public signup)
 - JWT-based authentication with refresh tokens
@@ -186,7 +186,7 @@ The application will be available at:
 ## 📱 Default Credentials
 
 ### Super Admin
-- **Email**: Admin@MediCore.in
+- **Email**: admin@medicore.in
 - **Password**: Welcomeadmin
 
 ### First Steps

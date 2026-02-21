@@ -59,14 +59,14 @@ const doctorOnly = authorizeRoles('doctor');
 // Receptionist only middleware
 const receptionistOnly = authorizeRoles('receptionist');
 
-// Staff roles (doctor, receptionist, staff)
-const staffOnly = authorizeRoles('doctor', 'receptionist', 'staff');
+// Staff roles (doctor, receptionist)
+const staffOnly = authorizeRoles('doctor', 'receptionist', 'patient');
 
 // Patient only middleware
 const patientOnly = authorizeRoles('patient');
 
 // Admin and staff roles
-const adminAndStaff = authorizeRoles('superadmin', 'doctor', 'receptionist', 'staff');
+const adminAndStaff = authorizeRoles('superadmin', 'doctor', 'receptionist', 'patient');
 
 module.exports = {
   authenticateToken,
