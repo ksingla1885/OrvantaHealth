@@ -301,4 +301,33 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
+// Update user profile - for staff members (date of birth, gender, address)
+router.patch('/profile', authenticateToken, async (req, res) => {
+  try {
+    const { dateOfBirth, gender, address } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        'profile.dateOfBirth': dateOfBirth,
+        'profile.gender': gender,
+        'profile.address': address
+      },
+      { new: true }
+    ).select('-password -refreshToken');
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: { user }
+    });
+  } catch (error) {
+    console.error('Update user profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating profile'
+    });
+  }
+});
+
 module.exports = router;

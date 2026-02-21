@@ -3,7 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const multer = require('multer');
 const path = require('path');
-const { authenticateToken, doctorOnly } = require('../middleware/auth');
+const { authenticateToken, doctorOnly, authorizeRoles } = require('../middleware/auth');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
@@ -139,11 +139,12 @@ router.get('/profile', async (req, res) => {
   }
 });
 
-// Update doctor availability
+// Update doctor availability (doctors update their own, receptionist/superadmin can update any doctor)
 router.patch('/availability', [
   body('days').isArray(),
-  body('timeSlots').isArray()
-], async (req, res) => {
+  body('timeSlots').isArray(),
+  body('doctorId').optional().isMongoId() // For receptionist/superadmin to update specific doctor
+], authenticateToken, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -154,13 +155,38 @@ router.patch('/availability', [
       });
     }
 
-    const { days, timeSlots } = req.body;
+    const { days, timeSlots, doctorId } = req.body;
+    let doctor;
 
-    const doctor = await Doctor.findOne({ userId: req.user._id });
-    if (!doctor) {
-      return res.status(404).json({
+    // Check authorization
+    if (req.user.role === 'doctor') {
+      // Doctors can only update their own availability
+      doctor = await Doctor.findOne({ userId: req.user._id });
+      if (!doctor) {
+        return res.status(404).json({
+          success: false,
+          message: 'Doctor profile not found'
+        });
+      }
+    } else if (req.user.role === 'receptionist' || req.user.role === 'superadmin') {
+      // Receptionists and superadmins can update any doctor's availability
+      if (!doctorId) {
+        return res.status(400).json({
+          success: false,
+          message: 'doctorId is required for receptionist/superadmin'
+        });
+      }
+      doctor = await Doctor.findById(doctorId);
+      if (!doctor) {
+        return res.status(404).json({
+          success: false,
+          message: 'Doctor not found'
+        });
+      }
+    } else {
+      return res.status(403).json({
         success: false,
-        message: 'Doctor profile not found'
+        message: 'Only doctors, receptionists, and superadmins can update availability'
       });
     }
 

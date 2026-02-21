@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Search, Filter, Eye, Edit, Star, Calendar, Phone, Mail } from 'lucide-react';
+import { Users, UserPlus, Search, Filter, Eye, Edit, Star, Calendar, Phone, Mail, Save, Edit2, XCircle, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 
@@ -10,6 +10,15 @@ const DoctorsManagement = () => {
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [showDoctorModal, setShowDoctorModal] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [isEditingAvailability, setIsEditingAvailability] = useState(false);
+  const [savingAvailability, setSavingAvailability] = useState(false);
+  const [availabilityForm, setAvailabilityForm] = useState({
+    days: [],
+    timeSlots: []
+  });
+
+  const ALL_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const DAY_LABELS = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' };
 
   useEffect(() => {
     fetchDoctors();
@@ -25,6 +34,80 @@ const DoctorsManagement = () => {
       toast.error('Failed to fetch doctors data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startEditingAvailability = () => {
+    setAvailabilityForm({
+      days: selectedDoctor?.availability?.days || [],
+      timeSlots: selectedDoctor?.availability?.timeSlots || []
+    });
+    setIsEditingAvailability(true);
+  };
+
+  const toggleDay = (day) => {
+    setAvailabilityForm(prev => {
+      const days = prev.days.includes(day)
+        ? prev.days.filter(d => d !== day)
+        : [...prev.days, day];
+      return { ...prev, days };
+    });
+  };
+
+  const addTimeSlot = () => {
+    setAvailabilityForm(prev => ({
+      ...prev,
+      timeSlots: [...prev.timeSlots, { start: '09:00', end: '17:00' }]
+    }));
+  };
+
+  const removeTimeSlot = (index) => {
+    setAvailabilityForm(prev => ({
+      ...prev,
+      timeSlots: prev.timeSlots.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateTimeSlot = (index, field, value) => {
+    setAvailabilityForm(prev => {
+      const slots = [...prev.timeSlots];
+      slots[index] = { ...slots[index], [field]: value };
+      return { ...prev, timeSlots: slots };
+    });
+  };
+
+  const saveAvailability = async () => {
+    if (availabilityForm.days.length === 0) {
+      toast.error('Please select at least one day');
+      return;
+    }
+    if (availabilityForm.timeSlots.length === 0) {
+      toast.error('Please add at least one time slot');
+      return;
+    }
+
+    try {
+      setSavingAvailability(true);
+      const response = await api.patch('/doctor/availability', {
+        days: availabilityForm.days,
+        timeSlots: availabilityForm.timeSlots,
+        doctorId: selectedDoctor._id
+      });
+      if (response.data.success) {
+        // Update the local doctor in selectedDoctor and doctors array
+        setSelectedDoctor(prev => ({
+          ...prev,
+          availability: response.data.data.doctor.availability
+        }));
+        setDoctors(prev => prev.map(d => d._id === selectedDoctor._id ? response.data.data.doctor : d));
+        setIsEditingAvailability(false);
+        toast.success('Availability updated successfully');
+      }
+    } catch (error) {
+      console.error('Update availability error:', error);
+      toast.error(error.response?.data?.message || 'Failed to update availability');
+    } finally {
+      setSavingAvailability(false);
     }
   };
 
@@ -267,12 +350,139 @@ const DoctorsManagement = () => {
                 </div>
               </div>
 
-              <button
-                onClick={() => setShowDoctorModal(false)}
-                className="btn btn-primary w-full py-5 text-xl font-display font-black shadow-2xl hover:scale-101 active:scale-99 transition-all"
-              >
-                Exit Practitioner Record
-              </button>
+              {/* Availability Section */}
+              {isEditingAvailability ? (
+                <div className="mb-10 p-6 bg-slate-50 rounded-2xl border-2 border-blue-200">
+                  <h3 className="font-black text-brand-dark mb-6 flex items-center"><Calendar className="h-5 w-5 mr-2" />Edit Availability</h3>
+                  
+                  {/* Days Selection */}
+                  <div className="mb-6">
+                    <label className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3 block">Available Days</label>
+                    <div className="grid grid-cols-7 gap-2">
+                      {ALL_DAYS.map(day => (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => toggleDay(day)}
+                          className={`rounded-lg p-2 text-xs font-bold transition-all ${
+                            availabilityForm.days.includes(day)
+                              ? 'bg-blue-600 text-white shadow-md'
+                              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          {DAY_LABELS[day]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Time Slots */}
+                  <div className="mb-6">
+                    <label className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3 block">Time Slots</label>
+                    <div className="space-y-2">
+                      {availabilityForm.timeSlots.map((slot, idx) => (
+                        <div key={idx} className="flex gap-2 items-end">
+                          <input
+                            type="time"
+                            value={slot.start}
+                            onChange={(e) => updateTimeSlot(idx, 'start', e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                          />
+                          <span className="text-gray-400">—</span>
+                          <input
+                            type="time"
+                            value={slot.end}
+                            onChange={(e) => updateTimeSlot(idx, 'end', e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeTimeSlot(idx)}
+                            className="px-3 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-colors"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addTimeSlot}
+                      className="mt-3 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg font-medium text-sm transition-colors"
+                    >
+                      + Add Slot
+                    </button>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={saveAvailability}
+                      disabled={savingAvailability}
+                      className="flex-1 btn btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <Save className="h-4 w-4" />
+                      {savingAvailability ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => setIsEditingAvailability(false)}
+                      className="flex-1 btn bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-10 p-6 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-black text-brand-dark flex items-center"><Calendar className="h-5 w-5 mr-2" />Weekly Availability</h3>
+                    <button
+                      onClick={startEditingAvailability}
+                      className="btn btn-sm bg-blue-100 text-blue-600 hover:bg-blue-200 flex items-center gap-2"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                      Edit
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-7 gap-1.5 mb-4">
+                    {ALL_DAYS.map(day => {
+                      const active = selectedDoctor?.availability?.days?.includes(day);
+                      return (
+                        <div
+                          key={day}
+                          className={`rounded-lg p-2 text-center text-xs font-bold transition-all ${
+                            active ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-400'
+                          }`}
+                        >
+                          {DAY_LABELS[day]}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {selectedDoctor?.availability?.timeSlots?.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedDoctor.availability.timeSlots.map((slot, i) => (
+                        <span key={i} className="flex items-center bg-blue-50 text-blue-700 border border-blue-200 rounded-lg px-3 py-1.5 text-xs font-semibold">
+                          <Clock className="h-3.5 w-3.5 mr-1.5" />
+                          {slot.start} – {slot.end}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400 italic">No time slots configured</p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDoctorModal(false)}
+                  className="btn btn-primary w-full py-5 text-xl font-display font-black shadow-2xl hover:scale-101 active:scale-99 transition-all"
+                >
+                  Exit Practitioner Record
+                </button>
+              </div>
             </div>
           </div>
         </div>

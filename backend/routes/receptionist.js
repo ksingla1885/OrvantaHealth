@@ -209,6 +209,51 @@ router.get('/doctors/availability', async (req, res) => {
   }
 });
 
+// Update doctor availability (receptionist can update any doctor)
+router.patch('/doctors/:doctorId/availability', [
+  body('days').isArray(),
+  body('timeSlots').isArray()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { doctorId } = req.params;
+    const { days, timeSlots } = req.body;
+
+    const doctor = await Doctor.findByIdAndUpdate(
+      doctorId,
+      { availability: { days, timeSlots } },
+      { new: true }
+    ).populate('userId', 'profile');
+
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Doctor availability updated successfully',
+      data: { doctor }
+    });
+  } catch (error) {
+    console.error('Update doctor availability error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating doctor availability'
+    });
+  }
+});
+
 // Create bill
 router.post('/bill', [
   body('patientId').isMongoId(),

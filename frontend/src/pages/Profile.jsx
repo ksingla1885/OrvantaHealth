@@ -14,12 +14,24 @@ import { toast } from 'react-hot-toast';
 const DoctorProfile = ({ user }) => {
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEditingAvailability, setIsEditingAvailability] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [availabilityForm, setAvailabilityForm] = useState({
+    days: [],
+    timeSlots: []
+  });
 
   useEffect(() => {
     const fetchDoctorProfile = async () => {
       try {
         const res = await api.get('/doctor/profile');
-        if (res.data.success) setDoctor(res.data.data.doctor);
+        if (res.data.success) {
+          setDoctor(res.data.data.doctor);
+          setAvailabilityForm({
+            days: res.data.data.doctor?.availability?.days || [],
+            timeSlots: res.data.data.doctor?.availability?.timeSlots || []
+          });
+        }
       } catch (err) {
         console.error('Doctor profile fetch error:', err);
         toast.error('Failed to load doctor profile');
@@ -29,6 +41,67 @@ const DoctorProfile = ({ user }) => {
     };
     fetchDoctorProfile();
   }, []);
+
+  const handleSaveAvailability = async (e) => {
+    e.preventDefault();
+    if (availabilityForm.days.length === 0) {
+      toast.error('Please select at least one day');
+      return;
+    }
+    if (availabilityForm.timeSlots.length === 0) {
+      toast.error('Please add at least one time slot');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const response = await api.patch('/doctor/availability', {
+        days: availabilityForm.days,
+        timeSlots: availabilityForm.timeSlots
+      });
+      if (response.data.success) {
+        setDoctor(response.data.data.doctor);
+        setIsEditingAvailability(false);
+        toast.success('Availability updated successfully');
+      }
+    } catch (err) {
+      console.error('Update availability error:', err);
+      toast.error(err.response?.data?.message || 'Failed to update availability');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleDay = (day) => {
+    setAvailabilityForm(prev => {
+      const days = prev.days.includes(day)
+        ? prev.days.filter(d => d !== day)
+        : [...prev.days, day];
+      return { ...prev, days };
+    });
+  };
+
+  const addTimeSlot = () => {
+    setAvailabilityForm(prev => ({
+      ...prev,
+      timeSlots: [...prev.timeSlots, { start: '09:00', end: '17:00' }]
+    }));
+  };
+
+  const removeTimeSlot = (index) => {
+    setAvailabilityForm(prev => ({
+      ...prev,
+      timeSlots: prev.timeSlots.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateTimeSlot = (index, field, value) => {
+    setAvailabilityForm(prev => {
+      const slots = [...prev.timeSlots];
+      slots[index] = { ...slots[index], [field]: value };
+      return { ...prev, timeSlots: slots };
+    });
+  };
 
   if (loading) {
     return (
@@ -113,43 +186,142 @@ const DoctorProfile = ({ user }) => {
 
           {/* Availability */}
           <div className="card p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center">
-              <Calendar className="h-5 w-5 mr-2 text-primary-600" /> Weekly Availability
-            </h2>
-
-            {/* Day grid */}
-            <div className="grid grid-cols-7 gap-1.5 mb-5">
-              {ALL_DAYS.map(day => {
-                const active = days.includes(day);
-                return (
-                  <div
-                    key={day}
-                    className={`rounded-xl p-2 text-center text-xs font-bold transition-all ${active
-                      ? 'bg-primary-600 text-white shadow-md shadow-primary-200'
-                      : 'bg-gray-100 text-gray-400'
-                      }`}
-                  >
-                    {DAY_LABELS[day]}
-                  </div>
-                );
-              })}
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center">
+                <Calendar className="h-5 w-5 mr-2 text-primary-600" /> Weekly Availability
+              </h2>
+              {!isEditingAvailability && (
+                <button
+                  onClick={() => setIsEditingAvailability(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-primary-100 text-primary-600 hover:bg-primary-200 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Edit2 className="h-4 w-4" />
+                  Edit
+                </button>
+              )}
             </div>
 
-            {/* Time slots */}
-            {slots.length > 0 ? (
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Time Slots</p>
-                <div className="flex flex-wrap gap-2">
-                  {slots.map((slot, i) => (
-                    <span key={i} className="flex items-center bg-primary-50 text-primary-700 border border-primary-100 rounded-lg px-3 py-1.5 text-sm font-semibold">
-                      <Clock className="h-3.5 w-3.5 mr-1.5" />
-                      {slot.start} – {slot.end}
-                    </span>
-                  ))}
+            {isEditingAvailability ? (
+              <form onSubmit={handleSaveAvailability} className="space-y-6">
+                {/* Days Selection */}
+                <div>
+                  <label className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-3 block">Select Available Days</label>
+                  <div className="grid grid-cols-7 gap-2">
+                    {ALL_DAYS.map(day => (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleDay(day)}
+                        className={`rounded-lg p-3 text-xs font-bold transition-all ${
+                          availabilityForm.days.includes(day)
+                            ? 'bg-primary-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {DAY_LABELS[day]}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+
+                {/* Time Slots */}
+                <div>
+                  <label className="text-xs font-bold text-gray-600 uppercase tracking-widest mb-3 block">Consultation Time Slots</label>
+                  <div className="space-y-3">
+                    {availabilityForm.timeSlots.map((slot, idx) => (
+                      <div key={idx} className="flex gap-2 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div className="flex-1">
+                          <label className="text-xs text-gray-600 font-medium">Start Time</label>
+                          <input
+                            type="time"
+                            value={slot.start}
+                            onChange={(e) => updateTimeSlot(idx, 'start', e.target.value)}
+                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs text-gray-600 font-medium">End Time</label>
+                          <input
+                            type="time"
+                            value={slot.end}
+                            onChange={(e) => updateTimeSlot(idx, 'end', e.target.value)}
+                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-sm"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeTimeSlot(idx)}
+                          className="px-3 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg transition-colors"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addTimeSlot}
+                    className="mt-3 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg font-medium text-sm transition-colors"
+                  >
+                    + Add Time Slot
+                  </button>
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white hover:bg-primary-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  >
+                    <Save className="h-4 w-4" />
+                    {saving ? 'Saving...' : 'Save Availability'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingAvailability(false)}
+                    className="px-6 py-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             ) : (
-              <p className="text-sm text-gray-400 italic">No time slots configured.</p>
+              <>
+                {/* Day grid */}
+                <div className="grid grid-cols-7 gap-1.5 mb-5">
+                  {ALL_DAYS.map(day => {
+                    const active = doctor?.availability?.days?.includes(day);
+                    return (
+                      <div
+                        key={day}
+                        className={`rounded-xl p-2 text-center text-xs font-bold transition-all ${active
+                          ? 'bg-primary-600 text-white shadow-md shadow-primary-200'
+                          : 'bg-gray-100 text-gray-400'
+                          }`}
+                      >
+                        {DAY_LABELS[day]}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Time slots */}
+                {doctor?.availability?.timeSlots?.length > 0 ? (
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Time Slots</p>
+                    <div className="flex flex-wrap gap-2">
+                      {doctor.availability.timeSlots.map((slot, i) => (
+                        <span key={i} className="flex items-center bg-primary-50 text-primary-700 border border-primary-100 rounded-lg px-3 py-1.5 text-sm font-semibold">
+                          <Clock className="h-3.5 w-3.5 mr-1.5" />
+                          {slot.start} – {slot.end}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 italic">No time slots configured.</p>
+                )}
+              </>
             )}
           </div>
 
@@ -157,7 +329,7 @@ const DoctorProfile = ({ user }) => {
           <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start space-x-3">
             <Shield className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
             <p className="text-sm text-blue-800">
-              <span className="font-bold">Profile managed by Admin.</span> To update your specialization, qualifications, fees, or availability, please contact the hospital administrator.
+              <span className="font-bold">You can manage your availability.</span> To update your specialization, qualifications, fees, or other profile details, please contact the hospital administrator.
             </p>
           </div>
         </div>
@@ -390,6 +562,212 @@ const PatientProfile = ({ user }) => {
 };
 
 /* ─────────────────────────────────────────────
+   STAFF PROFILE VIEW (Receptionist, SuperAdmin, etc)
+───────────────────────────────────────────── */
+const StaffProfile = ({ user }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    dateOfBirth: user?.profile?.dateOfBirth?.split('T')[0] || '',
+    gender: user?.profile?.gender || '',
+    address: user?.profile?.address || ''
+  });
+
+  const fullName = `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`.trim() || 'Staff Member';
+  const roleLabel = user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Staff';
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      const response = await api.patch('/auth/profile', {
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        address: formData.address
+      });
+      if (response.data.success) {
+        setIsEditing(false);
+        toast.success('Profile updated successfully');
+        // Optionally reload page or update user context
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Hero Banner */}
+      <div className="relative bg-gradient-to-r from-primary-600 to-secondary-600 rounded-2xl shadow-lg overflow-hidden">
+        <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]" />
+        <div className="relative flex items-center gap-5 px-8 py-6">
+          <div className="h-20 w-20 shrink-0 rounded-2xl bg-white p-1.5 shadow-2xl">
+            <div className="h-full w-full rounded-xl bg-primary-100 flex items-center justify-center">
+              <Briefcase className="h-10 w-10 text-primary-600" />
+            </div>
+          </div>
+          <div className="text-white">
+            <h1 className="text-2xl font-black tracking-tight drop-shadow">{fullName}</h1>
+            <p className="opacity-90 flex items-center text-sm font-medium mt-1">
+              <Shield className="h-3.5 w-3.5 mr-1.5" /> {roleLabel}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Profile Card */}
+      <div className="card p-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center">
+            <User className="h-5 w-5 mr-2 text-primary-600" />
+            Personal Information
+          </h2>
+          {!isEditing && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary-100 text-primary-600 hover:bg-primary-200 rounded-lg font-medium transition-colors"
+            >
+              <Edit2 className="h-4 w-4" />
+              Edit
+            </button>
+          )}
+        </div>
+
+        {/* Basic Info Grid - Read Only */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <DetailBox 
+            label="First Name" 
+            value={user?.profile?.firstName} 
+          />
+          <DetailBox 
+            label="Last Name" 
+            value={user?.profile?.lastName} 
+          />
+          <DetailBox 
+            label="Email" 
+            value={user?.email} 
+          />
+          <DetailBox 
+            label="Phone" 
+            value={user?.profile?.phone} 
+          />
+        </div>
+
+        {/* Editable Section */}
+        {isEditing ? (
+          <form onSubmit={handleSave} className="space-y-6 border-t pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                label="Date of Birth"
+                type="date"
+                value={formData.dateOfBirth}
+                onChange={(value) => setFormData({ ...formData, dateOfBirth: value })}
+              />
+              <FormField
+                label="Gender"
+                disabled={false}
+                value={formData.gender}
+                onChange={(value) => setFormData({ ...formData, gender: value })}
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-500 ml-1 block mb-2">Address</label>
+              <textarea
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                rows="3"
+                className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary-500 outline-none text-sm resize-none"
+                placeholder="Enter your address"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary-600 text-white hover:bg-primary-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+              >
+                <Save className="h-4 w-4" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="px-6 py-2.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            {/* Date of Birth & Gender - Read Only */}
+            <div className="border-t pt-6">
+              <h3 className="font-semibold text-gray-900 mb-3">Additional Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DetailBox 
+                  label="Date of Birth" 
+                  value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : '—'} 
+                />
+                <DetailBox 
+                  label="Gender" 
+                  value={formData.gender || '—'} 
+                />
+              </div>
+            </div>
+
+            {/* Address */}
+            <div className="border-t pt-6">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                <MapPin className="h-4 w-4 mr-2 text-primary-600" />
+                Address
+              </h3>
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <p className="text-gray-700">{formData.address || '—'}</p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Account Status */}
+        <div className="border-t pt-6">
+          <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+            <Activity className="h-4 w-4 mr-2 text-primary-600" />
+            Account Status
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DetailBox 
+              label="Status" 
+              value={user?.isActive ? '✓ Active' : '✗ Inactive'} 
+            />
+            <DetailBox 
+              label="Role" 
+              value={roleLabel} 
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Info Message */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+        <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+        <div>
+          <p className="text-sm font-medium text-blue-900">Profile Information</p>
+          <p className="text-sm text-blue-700 mt-1">
+            You can edit your personal information such as date of birth, gender, and address. To update your email, phone number, or role, please contact the hospital administrator.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────
    SHARED HELPER COMPONENTS
 ───────────────────────────────────────────── */
 const InfoRow = ({ icon, label, value }) => (
@@ -438,8 +816,16 @@ const FormField = ({ label, disabled, value, onChange, type = 'text' }) => (
 const Profile = () => {
   const { user } = useAuth();
 
-  if (user?.role === 'doctor') return <DoctorProfile user={user} />;
-  return <PatientProfile user={user} />;
+  if (user?.role === 'doctor') {
+    return <DoctorProfile user={user} />;
+  }
+  
+  if (user?.role === 'patient') {
+    return <PatientProfile user={user} />;
+  }
+
+  // For staff roles (receptionist, superadmin, staff)
+  return <StaffProfile user={user} />;
 };
 
 export default Profile;

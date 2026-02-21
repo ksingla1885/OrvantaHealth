@@ -37,12 +37,12 @@ router.post('/book', [
 
     // Check if doctor is available on this day and time
     const appointmentDate = new Date(date);
-    const dayOfWeek = appointmentDate.toLocaleDateString('en-US', { weekday: 'lowercase' });
+    const dayOfWeek = appointmentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
     if (!doctor.availability.days.includes(dayOfWeek)) {
       return res.status(400).json({
         success: false,
-        message: 'Doctor not available on this day'
+        message: `Doctor is not available on ${dayOfWeek}s. Available days: ${doctor.availability.days.join(', ')}`
       });
     }
 
@@ -132,7 +132,7 @@ router.get('/', authenticateToken, async (req, res) => {
         }
         query.patientId = patient._id;
         break;
-      
+
       case 'doctor':
         const doctor = await Doctor.findOne({ userId: req.user._id });
         if (!doctor) {
@@ -143,12 +143,12 @@ router.get('/', authenticateToken, async (req, res) => {
         }
         query.doctorId = doctor._id;
         break;
-      
+
       case 'receptionist':
       case 'superadmin':
         // Can see all appointments
         break;
-      
+
       default:
         return res.status(403).json({
           success: false,
@@ -161,7 +161,7 @@ router.get('/', authenticateToken, async (req, res) => {
       const startDate = new Date(req.query.date);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 1);
-      
+
       query.date = {
         $gte: startDate,
         $lt: endDate
@@ -174,10 +174,14 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 
     appointments = await Appointment.find(query)
-      .populate('doctorId')
-      .populate('doctorId.userId', 'profile')
-      .populate('patientId')
-      .populate('patientId.userId', 'profile')
+      .populate({
+        path: 'doctorId',
+        populate: { path: 'userId', select: 'profile' }
+      })
+      .populate({
+        path: 'patientId',
+        populate: { path: 'userId', select: 'profile' }
+      })
       .sort({ date: -1, 'timeSlot.start': -1 });
 
     res.json({
@@ -227,7 +231,7 @@ router.patch('/:appointmentId/status', [
           message: 'Can only update your own appointments'
         });
       }
-      
+
       // Doctors can only confirm or complete appointments
       if (!['confirmed', 'completed'].includes(status)) {
         return res.status(403).json({
@@ -239,11 +243,11 @@ router.patch('/:appointmentId/status', [
 
     // Update appointment
     appointment.status = status;
-    
+
     if (status === 'cancelled') {
       appointment.cancellationReason = cancellationReason;
       appointment.cancelledBy = req.user._id;
-      
+
       // Refund logic would go here
       if (appointment.paymentStatus === 'paid') {
         appointment.paymentStatus = 'refunded';
@@ -357,7 +361,7 @@ router.get('/:appointmentId', authenticateToken, async (req, res) => {
         }
         query.patientId = patient._id;
         break;
-      
+
       case 'doctor':
         const doctor = await Doctor.findOne({ userId: req.user._id });
         if (!doctor) {
@@ -371,10 +375,14 @@ router.get('/:appointmentId', authenticateToken, async (req, res) => {
     }
 
     const appointment = await Appointment.findOne(query)
-      .populate('doctorId')
-      .populate('doctorId.userId', 'profile')
-      .populate('patientId')
-      .populate('patientId.userId', 'profile')
+      .populate({
+        path: 'doctorId',
+        populate: { path: 'userId', select: 'profile' }
+      })
+      .populate({
+        path: 'patientId',
+        populate: { path: 'userId', select: 'profile' }
+      })
       .populate('prescription');
 
     if (!appointment) {
