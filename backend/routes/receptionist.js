@@ -9,32 +9,20 @@ const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Bill = require('../models/Bill');
 const LabReport = require('../models/LabReport');
+const Prescription = require('../models/Prescription');
 
-// Configure multer for lab report uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/lab-reports/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `lab-report-${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
+const { labReportStorage, prescriptionStorage } = require('../config/cloudinary');
+
+// Configure multer for lab report uploads using Cloudinary
+const upload = multer({
+  storage: labReportStorage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|pdf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only JPEG, JPG, PNG, and PDF files are allowed'));
-    }
-  }
+// Configure multer for prescription receipts using Cloudinary
+const receiptUpload = multer({
+  storage: prescriptionStorage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
 // All receptionist routes require receptionist authentication
@@ -51,7 +39,7 @@ router.get('/appointments', async (req, res) => {
       const startDate = new Date(req.query.date);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 1);
-      
+
       query.date = {
         $gte: startDate,
         $lt: endDate
@@ -274,6 +262,12 @@ router.post('/bill', [
 
     const { patientId, appointmentId, items, dueDate } = req.body;
 
+    // Process items and calculate individual totals
+    const processedItems = items.map(item => ({
+      ...item,
+      total: item.quantity * item.unitPrice
+    }));
+
     // Check if patient exists
     const patient = await Patient.findById(patientId);
     if (!patient) {
@@ -284,7 +278,7 @@ router.post('/bill', [
     }
 
     // Calculate totals
-    const subtotal = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+    const subtotal = processedItems.reduce((sum, item) => sum + item.total, 0);
     const tax = subtotal * 0.18; // 18% tax
     const total = subtotal + tax;
 
@@ -292,7 +286,7 @@ router.post('/bill', [
     const bill = new Bill({
       patientId,
       appointmentId,
-      items,
+      items: processedItems,
       subtotal,
       tax,
       total,
@@ -367,7 +361,7 @@ router.post('/lab-report', [
       results: results ? JSON.parse(results) : [],
       conclusion,
       recommendations,
-      reportFile: req.file.filename,
+      reportFile: req.file.path,
       uploadedBy: req.user._id
     });
 
@@ -400,7 +394,7 @@ router.post('/lab-report', [
 });
 
 // Upload prescription receipt
-router.post('/prescription-receipt', upload.single('receipt'), async (req, res) => {
+router.post('/prescription-receipt', receiptUpload.single('receipt'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -428,14 +422,14 @@ router.post('/prescription-receipt', upload.single('receipt'), async (req, res) 
     }
 
     // Update prescription with file path
-    prescription.receipt = req.file.filename;
+    prescription.receipt = req.file.path;
     await prescription.save();
 
     res.json({
       success: true,
       message: 'Prescription receipt uploaded successfully',
       data: {
-        filename: req.file.filename,
+        filename: req.file.path,
         prescription
       }
     });
@@ -488,6 +482,37 @@ router.get('/bills', async (req, res) => {
   }
 });
 
+// Mark bill as paid
+router.patch('/bill/:billId/mark-paid', async (req, res) => {
+  try {
+    const { billId } = req.params;
+    const bill = await Bill.findByIdAndUpdate(
+      billId,
+      { status: 'paid' },
+      { new: true }
+    );
+
+    if (!bill) {
+      return res.status(404).json({
+        success: false,
+        message: 'Bill not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Bill marked as paid successfully',
+      data: { bill }
+    });
+  } catch (error) {
+    console.error('Mark bill paid error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error marking bill as paid'
+    });
+  }
+});
+
 // Get all lab reports
 router.get('/lab-reports', async (req, res) => {
   try {
@@ -513,6 +538,78 @@ router.get('/lab-reports', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error fetching lab reports'
+    });
+  }
+});
+
+// Upload bill receipt
+router.post('/bill/:billId/receipt', receiptUpload.single('receipt'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    const { billId } = req.params;
+
+    const bill = await Bill.findById(billId);
+    if (!bill) {
+      return res.status(404).json({
+        success: false,
+        message: 'Bill not found'
+      });
+    }
+
+    // Update bill with file path
+    bill.receipt = req.file.path;
+    await bill.save();
+
+    res.json({
+      success: true,
+      message: 'Bill receipt uploaded successfully',
+      data: {
+        filename: req.file.path,
+        bill
+      }
+    });
+  } catch (error) {
+    console.error('Upload bill receipt error:', error);
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File size too large. Maximum size is 10MB'
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: 'Server error uploading receipt'
+    });
+  }
+});
+
+// Get prescriptions for a specific patient
+router.get('/patient/:patientId/prescriptions', async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const prescriptions = await Prescription.find({ patientId })
+      .populate('doctorId', 'userId')
+      .populate({
+        path: 'doctorId',
+        populate: { path: 'userId', select: 'profile' }
+      })
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: { prescriptions }
+    });
+  } catch (error) {
+    console.error('Get patient prescriptions error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching prescriptions'
     });
   }
 });

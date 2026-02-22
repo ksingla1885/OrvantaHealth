@@ -198,8 +198,13 @@ router.get('/bills', async (req, res) => {
 router.get('/prescriptions', async (req, res) => {
   try {
     const prescriptions = await Prescription.find({ patientId: req.patient._id })
-      .populate('doctorId')
-      .populate('doctorId.userId', 'profile')
+      .populate({
+        path: 'doctorId',
+        populate: {
+          path: 'userId',
+          select: 'profile'
+        }
+      })
       .sort({ createdAt: -1 });
 
     // Map fields to match frontend expectations

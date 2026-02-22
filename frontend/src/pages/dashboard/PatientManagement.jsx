@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Filter, Eye, Calendar, Phone, Mail } from 'lucide-react';
+import { Users, Search, Filter, Eye, Calendar, Phone, Mail, FileUp, DollarSign, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
+import LabReportUploadModal from '../../components/LabReportUploadModal';
+import BillUploadModal from '../../components/BillUploadModal';
 
 const PatientManagement = () => {
   const [patients, setPatients] = useState([]);
@@ -9,6 +11,8 @@ const PatientManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showPatientModal, setShowPatientModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [showLabModal, setShowLabModal] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
 
   useEffect(() => {
     fetchPatients();
@@ -26,7 +30,7 @@ const PatientManagement = () => {
       setLoading(false);
     }
   };
-
+  // ... rest of the helper functions unchanged ...
   const filteredPatients = patients.filter(patient => {
     const matchesSearch =
       patient.userId.profile.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,6 +53,7 @@ const PatientManagement = () => {
   };
 
   if (loading) {
+    // ... loading spinner remains same ...
     return (
       <div className="flex items-center justify-center h-64">
         <div className="loading-spinner"></div>
@@ -58,6 +63,7 @@ const PatientManagement = () => {
 
   return (
     <div className="space-y-10 animate-fade-in">
+      {/* ... header and search remains same ... */}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
@@ -188,12 +194,12 @@ const PatientManagement = () => {
         </div>
       </div>
 
-      {/* Patient Details Modal - Premium */}
+      {/* Patient Details Modal */}
       {showPatientModal && selectedPatient && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-brand-dark/40 backdrop-blur-md animate-fade-in" onClick={() => setShowPatientModal(false)}></div>
-          <div className="bg-white rounded-[2.5rem] shadow-premium w-full max-w-2xl relative animate-slide-up overflow-hidden border border-slate-100">
-            <div className="h-32 bg-brand-dark relative">
+          <div className="bg-white rounded-[2.5rem] shadow-premium w-full max-w-2xl relative animate-slide-up overflow-hidden border border-slate-100 max-h-[95vh] flex flex-col">
+            <div className="h-32 bg-brand-dark relative shrink-0">
               <div className="absolute top-8 right-10 flex gap-4">
                 <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur text-[10px] font-black text-white uppercase tracking-widest border border-white/10">MRN: {selectedPatient.medicalRecordNumber}</div>
               </div>
@@ -202,12 +208,46 @@ const PatientManagement = () => {
               </div>
             </div>
 
-            <div className="px-12 pt-16 pb-12">
+            <div className="px-12 pt-16 pb-12 overflow-y-auto">
               <div className="mb-10">
                 <h2 className="text-4xl font-black font-display text-brand-dark mb-1">
                   {selectedPatient.userId.profile.firstName} {selectedPatient.userId.profile.lastName}
                 </h2>
                 <p className="text-slate-400 font-bold tracking-[0.2em] text-[10px]">{selectedPatient.userId.email?.toLowerCase()}</p>
+              </div>
+
+              {/* Service Actions - NEW SECTION */}
+              <div className="grid grid-cols-2 gap-4 mb-10">
+                <button
+                  onClick={() => {
+                    setShowPatientModal(false);
+                    setShowLabModal(true);
+                  }}
+                  className="p-4 rounded-2xl bg-brand-dark text-white hover:bg-slate-800 transition-all flex items-center gap-4 group"
+                >
+                  <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-brand-teal group-hover:scale-110 transition-transform">
+                    <FileUp className="h-5 w-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Lab Services</p>
+                    <p className="font-bold text-sm">Upload Report</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPatientModal(false);
+                    setShowBillModal(true);
+                  }}
+                  className="p-4 rounded-2xl bg-brand-teal text-white hover:bg-brand-teal/90 transition-all flex items-center gap-4 group"
+                >
+                  <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                    <DollarSign className="h-5 w-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Accounts</p>
+                    <p className="font-bold text-sm">Generate Bill</p>
+                  </div>
+                </button>
               </div>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
@@ -234,16 +274,6 @@ const PatientManagement = () => {
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Residential Address</h4>
                   <p className="text-sm font-bold text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100">{selectedPatient.userId.profile.address || 'No primary residence on file'}</p>
                 </div>
-                {selectedPatient.allergies && selectedPatient.allergies.length > 0 && (
-                  <div>
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Clinical Allergies</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedPatient.allergies.map((allergy, i) => (
-                        <span key={i} className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-[10px] font-black uppercase">{allergy}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               <button
@@ -256,6 +286,21 @@ const PatientManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Upload Modals */}
+      <LabReportUploadModal
+        isOpen={showLabModal}
+        onClose={() => setShowLabModal(false)}
+        patient={selectedPatient}
+        onSuccess={() => fetchPatients()}
+      />
+
+      <BillUploadModal
+        isOpen={showBillModal}
+        onClose={() => setShowBillModal(false)}
+        patient={selectedPatient}
+        onSuccess={() => fetchPatients()}
+      />
     </div>
   );
 };

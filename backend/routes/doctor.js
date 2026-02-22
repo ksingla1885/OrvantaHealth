@@ -9,31 +9,12 @@ const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
 const Prescription = require('../models/Prescription');
 
-// Configure multer for prescription uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/prescriptions/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `prescription-${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
-});
+const { prescriptionStorage } = require('../config/cloudinary');
 
+// Configure multer for prescription uploads using Cloudinary
 const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|pdf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only JPEG, JPG, PNG, and PDF files are allowed'));
-    }
-  }
+  storage: prescriptionStorage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
 // All doctor routes require doctor authentication
@@ -240,6 +221,7 @@ router.get('/appointments', async (req, res) => {
     const appointments = await Appointment.find(query)
       .populate('patientId')
       .populate('patientId.userId', 'profile')
+      .populate('prescription')
       .sort({ date: -1, 'timeSlot.start': -1 });
 
     res.json({
@@ -378,6 +360,103 @@ router.post('/prescription', [
   }
 });
 
+// Get prescription by appointment ID
+router.get('/prescription/appointment/:appointmentId', async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const prescription = await Prescription.findOne({ appointmentId })
+      .populate({ path: 'patientId', populate: { path: 'userId', select: 'profile' } })
+      .populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } });
+
+    if (!prescription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Prescription not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { prescription }
+    });
+  } catch (error) {
+    console.error('Get prescription error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching prescription'
+    });
+  }
+});
+
+// Update prescription
+router.patch('/prescription/:prescriptionId', [
+  body('diagnosis').optional().trim(),
+  body('medicines').optional().isArray(),
+  body('medicines.*.name').optional().notEmpty().trim(),
+  body('medicines.*.dosage').optional().notEmpty().trim(),
+  body('medicines.*.frequency').optional().notEmpty().trim(),
+  body('medicines.*.duration').optional().notEmpty().trim()
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { prescriptionId } = req.params;
+    const { diagnosis, medicines, tests, advice, followUpDate } = req.body;
+
+    const doctor = await Doctor.findOne({ userId: req.user._id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor profile not found'
+      });
+    }
+
+    const prescription = await Prescription.findById(prescriptionId);
+    if (!prescription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Prescription not found'
+      });
+    }
+
+    // Check if prescription belongs to this doctor
+    if (prescription.doctorId.toString() !== doctor._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    // Update fields
+    if (diagnosis) prescription.diagnosis = diagnosis;
+    if (medicines) prescription.medicines = medicines;
+    if (tests) prescription.tests = tests;
+    if (advice) prescription.advice = advice;
+    if (followUpDate) prescription.followUpDate = new Date(followUpDate);
+
+    await prescription.save();
+
+    res.json({
+      success: true,
+      message: 'Prescription updated successfully',
+      data: { prescription }
+    });
+  } catch (error) {
+    console.error('Update prescription error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating prescription'
+    });
+  }
+});
+
 // Upload prescription receipt
 router.post('/prescription/:prescriptionId/receipt', upload.single('receipt'), async (req, res) => {
   try {
@@ -415,14 +494,14 @@ router.post('/prescription/:prescriptionId/receipt', upload.single('receipt'), a
     }
 
     // Update prescription with file path
-    prescription.receipt = req.file.filename;
+    prescription.receipt = req.file.path;
     await prescription.save();
 
     res.json({
       success: true,
       message: 'Prescription receipt uploaded successfully',
       data: {
-        filename: req.file.filename,
+        filename: req.file.path,
         prescription
       }
     });
@@ -460,7 +539,13 @@ router.get('/prescriptions', async (req, res) => {
           select: 'profile'
         }
       })
-      .populate('doctorId', 'userId profile')
+      .populate({
+        path: 'doctorId',
+        populate: {
+          path: 'userId',
+          select: 'profile'
+        }
+      })
       .populate('appointmentId', 'date timeSlot')
       .sort({ createdAt: -1 });
 

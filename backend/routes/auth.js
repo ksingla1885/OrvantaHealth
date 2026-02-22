@@ -6,6 +6,13 @@ const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 const { generateTokens, verifyRefreshToken } = require('../utils/jwtUtils');
 const { authenticateToken } = require('../middleware/auth');
+const multer = require('multer');
+const { profilePicStorage } = require('../config/cloudinary');
+
+const upload = multer({
+  storage: profilePicStorage,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 // Test route
 router.get('/test', (req, res) => {
@@ -326,6 +333,45 @@ router.patch('/profile', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error updating profile'
+    });
+  }
+});
+
+// Upload profile picture (avatar)
+router.post('/profile/avatar', authenticateToken, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Update avatar in profile
+    user.profile.avatar = req.file.path;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Profile picture updated successfully',
+      data: {
+        avatar: req.file.path,
+        user: user.toJSON()
+      }
+    });
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error uploading profile picture'
     });
   }
 });

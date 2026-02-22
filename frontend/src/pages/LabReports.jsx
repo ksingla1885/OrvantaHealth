@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { TestTube, Download, Calendar, Activity, CheckCircle, Clock } from 'lucide-react';
+import { TestTube, Download, Calendar, Activity, CheckCircle, Clock, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const LabReports = () => {
   const { user: currentUser } = useAuth();
@@ -58,9 +59,20 @@ const LabReports = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Lab Reports</h1>
-        <p className="text-gray-600">View and track your laboratory test results</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 font-display">Lab Reports</h1>
+          <p className="text-gray-600 font-medium tracking-tight">View and track laboratory test results</p>
+        </div>
+        {currentUser?.role === 'receptionist' && (
+          <Link
+            to="/dashboard/patients"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-teal text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-teal/20 hover:bg-brand-teal/90 transition-all font-display"
+          >
+            <Plus className="h-4 w-4" />
+            Upload New Report
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -7,7 +7,7 @@ const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
 const Bill = require('../models/Bill');
-const { authenticateToken, superAdminOnly } = require('../middleware/auth');
+const { authenticateToken, superAdminOnly, superAdminOrReceptionist } = require('../middleware/auth');
 const {
   getSystemOverview,
   getUserAnalytics,
@@ -66,8 +66,50 @@ router.post('/seed-superadmin', async (req, res) => {
   }
 });
 
-// All other admin routes require super admin authentication
+// Routes accessible by both Super Admin and Receptionist
 router.use(authenticateToken);
+
+// Get all doctors
+router.get('/doctors', superAdminOrReceptionist, async (req, res) => {
+  try {
+    const doctors = await Doctor.find()
+      .populate('userId', 'email profile isActive lastLogin')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: { doctors }
+    });
+  } catch (error) {
+    console.error('Get doctors error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Get all patients
+router.get('/patients', superAdminOrReceptionist, async (req, res) => {
+  try {
+    const patients = await Patient.find()
+      .populate('userId', 'email profile isActive lastLogin')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: { patients }
+    });
+  } catch (error) {
+    console.error('Get patients error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// All other routes below require super admin authentication
 router.use(superAdminOnly);
 
 // Create staff account (doctor, receptionist, staff)
@@ -183,45 +225,7 @@ router.post('/create-staff', [
   }
 });
 
-// Get all doctors
-router.get('/doctors', async (req, res) => {
-  try {
-    const doctors = await Doctor.find()
-      .populate('userId', 'email profile isActive lastLogin')
-      .sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      data: { doctors }
-    });
-  } catch (error) {
-    console.error('Get doctors error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
-
-// Get all patients
-router.get('/patients', async (req, res) => {
-  try {
-    const patients = await Patient.find()
-      .populate('userId', 'email profile isActive lastLogin')
-      .sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      data: { patients }
-    });
-  } catch (error) {
-    console.error('Get patients error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
+// Sensitive routes moved up or handled by middleware above
 
 // Get all staff (excluding patients)
 router.get('/staff', async (req, res) => {

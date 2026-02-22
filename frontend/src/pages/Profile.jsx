@@ -4,13 +4,72 @@ import { useAuth } from '../context/AuthContext';
 import {
   User, Mail, Phone, MapPin, Shield, Activity, Save, Edit2, AlertCircle,
   Stethoscope, Award, Clock, DollarSign, Calendar, CheckCircle, XCircle,
-  Briefcase, Hash, Building2
+  Briefcase, Hash, Building2, Camera
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+const ProfileAvatar = ({ user, defaultIcon: DefaultIcon }) => {
+  const [uploading, setUploading] = useState(false);
+  const avatarUrl = user?.profile?.avatar;
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size exceeds 5MB limit');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const res = await api.post('/auth/profile/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (res.data.success) {
+        toast.success('Profile picture updated');
+        // Update local storage and force a refresh of the user data if needed
+        const currentUser = JSON.parse(localStorage.getItem('user'));
+        currentUser.profile.avatar = res.data.data.avatar;
+        localStorage.setItem('user', JSON.stringify(currentUser));
+        window.location.reload(); // Simple way to sync all profile views
+      }
+    } catch (err) {
+      console.error('Avatar upload error:', err);
+      toast.error(err.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="relative group">
+      <div className="h-20 w-20 shrink-0 rounded-2xl bg-white p-1.5 shadow-2xl relative overflow-hidden">
+        <div className="h-full w-full rounded-xl bg-gradient-to-br from-primary-100 to-secondary-100 flex items-center justify-center overflow-hidden">
+          {uploading ? (
+            <div className="loading-spinner h-6 w-6 border-primary-600" />
+          ) : avatarUrl ? (
+            <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+          ) : (
+            <DefaultIcon className="h-10 w-10 text-primary-600" />
+          )}
+        </div>
+      </div>
+      <label className="absolute -bottom-1 -right-1 h-7 w-7 bg-white rounded-lg shadow-lg border border-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
+        <Camera className="h-4 w-4 text-gray-600" />
+        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} disabled={uploading} />
+      </label>
+    </div>
+  );
+};
+
 /* ─────────────────────────────────────────────
    DOCTOR PROFILE VIEW
-───────────────────────────────────────────── */
+   ───────────────────────────────────────────── */
 const DoctorProfile = ({ user }) => {
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,11 +115,7 @@ const DoctorProfile = ({ user }) => {
         <div className="absolute inset-0 opacity-20"
           style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
         <div className="relative flex items-center gap-5 px-8 py-6">
-          <div className="h-20 w-20 shrink-0 rounded-2xl bg-white p-1.5 shadow-2xl">
-            <div className="h-full w-full rounded-xl bg-gradient-to-br from-primary-100 to-secondary-100 flex items-center justify-center">
-              <Stethoscope className="h-10 w-10 text-primary-600" />
-            </div>
-          </div>
+          <ProfileAvatar user={user} defaultIcon={Stethoscope} />
           <div className="text-white">
             <h1 className="text-2xl font-black tracking-tight drop-shadow">Dr. {fullName}</h1>
             <p className="opacity-90 flex items-center text-sm font-medium mt-1">
@@ -130,11 +185,10 @@ const DoctorProfile = ({ user }) => {
                 return (
                   <div
                     key={day}
-                    className={`rounded-xl p-2 text-center text-xs font-bold transition-all ${
-                      active
-                        ? 'bg-primary-600 text-white shadow-md shadow-primary-200'
-                        : 'bg-gray-100 text-gray-400'
-                    }`}
+                    className={`rounded-xl p-2 text-center text-xs font-bold transition-all ${active
+                      ? 'bg-primary-600 text-white shadow-md shadow-primary-200'
+                      : 'bg-gray-100 text-gray-400'
+                      }`}
                   >
                     {DAY_LABELS[day]}
                   </div>
@@ -246,11 +300,7 @@ const PatientProfile = ({ user }) => {
       <div className="relative bg-gradient-to-r from-primary-600 to-secondary-600 rounded-2xl shadow-lg overflow-hidden">
         <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]" />
         <div className="relative flex items-center gap-5 px-8 py-6">
-          <div className="h-20 w-20 shrink-0 rounded-2xl bg-white p-1.5 shadow-2xl">
-            <div className="h-full w-full rounded-xl bg-primary-100 flex items-center justify-center">
-              <User className="h-10 w-10 text-primary-600" />
-            </div>
-          </div>
+          <ProfileAvatar user={user} defaultIcon={User} />
           <div className="text-white">
             <h1 className="text-2xl font-black tracking-tight drop-shadow">{fullName}</h1>
             <p className="opacity-90 flex items-center text-sm font-medium mt-1">
@@ -440,11 +490,7 @@ const StaffProfile = ({ user }) => {
       <div className="relative bg-gradient-to-r from-primary-600 to-secondary-600 rounded-2xl shadow-lg overflow-hidden">
         <div className="absolute inset-0 bg-white/10 backdrop-blur-[2px]" />
         <div className="relative flex items-center gap-5 px-8 py-6">
-          <div className="h-20 w-20 shrink-0 rounded-2xl bg-white p-1.5 shadow-2xl">
-            <div className="h-full w-full rounded-xl bg-primary-100 flex items-center justify-center">
-              <Briefcase className="h-10 w-10 text-primary-600" />
-            </div>
-          </div>
+          <ProfileAvatar user={user} defaultIcon={Briefcase} />
           <div className="text-white">
             <h1 className="text-2xl font-black tracking-tight drop-shadow">{fullName}</h1>
             <p className="opacity-90 flex items-center text-sm font-medium mt-1">
@@ -474,21 +520,21 @@ const StaffProfile = ({ user }) => {
 
         {/* Basic Info Grid - Read Only */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <DetailBox 
-            label="First Name" 
-            value={user?.profile?.firstName} 
+          <DetailBox
+            label="First Name"
+            value={user?.profile?.firstName}
           />
-          <DetailBox 
-            label="Last Name" 
-            value={user?.profile?.lastName} 
+          <DetailBox
+            label="Last Name"
+            value={user?.profile?.lastName}
           />
-          <DetailBox 
-            label="Email" 
-            value={user?.email} 
+          <DetailBox
+            label="Email"
+            value={user?.email}
           />
-          <DetailBox 
-            label="Phone" 
-            value={user?.profile?.phone} 
+          <DetailBox
+            label="Phone"
+            value={user?.profile?.phone}
           />
         </div>
 
@@ -545,13 +591,13 @@ const StaffProfile = ({ user }) => {
             <div className="border-t pt-6">
               <h3 className="font-semibold text-gray-900 mb-3">Additional Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <DetailBox 
-                  label="Date of Birth" 
-                  value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : '—'} 
+                <DetailBox
+                  label="Date of Birth"
+                  value={formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : '—'}
                 />
-                <DetailBox 
-                  label="Gender" 
-                  value={formData.gender || '—'} 
+                <DetailBox
+                  label="Gender"
+                  value={formData.gender || '—'}
                 />
               </div>
             </div>
@@ -576,13 +622,13 @@ const StaffProfile = ({ user }) => {
             Account Status
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <DetailBox 
-              label="Status" 
-              value={user?.isActive ? '✓ Active' : '✗ Inactive'} 
+            <DetailBox
+              label="Status"
+              value={user?.isActive ? '✓ Active' : '✗ Inactive'}
             />
-            <DetailBox 
-              label="Role" 
-              value={roleLabel} 
+            <DetailBox
+              label="Role"
+              value={roleLabel}
             />
           </div>
         </div>
@@ -654,7 +700,7 @@ const Profile = () => {
   if (user?.role === 'doctor') {
     return <DoctorProfile user={user} />;
   }
-  
+
   if (user?.role === 'patient') {
     return <PatientProfile user={user} />;
   }

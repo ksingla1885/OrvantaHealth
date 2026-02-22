@@ -68,6 +68,8 @@ const patientOnly = authorizeRoles('patient');
 // Admin and staff roles
 const adminAndStaff = authorizeRoles('superadmin', 'doctor', 'receptionist', 'patient');
 
+const superAdminOrReceptionist = authorizeRoles('superadmin', 'receptionist');
+
 module.exports = {
   authenticateToken,
   authorizeRoles,
@@ -76,5 +78,6 @@ module.exports = {
   receptionistOnly,
   staffOnly,
   patientOnly,
-  adminAndStaff
+  adminAndStaff,
+  superAdminOrReceptionist
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { FileText, Download, User, Calendar, Pill, Search } from 'lucide-react';
+import { FileText, Download, User, Calendar, Pill, Search, Activity, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 
@@ -137,9 +137,10 @@ const Prescriptions = () => {
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {prescription.medications?.map((med, idx) => (
-                          <div key={idx} className="flex flex-col border-l-2 border-purple-200 pl-2">
+                          <div key={idx} className="flex flex-col border-l-2 border-primary-200 pl-2">
                             <span className="text-sm font-medium text-gray-900">{med.name}</span>
-                            <span className="text-xs text-gray-500">{med.dosage} - {med.frequency}</span>
+                            <span className="text-xs text-gray-500">{med.dosage} • {med.frequency} • {med.duration}</span>
+                            {med.instructions && <span className="text-xs text-gray-400 italic mt-1">{med.instructions}</span>}
                           </div>
                         ))}
                         {(!prescription.medications || prescription.medications.length === 0) && (
@@ -148,21 +149,49 @@ const Prescriptions = () => {
                       </div>
                     </div>
 
+                    {prescription.tests && prescription.tests.length > 0 && (
+                      <div className="bg-amber-50/50 rounded-lg p-3">
+                        <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2 flex items-center">
+                          <Activity className="h-3 w-3 mr-1" /> Diagnostic Tests
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {prescription.tests.map((test, idx) => (
+                            <div key={idx} className="flex flex-col border-l-2 border-amber-200 pl-2">
+                              <span className="text-sm font-medium text-gray-900">{test.name}</span>
+                              {test.instructions && <span className="text-xs text-gray-500">{test.instructions}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {prescription.instructions && (
-                      <p className="text-sm text-gray-600">
-                        <span className="font-semibold">Notes:</span> {prescription.instructions}
-                      </p>
+                      <div className="text-sm text-gray-600 bg-blue-50/30 p-3 rounded-lg border border-blue-100/50">
+                        <span className="font-bold flex items-center text-blue-600 text-xs uppercase tracking-widest mb-1">
+                          <AlertCircle className="h-3 w-3 mr-1" /> Doctor's Advice
+                        </span>
+                        <p className="text-gray-700 leading-relaxed">{prescription.instructions}</p>
+                      </div>
+                    )}
+
+                    {prescription.followUpDate && (
+                      <div className="flex items-center text-xs text-slate-500 bg-slate-100 w-fit px-3 py-1 rounded-full">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Next Follow-up: {format(new Date(prescription.followUpDate), 'PPP')}
+                      </div>
                     )}
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2 self-end md:self-start">
-                  <button
-                    onClick={() => handleDownload(prescription._id)}
-                    className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-                  >
-                    <Download className="h-4 w-4 mr-2" /> Download PDF
-                  </button>
+                  {prescription.receipt && (
+                    <button
+                      onClick={() => handleDownload(prescription._id)}
+                      className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Download PDF
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

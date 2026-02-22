@@ -84,14 +84,18 @@ router.get('/download/:type/:id', async (req, res) => {
             return res.status(404).json({ success: false, message: 'File reference not found in database' });
         }
 
-        // Resolve full path
-        // Assuming files are stored in subfolders of uploads
+        // If it's a Cloudinary URL (starts with http), redirect to it
+        if (filePath.startsWith('http')) {
+            return res.redirect(filePath);
+        }
+
+        // Resolve full path for local files
         let subfolder = '';
         if (type === 'lab-report') subfolder = 'lab-reports';
+        if (type === 'prescription') subfolder = 'prescriptions';
         // Add other subfolders if needed
 
-        // Check if filename already contains path
-        const fullPath = path.join(__dirname, '..', 'uploads', subfolder, filePath);
+        const fullPath = path.resolve(__dirname, '..', 'uploads', subfolder, filePath);
 
         res.download(fullPath, filename, (err) => {
             if (err) {

@@ -110,6 +110,12 @@ const Layout = () => {
             current: location.pathname.includes('/appointments'),
           },
           {
+            name: 'Patients',
+            href: '/dashboard/patients',
+            icon: Users,
+            current: location.pathname.includes('/patients'),
+          },
+          {
             name: 'Doctor Availability',
             href: '/receptionist/doctor-availability',
             icon: Calendar,

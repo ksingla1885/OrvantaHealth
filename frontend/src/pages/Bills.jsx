@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { DollarSign, FileText, Download, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { DollarSign, FileText, Download, CheckCircle, Clock, AlertCircle, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const Bills = () => {
   const { user: currentUser } = useAuth();
@@ -48,11 +49,27 @@ const Bills = () => {
     }
   };
 
+  const handleMarkAsPaid = async (billId) => {
+    try {
+      const response = await api.patch(`/receptionist/bill/${billId}/mark-paid`);
+      if (response.data.success) {
+        toast.success('Bill marked as paid');
+        fetchBills();
+      }
+    } catch (error) {
+      console.error('Error marking as paid:', error);
+      toast.error('Failed to update bill status');
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'unpaid': return 'bg-red-100 text-red-800';
-      case 'partially_paid': return 'bg-yellow-100 text-yellow-800';
+      case 'paid': return 'bg-green-100 text-green-800 border border-green-200';
+      case 'unpaid': return 'bg-rose-100 text-rose-800 border border-rose-200';
+      case 'overdue': return 'bg-red-100 text-red-800 border border-red-200';
+      case 'partially_paid': return 'bg-amber-100 text-amber-800 border border-amber-200';
+      case 'draft': return 'bg-slate-100 text-slate-800 border border-slate-200';
+      case 'sent': return 'bg-blue-100 text-blue-800 border border-blue-200';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -67,9 +84,20 @@ const Bills = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Bills & Payments</h1>
-        <p className="text-gray-600">View and manage your medical invoices</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 font-display">Bills & Payments</h1>
+          <p className="text-gray-600 font-medium tracking-tight">View and manage medical invoices</p>
+        </div>
+        {currentUser?.role === 'receptionist' && (
+          <Link
+            to="/dashboard/patients"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-teal text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-teal/20 hover:bg-brand-teal/90 transition-all font-display"
+          >
+            <Plus className="h-4 w-4" />
+            Create New Bill
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -93,29 +121,39 @@ const Bills = () => {
 
                     <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600">
                       <div className="flex items-center font-medium text-gray-900">
-                        Total: ₹{bill.totalAmount}
+                        Total: ₹{bill.total}
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-2" />
                         Date: {format(new Date(bill.createdAt), 'PPP')}
                       </div>
-                      <div className="flex items-center">
+                      <div className="flex items-center font-bold text-brand-teal">
                         <FileText className="h-4 w-4 mr-2" />
-                        Items: {bill.items?.length || 0}
+                        Status: {bill.status.toUpperCase()}
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2 self-end md:self-center">
-                  {bill.status !== 'paid' && (
-                    <button className="px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors">
+                  {bill.status !== 'paid' && currentUser?.role === 'patient' && (
+                    <button className="px-6 py-2 bg-brand-teal text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-brand-teal/90 transition-all shadow-lg shadow-brand-teal/20">
                       Pay Now
                     </button>
                   )}
+
+                  {bill.status !== 'paid' && currentUser?.role === 'receptionist' && (
+                    <button
+                      onClick={() => handleMarkAsPaid(bill._id)}
+                      className="px-6 py-2 bg-brand-dark text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-lg"
+                    >
+                      Mark as Paid
+                    </button>
+                  )}
+
                   <button
                     onClick={() => handleDownload(bill._id)}
-                    className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                    className="p-3 text-slate-400 hover:text-brand-teal hover:bg-brand-teal/5 rounded-xl transition-all"
                     title="Download PDF"
                   >
                     <Download className="h-5 w-5" />

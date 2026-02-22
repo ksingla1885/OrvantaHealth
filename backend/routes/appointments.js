@@ -182,6 +182,7 @@ router.get('/', authenticateToken, async (req, res) => {
         path: 'patientId',
         populate: { path: 'userId', select: 'profile' }
       })
+      .populate('prescription')
       .sort({ date: -1, 'timeSlot.start': -1 });
 
     res.json({

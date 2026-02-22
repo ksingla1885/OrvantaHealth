@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Calendar, Clock, User, UserCheck, XCircle, CheckCircle, AlertCircle, Filter } from 'lucide-react';
+import { Calendar, Clock, User, UserCheck, XCircle, CheckCircle, AlertCircle, Filter, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
+import PrescriptionModal from '../components/PrescriptionModal';
 
 const Appointments = () => {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ const Appointments = () => {
   const [filter, setFilter] = useState('all');
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
 
   useEffect(() => {
     fetchAppointments();
@@ -52,7 +54,14 @@ const Appointments = () => {
 
   const handleUpdateStatus = async (status) => {
     if (!selectedAppointment) return;
-    
+
+    // If doctor marks as completed, we might want to suggest adding a prescription
+    if (user.role === 'doctor' && status === 'completed') {
+      setShowStatusModal(false);
+      setShowPrescriptionModal(true);
+      return;
+    }
+
     try {
       const response = await api.patch(`/appointments/${selectedAppointment._id}/status`, {
         status
@@ -72,6 +81,11 @@ const Appointments = () => {
   const openStatusModal = (appointment) => {
     setSelectedAppointment(appointment);
     setShowStatusModal(true);
+  };
+
+  const openPrescriptionModal = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowPrescriptionModal(true);
   };
 
   const getAvailableStatuses = (appointment) => {
@@ -159,7 +173,7 @@ const Appointments = () => {
                       </h3>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center ${getStatusColor(appointment.status)}`}>
                         {getStatusIcon(appointment.status)}
-                        {appointment.status.charAt(0) + appointment.status.slice(1)}
+                        {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                       </span>
                     </div>
 
@@ -202,15 +216,41 @@ const Appointments = () => {
                     </button>
                   )}
 
-                  {(user.role === 'doctor' || user.role === 'receptionist' || user.role === 'superadmin') && 
-                   getAvailableStatuses(appointment).length > 0 && (
-                    <button
-                      onClick={() => openStatusModal(appointment)}
-                      className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
-                    >
-                      Update Status
-                    </button>
+                  {user.role === 'doctor' && (
+                    <>
+                      {appointment.status === 'confirmed' && (
+                        <button
+                          onClick={() => openPrescriptionModal(appointment)}
+                          className="px-4 py-2 bg-brand-dark text-white text-sm font-bold rounded-lg hover:bg-slate-800 transition-colors flex items-center gap-2"
+                        >
+                          <FileText className="h-4 w-4" />
+                          Prescribe
+                        </button>
+                      )}
+                      {appointment.status === 'completed' && (
+                        <button
+                          onClick={() => openPrescriptionModal(appointment)}
+                          className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${appointment.prescription
+                              ? 'bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200'
+                              : 'bg-brand-dark text-white hover:bg-slate-800'
+                            }`}
+                        >
+                          <FileText className="h-4 w-4" />
+                          {appointment.prescription ? 'Update Prescription' : 'Give Prescription'}
+                        </button>
+                      )}
+                    </>
                   )}
+
+                  {(user.role === 'doctor' || user.role === 'receptionist' || user.role === 'superadmin') &&
+                    getAvailableStatuses(appointment).length > 0 && (
+                      <button
+                        onClick={() => openStatusModal(appointment)}
+                        className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors"
+                      >
+                        Update Status
+                      </button>
+                    )}
                 </div>
               </div>
             </div>
@@ -236,38 +276,41 @@ const Appointments = () => {
 
       {/* Status Update Modal */}
       {showStatusModal && selectedAppointment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-sm w-full mx-4 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-8 border border-slate-100">
+            <h2 className="text-xl font-bold text-slate-800 mb-6 font-display">
               Update Appointment Status
             </h2>
-            
-            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">
-                <strong>Patient:</strong> {selectedAppointment.patientId?.userId?.profile?.firstName} {selectedAppointment.patientId?.userId?.profile?.lastName}
+
+            <div className="mb-8 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Patient</p>
+              <p className="text-lg font-black text-brand-dark">
+                {selectedAppointment.patientId?.userId?.profile?.firstName} {selectedAppointment.patientId?.userId?.profile?.lastName}
               </p>
-              <p className="text-sm text-gray-600 mt-1">
-                <strong>Current Status:</strong> <span className="capitalize font-medium">{selectedAppointment.status}</span>
-              </p>
+              <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Current Status</span>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor(selectedAppointment.status)}`}>
+                  {selectedAppointment.status}
+                </span>
+              </div>
             </div>
 
-            <div className="space-y-3 mb-6">
+            <div className="space-y-4 mb-8">
               {getAvailableStatuses(selectedAppointment).map((status) => (
                 <button
                   key={status}
                   onClick={() => handleUpdateStatus(status)}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center ${
-                    status === 'confirmed' 
-                      ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                      : status === 'completed'
-                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                      : 'bg-red-100 text-red-700 hover:bg-red-200'
-                  }`}
+                  className={`w-full py-4 px-6 rounded-2xl font-black font-display text-sm transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md active:scale-95 ${status === 'confirmed'
+                    ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-100'
+                    : status === 'completed'
+                      ? 'bg-brand-dark text-white hover:bg-slate-800'
+                      : 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-100'
+                    }`}
                 >
-                  {status === 'confirmed' && <CheckCircle className="h-5 w-5 mr-2" />}
-                  {status === 'completed' && <UserCheck className="h-5 w-5 mr-2" />}
-                  {status === 'cancelled' && <XCircle className="h-5 w-5 mr-2" />}
-                  <span className="capitalize">{status}</span>
+                  {status === 'confirmed' && <CheckCircle className="h-5 w-5" />}
+                  {status === 'completed' && <FileText className="h-5 w-5" />}
+                  {status === 'cancelled' && <XCircle className="h-5 w-5" />}
+                  <span className="capitalize">{status === 'completed' && user.role === 'doctor' ? 'Complete & Prescribe' : status}</span>
                 </button>
               ))}
             </div>
@@ -277,16 +320,30 @@ const Appointments = () => {
                 setShowStatusModal(false);
                 setSelectedAppointment(null);
               }}
-              className="w-full py-2 px-4 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              className="w-full py-4 px-6 border border-slate-200 rounded-2xl text-slate-500 font-bold hover:bg-slate-50 transition-colors text-sm"
             >
               Cancel
             </button>
           </div>
         </div>
       )}
+
+      {/* Prescription Modal */}
+      {showPrescriptionModal && selectedAppointment && (
+        <PrescriptionModal
+          isOpen={showPrescriptionModal}
+          onClose={() => {
+            setShowPrescriptionModal(false);
+            setSelectedAppointment(null);
+          }}
+          appointment={selectedAppointment}
+          onSuccess={fetchAppointments}
+        />
+      )}
     </div>
   );
 };
 
 export default Appointments;
+
 
