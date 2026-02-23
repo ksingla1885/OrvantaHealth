@@ -234,6 +234,10 @@ router.get('/prescriptions', async (req, res) => {
 router.get('/lab-reports', async (req, res) => {
   try {
     const labReports = await LabReport.find({ patientId: req.patient._id })
+      .populate({
+        path: 'doctorId',
+        populate: { path: 'userId', select: 'profile' }
+      })
       .populate('uploadedBy', 'profile')
       .sort({ reportDate: -1 });
 
@@ -250,83 +254,5 @@ router.get('/lab-reports', async (req, res) => {
   }
 });
 
-// Download document
-router.get('/download/:type/:id', async (req, res) => {
-  try {
-    const { type, id } = req.params;
-    let filePath;
-    let filename;
-
-    switch (type) {
-      case 'prescription':
-        const prescription = await Prescription.findById(id);
-        if (!prescription || prescription.patientId.toString() !== req.patient._id.toString()) {
-          return res.status(403).json({
-            success: false,
-            message: 'Access denied'
-          });
-        }
-        filePath = prescription.receipt;
-        filename = `prescription_${id}.pdf`;
-        break;
-
-      case 'bill':
-        const bill = await Bill.findById(id);
-        if (!bill || bill.patientId.toString() !== req.patient._id.toString()) {
-          return res.status(403).json({
-            success: false,
-            message: 'Access denied'
-          });
-        }
-        filePath = bill.receipt;
-        filename = `bill_${id}.pdf`;
-        break;
-
-      case 'lab-report':
-        const labReport = await LabReport.findById(id);
-        if (!labReport || labReport.patientId.toString() !== req.patient._id.toString()) {
-          return res.status(403).json({
-            success: false,
-            message: 'Access denied'
-          });
-        }
-        filePath = labReport.reportFile;
-        filename = `lab_report_${id}.pdf`;
-        break;
-
-      default:
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid document type'
-        });
-    }
-
-    if (!filePath) {
-      return res.status(404).json({
-        success: false,
-        message: 'File not found'
-      });
-    }
-
-    const path = require('path');
-    const fullPath = path.join(__dirname, '..', 'uploads', filePath);
-
-    res.download(fullPath, filename, (err) => {
-      if (err) {
-        console.error('Download error:', err);
-        res.status(500).json({
-          success: false,
-          message: 'Error downloading file'
-        });
-      }
-    });
-  } catch (error) {
-    console.error('Download document error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-});
-
+// End of patient routes
 module.exports = router;

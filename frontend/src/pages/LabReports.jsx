@@ -43,9 +43,25 @@ const LabReports = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      toast.success('Report downloaded successfully');
     } catch (error) {
       console.error('Download error:', error);
-      toast.error('Failed to download report');
+
+      // Try to parse the error message if the response is a blob (JSON error returned as blob)
+      if (error.response?.data instanceof Blob) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const errorData = JSON.parse(reader.result);
+            toast.error(errorData.message || 'Failed to download report');
+          } catch (e) {
+            toast.error('Failed to download report');
+          }
+        };
+        reader.readAsText(error.response.data);
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to download report');
+      }
     }
   };
 
@@ -88,35 +104,45 @@ const LabReports = () => {
                     <h3 className="text-lg font-semibold text-gray-900 truncate">
                       {report.testName}
                     </h3>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center ${report.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex items-center ${(report.status || 'completed') === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                      {report.status === 'completed' ? <CheckCircle className="h-3 w-3 mr-1" /> : <Clock className="h-3 w-3 mr-1" />}
-                      {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                      {(report.status || 'completed') === 'completed' ? <CheckCircle className="h-3 w-3 mr-1" /> : <Clock className="h-3 w-3 mr-1" />}
+                      {(report.status || 'Completed').charAt(0).toUpperCase() + (report.status || 'Completed').slice(1)}
                     </span>
                   </div>
 
                   <div className="mt-2 space-y-2">
                     <div className="flex items-center text-sm text-gray-500">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Date: {format(new Date(report.reportDate), 'PPP')}
+                      <Calendar className="h-4 w-4 mr-2 text-brand-teal" />
+                      <span className="font-bold">Date:</span>&nbsp;{format(new Date(report.reportDate), 'PPP')}
                     </div>
-                    {report.doctorName && (
+
+                    {currentUser?.role === 'receptionist' && report.patientId?.userId?.profile && (
                       <div className="flex items-center text-sm text-gray-500">
-                        <Activity className="h-4 w-4 mr-2" />
-                        Ref. by: {report.doctorName}
+                        <Activity className="h-4 w-4 mr-2 text-brand-teal" />
+                        <span className="font-bold">Patient:</span>&nbsp;
+                        {report.patientId.userId.profile.firstName} {report.patientId.userId.profile.lastName}
+                      </div>
+                    )}
+
+                    {report.doctorId?.userId?.profile && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Activity className="h-4 w-4 mr-2 text-brand-teal" />
+                        <span className="font-bold">Ref. by:</span>&nbsp;
+                        Dr. {report.doctorId.userId.profile.lastName}
                       </div>
                     )}
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                    <p className="text-xs text-gray-400">
-                      ID: {report._id.slice(-8).toUpperCase()}
+                  <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                      REF ID: {report._id?.toString().slice(-8).toUpperCase()}
                     </p>
                     <button
                       onClick={() => handleDownload(report._id)}
-                      className="flex items-center text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-brand-light text-brand-dark rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-teal/10 transition-colors"
                     >
-                      <Download className="h-4 w-4 mr-1" /> Download
+                      <Download className="h-4 w-4" /> Download
                     </button>
                   </div>
                 </div>

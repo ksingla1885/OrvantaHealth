@@ -317,12 +317,12 @@ router.post('/bill', [
 });
 
 // Upload lab report
-router.post('/lab-report', [
+router.post('/lab-report', upload.single('reportFile'), [
   body('patientId').isMongoId(),
   body('testName').notEmpty().trim(),
   body('testType').notEmpty().trim(),
   body('reportDate').isISO8601()
-], upload.single('reportFile'), async (req, res) => {
+], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -525,7 +525,14 @@ router.get('/lab-reports', async (req, res) => {
 
     const labReports = await LabReport.find(query)
       .populate('patientId')
-      .populate('patientId.userId', 'profile')
+      .populate({
+        path: 'patientId',
+        populate: { path: 'userId', select: 'profile' }
+      })
+      .populate({
+        path: 'doctorId',
+        populate: { path: 'userId', select: 'profile' }
+      })
       .populate('uploadedBy', 'profile')
       .sort({ reportDate: -1 });
 
