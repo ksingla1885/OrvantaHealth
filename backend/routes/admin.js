@@ -7,7 +7,7 @@ const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
 const Bill = require('../models/Bill');
-const { authenticateToken, superAdminOnly, superAdminOrReceptionist } = require('../middleware/auth');
+const { authenticateToken, superAdminOnly, superAdminOrReceptionist, authorizeRoles } = require('../middleware/auth');
 const {
   getSystemOverview,
   getUserAnalytics,
@@ -69,8 +69,8 @@ router.post('/seed-superadmin', async (req, res) => {
 // Routes accessible by both Super Admin and Receptionist
 router.use(authenticateToken);
 
-// Get all doctors
-router.get('/doctors', superAdminOrReceptionist, async (req, res) => {
+// Get all doctors (Accessible by Admin, Doctor, Receptionist)
+router.get('/doctors', authorizeRoles('superadmin', 'receptionist', 'doctor'), async (req, res) => {
   try {
     const doctors = await Doctor.find()
       .populate('userId', 'email profile isActive lastLogin')
@@ -89,8 +89,8 @@ router.get('/doctors', superAdminOrReceptionist, async (req, res) => {
   }
 });
 
-// Get all patients
-router.get('/patients', superAdminOrReceptionist, async (req, res) => {
+// Get all patients (Accessible by Admin, Doctor, Receptionist)
+router.get('/patients', authorizeRoles('superadmin', 'receptionist', 'doctor'), async (req, res) => {
   try {
     const patients = await Patient.find()
       .populate('userId', 'email profile isActive lastLogin')

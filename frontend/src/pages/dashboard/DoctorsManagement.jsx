@@ -94,12 +94,14 @@ const DoctorsManagement = () => {
         doctorId: selectedDoctor._id
       });
       if (response.data.success) {
-        // Update the local doctor in selectedDoctor and doctors array
-        setSelectedDoctor(prev => ({
-          ...prev,
+        // Correctly merge the update to maintain populated data (userId, etc.)
+        const updatedDoctor = {
+          ...selectedDoctor,
           availability: response.data.data.doctor.availability
-        }));
-        setDoctors(prev => prev.map(d => d._id === selectedDoctor._id ? response.data.data.doctor : d));
+        };
+
+        setSelectedDoctor(updatedDoctor);
+        setDoctors(prev => prev.map(d => d._id === updatedDoctor._id ? updatedDoctor : d));
         setIsEditingAvailability(false);
         toast.success('Availability updated successfully');
       }
@@ -112,11 +114,21 @@ const DoctorsManagement = () => {
   };
 
   const filteredDoctors = doctors.filter(doctor => {
+    // Basic null check for doctor and user data
+    if (!doctor || !doctor.userId || !doctor.userId.profile) return false;
+
+    const profile = doctor.userId.profile;
+    const email = doctor.userId.email || '';
+    const firstName = profile.firstName || '';
+    const lastName = profile.lastName || '';
+    const specialization = doctor.specialization || '';
+
     const matchesSearch =
-      doctor.userId.profile.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.userId.profile.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.userId.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.specialization?.toLowerCase().includes(searchTerm.toLowerCase());
+      firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      specialization.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesDepartment = filterDepartment === 'all' || doctor.department === filterDepartment;
     return matchesSearch && matchesDepartment;
   });
@@ -227,11 +239,11 @@ const DoctorsManagement = () => {
               <div className="relative z-10">
                 <div className="flex items-center gap-5 mb-6">
                   <div className="h-16 w-16 rounded-2xl bg-brand-dark flex items-center justify-center text-white text-xl font-black shadow-lg shadow-brand-dark/20 transform group-hover:rotate-6 transition-transform">
-                    {doctor.userId.profile.firstName[0]}{doctor.userId.profile.lastName[0]}
+                    {doctor.userId?.profile?.firstName?.[0] || 'D'}{doctor.userId?.profile?.lastName?.[0] || 'C'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-xl font-black font-display text-brand-dark leading-tight truncate">
-                      Dr. {doctor.userId.profile.firstName} {doctor.userId.profile.lastName}
+                      Dr. {doctor.userId?.profile?.firstName || 'Unknown'} {doctor.userId?.profile?.lastName || 'Doctor'}
                     </h3>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-teal mt-1">{doctor.department} unit</p>
                   </div>
@@ -240,7 +252,7 @@ const DoctorsManagement = () => {
                 <div className="space-y-4 mb-8">
                   <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
                     <Mail className="h-4 w-4 text-slate-300" />
-                    <span className="truncate">{doctor.userId.email}</span>
+                    <span className="truncate">{doctor.userId?.email || 'No email provided'}</span>
                   </div>
                   <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
                     <Calendar className="h-4 w-4 text-slate-300" />
@@ -291,7 +303,7 @@ const DoctorsManagement = () => {
                 <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur text-[10px] font-black text-white uppercase tracking-widest border border-white/10">License: {selectedDoctor.licenseNumber}</div>
               </div>
               <div className="absolute -bottom-10 left-12 h-32 w-32 rounded-[2.5rem] bg-brand-teal shadow-2xl flex items-center justify-center text-white text-4xl font-black border-8 border-white">
-                {selectedDoctor.userId.profile.firstName[0]}
+                {selectedDoctor.userId?.profile?.firstName?.[0] || 'D'}
               </div>
             </div>
 
@@ -299,7 +311,7 @@ const DoctorsManagement = () => {
               <div className="flex justify-between items-start mb-10">
                 <div>
                   <h2 className="text-4xl font-black font-display text-brand-dark leading-none mb-2">
-                    Dr. {selectedDoctor.userId.profile.firstName} {selectedDoctor.userId.profile.lastName}
+                    Dr. {selectedDoctor.userId?.profile?.firstName} {selectedDoctor.userId?.profile?.lastName}
                   </h2>
                   <div className="flex items-center gap-3">
                     <span className="text-brand-teal font-black uppercase text-[10px] tracking-[0.2em]">{selectedDoctor.specialization} specialist</span>
@@ -346,7 +358,7 @@ const DoctorsManagement = () => {
                   <div className="w-8 h-8 rounded-lg bg-brand-light flex items-center justify-center text-brand-teal">
                     <Phone className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-bold uppercase tracking-tight">{selectedDoctor.userId.profile.phone || 'Emergency Contact Unavailable'}</span>
+                  <span className="text-sm font-bold uppercase tracking-tight">{selectedDoctor.userId?.profile?.phone || 'Emergency Contact Unavailable'}</span>
                 </div>
               </div>
 
@@ -354,7 +366,7 @@ const DoctorsManagement = () => {
               {isEditingAvailability ? (
                 <div className="mb-10 p-6 bg-slate-50 rounded-2xl border-2 border-blue-200">
                   <h3 className="font-black text-brand-dark mb-6 flex items-center"><Calendar className="h-5 w-5 mr-2" />Edit Availability</h3>
-                  
+
                   {/* Days Selection */}
                   <div className="mb-6">
                     <label className="text-xs font-black text-gray-600 uppercase tracking-widest mb-3 block">Available Days</label>
@@ -364,11 +376,10 @@ const DoctorsManagement = () => {
                           key={day}
                           type="button"
                           onClick={() => toggleDay(day)}
-                          className={`rounded-lg p-2 text-xs font-bold transition-all ${
-                            availabilityForm.days.includes(day)
-                              ? 'bg-blue-600 text-white shadow-md'
-                              : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                          }`}
+                          className={`rounded-lg p-2 text-xs font-bold transition-all ${availabilityForm.days.includes(day)
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+                            }`}
                         >
                           {DAY_LABELS[day]}
                         </button>
@@ -443,16 +454,15 @@ const DoctorsManagement = () => {
                       Edit
                     </button>
                   </div>
-                  
+
                   <div className="grid grid-cols-7 gap-1.5 mb-4">
                     {ALL_DAYS.map(day => {
                       const active = selectedDoctor?.availability?.days?.includes(day);
                       return (
                         <div
                           key={day}
-                          className={`rounded-lg p-2 text-center text-xs font-bold transition-all ${
-                            active ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-400'
-                          }`}
+                          className={`rounded-lg p-2 text-center text-xs font-bold transition-all ${active ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-400'
+                            }`}
                         >
                           {DAY_LABELS[day]}
                         </div>

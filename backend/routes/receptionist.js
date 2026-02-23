@@ -3,7 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const multer = require('multer');
 const path = require('path');
-const { authenticateToken, receptionistOnly } = require('../middleware/auth');
+const { authenticateToken, receptionistOnly, superAdminOrReceptionist, authorizeRoles } = require('../middleware/auth');
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
@@ -25,9 +25,9 @@ const receiptUpload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-// All receptionist routes require receptionist authentication
+// All receptionist routes require receptionist or super admin authentication
 router.use(authenticateToken);
-router.use(receptionistOnly);
+router.use(authorizeRoles('receptionist', 'superadmin'));
 
 // Get all appointments
 router.get('/appointments', async (req, res) => {
