@@ -1,6 +1,6 @@
-const { cloudinary } = require('./config/cloudinary');
+const { cloudinary } = require('../config/cloudinary');
 const mongoose = require('mongoose');
-const LabReport = require('./models/LabReport');
+const LabReport = require('../models/LabReport');
 require('dotenv').config();
 
 async function testCloudinarySDK() {

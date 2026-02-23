@@ -33,6 +33,7 @@ import Bills from './pages/Bills';
 import Prescriptions from './pages/Prescriptions';
 import LabReports from './pages/LabReports';
 import Profile from './pages/Profile';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 // Components
 import Chatbot from './components/Chatbot';
@@ -94,6 +95,7 @@ function App() {
                 <Route path="patient/prescriptions" element={<ProtectedRoute roles={['patient']}><Prescriptions /></ProtectedRoute>} />
                 <Route path="patient/lab-reports" element={<ProtectedRoute roles={['patient']}><LabReports /></ProtectedRoute>} />
                 <Route path="patient/profile" element={<ProtectedRoute roles={['patient']}><Profile /></ProtectedRoute>} />
+                <Route path="patient/payment-success" element={<ProtectedRoute roles={['patient']}><PaymentSuccess /></ProtectedRoute>} />
               </Route>
 
               {/* 404 Route */}

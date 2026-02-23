@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const Appointment = require('../models/Appointment');
 const Patient = require('../models/Patient');
+const Bill = require('../models/Bill');
 
 // Initialize Razorpay
 let razorpay;
@@ -183,7 +184,7 @@ router.post('/verify', [
     // Verify payment with Razorpay
     try {
       const payment = await razorpay.payments.fetch(razorpay_payment_id);
-      
+
       if (payment.status !== 'captured') {
         return res.status(400).json({
           success: false,
@@ -223,6 +224,167 @@ router.post('/verify', [
   }
 });
 
+// Create Razorpay order for bill payment
+router.post('/create-bill-order', [
+  body('billId').isMongoId()
+], authenticateToken, authorizeRoles('patient'), async (req, res) => {
+  try {
+    const isMock = !razorpay || process.env.RAZORPAY_KEY_ID === 'rzp_test_1234567890abcdef';
+
+    const { billId } = req.body;
+
+    const patient = await Patient.findOne({ userId: req.user._id });
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Patient profile not found'
+      });
+    }
+
+    const bill = await Bill.findById(billId);
+    if (!bill) {
+      return res.status(404).json({
+        success: false,
+        message: 'Bill not found'
+      });
+    }
+
+    if (bill.patientId.toString() !== patient._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    if (bill.status === 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Bill already paid'
+      });
+    }
+
+    const amount = Math.round(bill.total * 100);
+
+    if (isMock) {
+      // Mock flow for testing without real keys
+      const mockOrder = {
+        id: `order_mock_${Date.now()}`,
+        amount,
+        currency: 'INR'
+      };
+
+      bill.paymentDetails = {
+        orderId: mockOrder.id,
+        amount: amount / 100,
+        currency: mockOrder.currency
+      };
+      bill.status = 'pending_payment';
+      await bill.save();
+
+      return res.json({
+        success: true,
+        isMock: true,
+        message: 'Mock order created (Demo Mode)',
+        data: {
+          orderId: mockOrder.id,
+          amount: mockOrder.amount,
+          currency: mockOrder.currency,
+          keyId: 'mock_key'
+        }
+      });
+    }
+
+    const options = {
+      amount: amount,
+      currency: 'INR',
+      receipt: `bill_${billId}`,
+      notes: {
+        billId: billId.toString(),
+        patientId: patient._id.toString()
+      }
+    };
+
+    const order = await razorpay.orders.create(options);
+
+    bill.paymentDetails = {
+      orderId: order.id,
+      amount: amount / 100,
+      currency: order.currency
+    };
+    bill.status = 'pending_payment';
+    await bill.save();
+
+    res.json({
+      success: true,
+      message: 'Order created successfully',
+      data: {
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        keyId: process.env.RAZORPAY_KEY_ID
+      }
+    });
+  } catch (error) {
+    console.error('Create bill order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error creating bill payment order',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Verify Razorpay bill payment
+router.post('/verify-bill', [
+  body('razorpay_order_id').notEmpty(),
+  body('razorpay_payment_id').notEmpty(),
+  body('razorpay_signature').notEmpty(),
+  body('billId').isMongoId()
+], authenticateToken, authorizeRoles('patient'), async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, billId } = req.body;
+
+    const patient = await Patient.findOne({ userId: req.user._id });
+    const bill = await Bill.findById(billId);
+
+    if (!bill || bill.patientId.toString() !== patient._id.toString()) {
+      return res.status(404).json({ success: false, message: 'Bill not found' });
+    }
+
+    // Skip signature verification if it's a mock order
+    if (!razorpay_order_id.startsWith('order_mock_')) {
+      if (!razorpay) {
+        return res.status(503).json({
+          success: false,
+          message: 'Payment service is not configured.'
+        });
+      }
+      const generated_signature = crypto
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest('hex');
+
+      if (generated_signature !== razorpay_signature) {
+        return res.status(400).json({ success: false, message: 'Invalid signature' });
+      }
+    }
+
+    bill.paymentDetails.paymentId = razorpay_payment_id;
+    bill.status = 'paid';
+    bill.paymentMethod = 'online';
+    await bill.save();
+
+    res.json({
+      success: true,
+      message: 'Payment verified successfully',
+      data: { bill }
+    });
+  } catch (error) {
+    console.error('Verify bill error:', error);
+    res.status(500).json({ success: false, message: 'Verification failed' });
+  }
+});
+
 // Get payment status
 router.get('/status/:appointmentId', authenticateToken, async (req, res) => {
   try {
@@ -242,7 +404,7 @@ router.get('/status/:appointmentId', authenticateToken, async (req, res) => {
         }
         query.patientId = patient._id;
         break;
-      
+
       case 'doctor':
         const Doctor = require('../models/Doctor');
         const doctor = await Doctor.findOne({ userId: req.user._id });
@@ -254,12 +416,12 @@ router.get('/status/:appointmentId', authenticateToken, async (req, res) => {
         }
         query.doctorId = doctor._id;
         break;
-      
+
       case 'receptionist':
       case 'superadmin':
         // Can access all
         break;
-      
+
       default:
         return res.status(403).json({
           success: false,

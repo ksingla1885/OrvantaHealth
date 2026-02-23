@@ -30,7 +30,7 @@ const billSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['draft', 'sent', 'paid', 'overdue'],
+    enum: ['draft', 'sent', 'paid', 'overdue', 'pending_payment'],
     default: 'draft'
   },
   dueDate: {
@@ -39,6 +39,12 @@ const billSchema = new mongoose.Schema({
   paymentMethod: {
     type: String,
     enum: ['cash', 'card', 'online', 'insurance']
+  },
+  paymentDetails: {
+    orderId: { type: String },
+    paymentId: { type: String },
+    amount: { type: Number },
+    currency: { type: String, default: 'INR' }
   },
   receipt: {
     type: String // file path
