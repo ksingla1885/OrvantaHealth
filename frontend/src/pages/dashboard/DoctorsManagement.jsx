@@ -16,6 +16,9 @@ const DoctorsManagement = () => {
     days: [],
     timeSlots: []
   });
+  const [leaves, setLeaves] = useState([]);
+  const [newLeaveDate, setNewLeaveDate] = useState('');
+  const [loadingLeaves, setLoadingLeaves] = useState(false);
 
   const ALL_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   const DAY_LABELS = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' };
@@ -110,6 +113,51 @@ const DoctorsManagement = () => {
       toast.error(error.response?.data?.message || 'Failed to update availability');
     } finally {
       setSavingAvailability(false);
+    }
+  };
+
+  const fetchDoctorLeaves = async (doctorId) => {
+    try {
+      setLoadingLeaves(true);
+      const response = await api.get(`/receptionist/doctors/${doctorId}/leaves`);
+      if (response.data.success) {
+        setLeaves(response.data.data.leaves);
+      }
+    } catch (error) {
+      console.error('Failed to fetch leaves:', error);
+      toast.error('Failed to fetch doctor leaves');
+    } finally {
+      setLoadingLeaves(false);
+    }
+  };
+
+  const handleAddLeave = async () => {
+    if (!newLeaveDate) {
+      toast.error('Please select a date');
+      return;
+    }
+
+    try {
+      const response = await api.post(`/receptionist/doctors/${selectedDoctor._id}/leave`, { date: newLeaveDate });
+      if (response.data.success) {
+        toast.success('Leave marked successfully');
+        setLeaves(response.data.data.leaves);
+        setNewLeaveDate('');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to mark leave');
+    }
+  };
+
+  const handleRemoveLeave = async (date) => {
+    try {
+      const response = await api.delete(`/receptionist/doctors/${selectedDoctor._id}/leave/${date}`);
+      if (response.data.success) {
+        toast.success('Leave removed successfully');
+        setLeaves(response.data.data.leaves);
+      }
+    } catch (error) {
+      toast.error('Failed to remove leave');
     }
   };
 
@@ -273,6 +321,7 @@ const DoctorsManagement = () => {
                       onClick={() => {
                         setSelectedDoctor(doctor);
                         setShowDoctorModal(true);
+                        fetchDoctorLeaves(doctor._id);
                       }}
                       className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-brand-dark hover:bg-brand-light transition-all"
                     >
@@ -307,7 +356,7 @@ const DoctorsManagement = () => {
               </div>
             </div>
 
-            <div className="px-12 pt-16 pb-12">
+            <div className="px-12 pt-16 pb-12 overflow-y-auto max-h-[70vh]">
               <div className="flex justify-between items-start mb-10">
                 <div>
                   <h2 className="text-4xl font-black font-display text-brand-dark leading-none mb-2">
@@ -485,6 +534,45 @@ const DoctorsManagement = () => {
                 </div>
               )}
 
+              {/* Leaves Management Section */}
+              <div className="mb-10 p-6 bg-slate-50 rounded-2xl border border-slate-200">
+                <h3 className="font-black text-brand-dark mb-4 flex items-center"><XCircle className="h-5 w-5 mr-2" />Doctor Leaves</h3>
+
+                <div className="flex gap-2 mb-6">
+                  <input
+                    type="date"
+                    value={newLeaveDate}
+                    onChange={(e) => setNewLeaveDate(e.target.value)}
+                    className="flex-1 px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-teal outline-none text-sm"
+                  />
+                  <button
+                    onClick={handleAddLeave}
+                    className="px-6 py-2 bg-brand-dark text-white text-sm font-black rounded-xl hover:bg-brand-dark/90 transition-all"
+                  >
+                    Mark on Leave
+                  </button>
+                </div>
+
+                {loadingLeaves ? (
+                  <div className="flex justify-center p-4">
+                    <div className="loading-spinner h-6 w-6"></div>
+                  </div>
+                ) : leaves.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {leaves.sort().map(date => (
+                      <div key={date} className="flex items-center bg-red-50 text-red-600 border border-red-100 rounded-lg px-3 py-1.5 text-xs font-bold">
+                        {new Date(date).toLocaleDateString()}
+                        <button onClick={() => handleRemoveLeave(date)} className="ml-2 hover:text-red-800 transition-colors">
+                          <XCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400 font-medium italic">No leaves currently scheduled</p>
+                )}
+              </div>
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowDoctorModal(false)}
@@ -502,3 +590,4 @@ const DoctorsManagement = () => {
 };
 
 export default DoctorsManagement;
+

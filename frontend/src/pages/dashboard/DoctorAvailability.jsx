@@ -12,16 +12,19 @@ const DoctorAvailability = () => {
     days: [],
     timeSlots: []
   });
+  const [leaves, setLeaves] = useState([]);
+  const [newLeaveDate, setNewLeaveDate] = useState('');
+  const [loadingLeaves, setLoadingLeaves] = useState(false);
 
   const ALL_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  const DAY_LABELS = { 
-    monday: 'Monday', 
-    tuesday: 'Tuesday', 
-    wednesday: 'Wednesday', 
-    thursday: 'Thursday', 
-    friday: 'Friday', 
-    saturday: 'Saturday', 
-    sunday: 'Sunday' 
+  const DAY_LABELS = {
+    monday: 'Monday',
+    tuesday: 'Tuesday',
+    wednesday: 'Wednesday',
+    thursday: 'Thursday',
+    friday: 'Friday',
+    saturday: 'Saturday',
+    sunday: 'Sunday'
   };
 
   useEffect(() => {
@@ -49,6 +52,52 @@ const DoctorAvailability = () => {
       days: doctor.availability?.days || [],
       timeSlots: doctor.availability?.timeSlots || []
     });
+    fetchDoctorLeaves(doctor._id);
+  };
+
+  const fetchDoctorLeaves = async (doctorId) => {
+    try {
+      setLoadingLeaves(true);
+      const response = await api.get(`/receptionist/doctors/${doctorId}/leaves`);
+      if (response.data.success) {
+        setLeaves(response.data.data.leaves);
+      }
+    } catch (error) {
+      console.error('Failed to fetch leaves:', error);
+      toast.error('Failed to fetch doctor leaves');
+    } finally {
+      setLoadingLeaves(false);
+    }
+  };
+
+  const handleAddLeave = async () => {
+    if (!newLeaveDate) {
+      toast.error('Please select a date');
+      return;
+    }
+
+    try {
+      const response = await api.post(`/receptionist/doctors/${selectedDoctor._id}/leave`, { date: newLeaveDate });
+      if (response.data.success) {
+        toast.success('Leave marked successfully');
+        setLeaves(response.data.data.leaves);
+        setNewLeaveDate('');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to mark leave');
+    }
+  };
+
+  const handleRemoveLeave = async (date) => {
+    try {
+      const response = await api.delete(`/receptionist/doctors/${selectedDoctor._id}/leave/${date}`);
+      if (response.data.success) {
+        toast.success('Leave removed successfully');
+        setLeaves(response.data.data.leaves);
+      }
+    } catch (error) {
+      toast.error('Failed to remove leave');
+    }
   };
 
   const handleDayToggle = (day) => {
@@ -161,11 +210,10 @@ const DoctorAvailability = () => {
                 <button
                   key={doctor._id}
                   onClick={() => handleSelectDoctor(doctor)}
-                  className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                    selectedDoctor?._id === doctor._id
+                  className={`w-full p-4 rounded-lg border-2 transition-all text-left ${selectedDoctor?._id === doctor._id
                       ? 'border-brand-teal bg-brand-light'
                       : 'border-gray-200 hover:border-brand-teal/50'
-                  }`}
+                    }`}
                 >
                   <p className="font-semibold text-gray-900">
                     Dr. {doctor.userId.profile.firstName} {doctor.userId.profile.lastName}
@@ -253,6 +301,44 @@ const DoctorAvailability = () => {
                   >
                     + Add Time Slot
                   </button>
+                </div>
+
+                {/* Leaves Management */}
+                <div className="border-t pt-6">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Mark Doctor on Leave
+                  </label>
+                  <div className="flex gap-2 mb-4">
+                    <input
+                      type="date"
+                      value={newLeaveDate}
+                      onChange={(e) => setNewLeaveDate(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <button
+                      onClick={handleAddLeave}
+                      className="px-4 py-2 bg-brand-dark text-white text-sm font-semibold rounded-lg hover:bg-brand-dark/90 transition-colors"
+                    >
+                      Mark Leave
+                    </button>
+                  </div>
+
+                  {loadingLeaves ? (
+                    <p className="text-xs text-gray-400 italic">Loading leaves...</p>
+                  ) : leaves.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {leaves.sort().map(date => (
+                        <div key={date} className="flex items-center bg-red-50 text-red-700 border border-red-200 rounded-lg px-3 py-1 text-xs font-semibold">
+                          {new Date(date).toLocaleDateString()}
+                          <button onClick={() => handleRemoveLeave(date)} className="ml-2 hover:text-red-900">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">No leaves marked</p>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

@@ -49,7 +49,10 @@ const doctorSchema = new mongoose.Schema({
   department: {
     type: String,
     required: true
-  }
+  },
+  leaves: [{
+    type: String // YYYY-MM-DD
+  }]
 }, {
   timestamps: true
 });

@@ -247,9 +247,12 @@ const Bills = () => {
                       </span>
                     </div>
 
-                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600">
-                      <div className="flex items-center font-medium text-gray-900">
-                        Total: ₹{bill.total}
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-600">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-black text-brand-dark font-display tracking-tight">
+                          ₹{Number(bill.total).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-xs text-gray-400 font-medium">total due</span>
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-2" />

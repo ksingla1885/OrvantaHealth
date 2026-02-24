@@ -18,6 +18,8 @@ const BookAppointment = () => {
   const [symptoms, setSymptoms] = useState('');
   const [consultationType, setConsultationType] = useState('in-person');
   const [bookedSlots, setBookedSlots] = useState([]);
+  const [leaveDates, setLeaveDates] = useState([]);
+  const [availableDays, setAvailableDays] = useState([]); // e.g. ['monday', 'wednesday']
 
   useEffect(() => {
     fetchDoctors();
@@ -47,10 +49,15 @@ const BookAppointment = () => {
     try {
       const response = await api.get(`/patient/doctor/${selectedDoctor._id}/availability`);
       if (response.data.success) {
-        // Filter booked slots for the selected date
-        const booked = response.data.data.bookedSlots.filter(
-          slot => format(new Date(slot.date), 'yyyy-MM-dd') === selectedDate
-        ).map(slot => slot.timeSlot.start);
+        const data = response.data.data;
+        // Store doctor's available weekdays
+        setAvailableDays(data.availability?.days || []);
+        setLeaveDates(data.leaves || []);
+
+        // Filter already-booked slots for the currently selected date
+        const booked = data.bookedSlots
+          .filter(slot => format(new Date(slot.date), 'yyyy-MM-dd') === selectedDate)
+          .map(slot => slot.timeSlot.start);
         setBookedSlots(booked);
       }
     } catch (error) {
@@ -81,6 +88,32 @@ const BookAppointment = () => {
       console.error('Booking error:', error);
       toast.error(error.response?.data?.message || 'Failed to book appointment');
     }
+  };
+
+  // Helper: check if a date string falls on a doctor's working day and is not a leave
+  const isDateAvailable = (dateStr) => {
+    if (!availableDays.length) return true; // no filter until doctor is selected
+    const weekDay = format(new Date(dateStr), 'EEEE').toLowerCase();
+    return availableDays.includes(weekDay) && !leaveDates.includes(dateStr);
+  };
+
+  // When doctor is picked, jump to Step 2 and auto-select the first valid date
+  const handleDoctorSelect = (doctor) => {
+    setSelectedDoctor(doctor);
+    const days = doctor.availability?.days || [];
+    setAvailableDays(days);
+    // Find first valid date in next 28 days
+    for (let i = 0; i < 28; i++) {
+      const d = addDays(startOfToday(), i);
+      const dateStr = format(d, 'yyyy-MM-dd');
+      const weekDay = format(d, 'EEEE').toLowerCase();
+      if (days.includes(weekDay)) {
+        setSelectedDate(dateStr);
+        break;
+      }
+    }
+    setSelectedSlot(null);
+    nextStep();
   };
 
   const nextStep = () => setStep(step + 1);
@@ -122,7 +155,7 @@ const BookAppointment = () => {
             {doctors.map((doctor) => (
               <div
                 key={doctor._id}
-                onClick={() => { setSelectedDoctor(doctor); nextStep(); }}
+                onClick={() => handleDoctorSelect(doctor)}
                 className={`card p-4 cursor-pointer hover:border-primary-500 border-2 transition-all ${selectedDoctor?._id === doctor._id ? 'border-primary-500 bg-primary-50' : 'border-transparent'
                   }`}
               >
@@ -157,29 +190,45 @@ const BookAppointment = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Calendar Placeholder / Date Selection */}
+            {/* Date Selection */}
             <div className="card p-4">
-              <h3 className="font-medium mb-4 flex items-center">
+              <h3 className="font-medium mb-1 flex items-center">
                 <Calendar className="h-5 w-5 mr-2 text-primary-600" /> Choose Date
               </h3>
+              <p className="text-xs text-gray-400 mb-4">
+                Only Dr. {selectedDoctor?.userId?.profile?.firstName}'s working days are selectable.
+              </p>
               <div className="grid grid-cols-4 gap-2">
-                {[...Array(8)].map((_, i) => {
+                {[...Array(28)].map((_, i) => {
                   const date = addDays(startOfToday(), i);
-                  const isSelected = format(date, 'yyyy-MM-dd') === selectedDate;
+                  const dateStr = format(date, 'yyyy-MM-dd');
+                  const weekDay = format(date, 'EEEE').toLowerCase();
+                  const isWorking = availableDays.length === 0 || availableDays.includes(weekDay);
+                  const isOnLeave = leaveDates.includes(dateStr);
+                  const isDisabled = !isWorking || isOnLeave;
+                  const isSelected = dateStr === selectedDate;
                   const dayName = format(date, 'EEE');
                   const dayNum = format(date, 'd');
+
+                  // Hide non-working days entirely — keeps the grid clean
+                  if (!isWorking) return null;
 
                   return (
                     <button
                       key={i}
-                      onClick={() => setSelectedDate(format(date, 'yyyy-MM-dd'))}
-                      className={`flex flex-col items-center p-3 rounded-lg border transition-all ${isSelected
-                        ? 'bg-primary-600 border-primary-600 text-white'
-                        : 'bg-white border-gray-200 text-gray-900 hover:border-primary-400'
+                      disabled={isDisabled}
+                      onClick={() => { if (!isDisabled) { setSelectedDate(dateStr); setSelectedSlot(null); } }}
+                      className={`flex flex-col items-center p-3 rounded-lg border transition-all ${isOnLeave
+                          ? 'bg-red-50 border-red-200 text-red-400 cursor-not-allowed opacity-70'
+                          : isSelected
+                            ? 'bg-primary-600 border-primary-600 text-white shadow-md'
+                            : 'bg-white border-gray-200 text-gray-900 hover:border-primary-400 hover:shadow'
                         }`}
+                      title={isOnLeave ? 'Doctor is on leave' : ''}
                     >
                       <span className="text-xs uppercase opacity-75">{dayName}</span>
                       <span className="text-lg font-bold">{dayNum}</span>
+                      {isOnLeave && <span className="text-[8px] font-bold text-red-400 mt-0.5 leading-tight">Leave</span>}
                     </button>
                   );
                 })}

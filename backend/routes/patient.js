@@ -141,7 +141,8 @@ router.get('/doctor/:doctorId/availability', async (req, res) => {
       data: {
         doctor,
         availability: doctor.availability,
-        bookedSlots: bookedAppointments
+        bookedSlots: bookedAppointments,
+        leaves: doctor.leaves || []
       }
     });
   } catch (error) {

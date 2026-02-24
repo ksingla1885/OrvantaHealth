@@ -46,6 +46,15 @@ router.post('/book', [
       });
     }
 
+    // Check if doctor is on leave on this date
+    const dateString = appointmentDate.toISOString().split('T')[0];
+    if (doctor.leaves && doctor.leaves.includes(dateString)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Doctor is on leave on this date'
+      });
+    }
+
     // Check if time slot is within doctor's available hours
     const isTimeSlotValid = doctor.availability.timeSlots.some(slot => {
       return timeSlot.start >= slot.start && timeSlot.end <= slot.end;

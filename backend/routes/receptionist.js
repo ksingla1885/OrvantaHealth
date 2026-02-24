@@ -242,6 +242,115 @@ router.patch('/doctors/:doctorId/availability', [
   }
 });
 
+// Get doctor leaves
+router.get('/doctors/:doctorId/leaves', async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const doctor = await Doctor.findById(doctorId).select('leaves');
+
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { leaves: doctor.leaves || [] }
+    });
+  } catch (error) {
+    console.error('Get doctor leaves error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching doctor leaves'
+    });
+  }
+});
+
+// Add doctor leave
+router.post('/doctors/:doctorId/leave', [
+  body('date').isISO8601().withMessage('Please provide a valid date (YYYY-MM-DD)')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { doctorId } = req.params;
+    const { date } = req.body;
+    const leaveDate = date.split('T')[0]; // Ensure it's YYYY-MM-DD
+
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor not found'
+      });
+    }
+
+    if (!doctor.leaves) doctor.leaves = [];
+
+    if (doctor.leaves.includes(leaveDate)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Leave already marked for this date'
+      });
+    }
+
+    doctor.leaves.push(leaveDate);
+    await doctor.save();
+
+    res.json({
+      success: true,
+      message: 'Leave marked successfully',
+      data: { leaves: doctor.leaves }
+    });
+  } catch (error) {
+    console.error('Add doctor leave error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error marking leave'
+    });
+  }
+});
+
+// Remove doctor leave
+router.delete('/doctors/:doctorId/leave/:date', async (req, res) => {
+  try {
+    const { doctorId, date } = req.params;
+
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor not found'
+      });
+    }
+
+    doctor.leaves = doctor.leaves.filter(l => l !== date);
+    await doctor.save();
+
+    res.json({
+      success: true,
+      message: 'Leave removed successfully',
+      data: { leaves: doctor.leaves }
+    });
+  } catch (error) {
+    console.error('Remove doctor leave error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error removing leave'
+    });
+  }
+});
+
+
 // Create bill
 router.post('/bill', [
   body('patientId').isMongoId(),
