@@ -8,15 +8,22 @@ import {
   Users,
   Calendar,
   FileText,
-  DollarSign,
   TestTube,
   User,
-
   LogOut,
   Building,
   UserPlus,
   BarChart3
 } from 'lucide-react';
+
+// Rupee icon as a component so it works like any lucide icon in the sidebar
+const RupeeIcon = ({ className }) => (
+  <span className={`inline-flex items-center justify-center font-black leading-none ${className}`}
+    style={{ fontSize: '1.1em' }}
+  >
+    ₹
+  </span>
+);
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -124,7 +131,7 @@ const Layout = () => {
           {
             name: 'Bills',
             href: '/receptionist/bills',
-            icon: DollarSign,
+            icon: RupeeIcon,
             current: location.pathname.includes('/bills'),
           },
           {
@@ -159,7 +166,7 @@ const Layout = () => {
           {
             name: 'Bills',
             href: '/patient/bills',
-            icon: DollarSign,
+            icon: RupeeIcon,
             current: location.pathname.includes('/bills'),
           },
           {

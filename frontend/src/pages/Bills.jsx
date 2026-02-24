@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { DollarSign, FileText, Download, CheckCircle, Clock, AlertCircle, Plus, Info, ShieldCheck, X } from 'lucide-react';
+import { FileText, Download, CheckCircle, Clock, AlertCircle, Plus, Info, ShieldCheck, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
@@ -234,8 +234,8 @@ const Bills = () => {
             <div key={bill._id} className="card p-5 hover:shadow-md transition-shadow">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start space-x-4">
-                  <div className="bg-yellow-100 p-3 rounded-full">
-                    <DollarSign className="h-6 w-6 text-yellow-600" />
+                  <div className="bg-brand-light h-12 w-12 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-brand-teal font-black text-xl">₹</span>
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
@@ -298,7 +298,7 @@ const Bills = () => {
           ))
         ) : (
           <div className="card p-12 text-center border-dashed">
-            <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <span className="block text-5xl text-gray-300 mx-auto mb-4 font-black">₹</span>
             <h3 className="text-lg font-medium text-gray-900">No bills found</h3>
             <p className="text-gray-500 max-w-xs mx-auto mt-2">
               You don't have any medical bills at the moment.
