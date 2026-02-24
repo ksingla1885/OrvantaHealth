@@ -5,6 +5,7 @@ import { Calendar, Clock, User, UserCheck, XCircle, CheckCircle, AlertCircle, Fi
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import PrescriptionModal from '../components/PrescriptionModal';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const Appointments = () => {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ const Appointments = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, appointmentId: null });
 
   useEffect(() => {
     fetchAppointments();
@@ -36,8 +38,13 @@ const Appointments = () => {
   };
 
   const handleCancel = async (appointmentId) => {
-    if (!window.confirm('Are you sure you want to cancel this appointment?')) return;
+    // Open the custom confirm dialog instead of window.confirm
+    setConfirmDialog({ open: true, appointmentId });
+  };
 
+  const confirmCancel = async () => {
+    const appointmentId = confirmDialog.appointmentId;
+    setConfirmDialog({ open: false, appointmentId: null });
     try {
       const response = await api.patch(`/appointments/${appointmentId}/cancel`, {
         reason: 'Cancelled by patient'
@@ -231,8 +238,8 @@ const Appointments = () => {
                         <button
                           onClick={() => openPrescriptionModal(appointment)}
                           className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${appointment.prescription
-                              ? 'bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200'
-                              : 'bg-brand-dark text-white hover:bg-slate-800'
+                            ? 'bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200'
+                            : 'bg-brand-dark text-white hover:bg-slate-800'
                             }`}
                         >
                           <FileText className="h-4 w-4" />
@@ -340,6 +347,18 @@ const Appointments = () => {
           onSuccess={fetchAppointments}
         />
       )}
+
+      {/* Cancel Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.open}
+        title="Cancel Appointment?"
+        message="Are you sure you want to cancel this appointment? This action cannot be undone."
+        confirmLabel="Yes, Cancel It"
+        cancelLabel="Keep Appointment"
+        variant="danger"
+        onConfirm={confirmCancel}
+        onCancel={() => setConfirmDialog({ open: false, appointmentId: null })}
+      />
     </div>
   );
 };
