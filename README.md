@@ -8,15 +8,17 @@ Ready to deploy? Follow these quick steps:
 - **Frontend**: Deploy to Vercel in 2 minutes
 - **Backend**: Deploy to Render/Railway in 3 minutes
 
-👉 **[Quick Start Guide](./DEPLOYMENT_QUICK_START.md)** | **[Full Deployment Guide](./DEPLOYMENT.md)** | **[Pre-Launch Checklist](./PRODUCTION_CHECKLIST.md)**
+👉 **[Full Deployment Guide](./DEPLOYMENT.md)** | **[Production Checklist](./PRODUCTION_CHECKLIST.md)**
 
-**Pre-deployment verification:**
+**Quick deployment commands:**
 ```bash
 # Windows
 build-production.bat
+vercel-deploy.bat
 
 # macOS/Linux
 bash build-production.sh
+bash vercel-deploy.sh
 ```
 
 ## 🎯 Features
