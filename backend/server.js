@@ -60,6 +60,15 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Root endpoint for simple health check when visiting the URL
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'OrvantaHealth Backend API is successfully running on Vercel!',
+    version: '1.0.0'
+  });
+});
+
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/orvantahealth', {
   useNewUrlParser: true,
