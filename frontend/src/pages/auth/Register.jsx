@@ -89,7 +89,7 @@ const Register = () => {
             Register as Patient
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Join MediCore Hospital Management System
+            Join OrvantaHealth Hospital Management System
           </p>
         </div>
 

@@ -80,16 +80,6 @@ export const ChatbotProvider = ({ children }) => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to send message';
       dispatch({ type: 'SET_ERROR', payload: errorMessage });
-
-      // Add error message from bot
-      dispatch({
-        type: 'ADD_MESSAGE',
-        payload: {
-          type: 'bot',
-          content: 'Sorry, I encountered an error. Please try again later.',
-          timestamp: new Date(),
-        },
-      });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -100,7 +90,7 @@ export const ChatbotProvider = ({ children }) => {
       type: 'ADD_MESSAGE',
       payload: {
         type: 'bot',
-        content: 'Hello! I\'m MediCore\'s medical assistant. How can I help you with your health-related questions today?',
+        content: 'Hello! I\'m OrvantaHealth\'s medical assistant. How can I help you with your health-related questions today?',
         timestamp: new Date(),
       },
     });

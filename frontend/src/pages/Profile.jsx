@@ -304,7 +304,7 @@ const PatientProfile = ({ user }) => {
           <div className="text-white">
             <h1 className="text-2xl font-black tracking-tight drop-shadow">{fullName}</h1>
             <p className="opacity-90 flex items-center text-sm font-medium mt-1">
-              <Shield className="h-3.5 w-3.5 mr-1.5" /> MediCore Member
+              <Shield className="h-3.5 w-3.5 mr-1.5" /> OrvantaHealth Member
             </p>
           </div>
         </div>

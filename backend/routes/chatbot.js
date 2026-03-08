@@ -23,7 +23,13 @@ const healthKeywords = [
   'lab', 'x-ray', 'mri', 'checkup', 'vaccination', 'immunity', 'allergy',
   'nutrition', 'diet', 'exercise', 'fitness', 'mental health', 'stress',
   'anxiety', 'depression', 'sleep', 'weight', 'obesity', 'cholesterol',
-  'first aid', 'emergency', 'ambulance', 'pharmacy', 'nurse', 'specialist'
+  'first aid', 'emergency', 'ambulance', 'pharmacy', 'nurse', 'specialist',
+  'cardiologist', 'physician', 'dose', 'ointment', 'syrup', 'flu', 'covid',
+  'vaccine', 'infection', 'allergy', 'bone', 'muscle', 'joint', 'brain',
+  'vision', 'dental', 'stomach', 'digestion', 'heartbeat', 'sugar', 'glucose',
+  'insulin', 'patient', 'appointment', 'scanning', 'therapy', 'rehab', 'healing',
+  'wellness', 'hygiene', 'wound', 'injury', 'fracture', 'trauma', 'sore',
+  'nausea', 'vomit', 'dizziness', 'seizure', 'spasm', 'allergen', 'fatigue'
 ];
 
 // Check if query is health-related
@@ -37,19 +43,19 @@ const generateGroqResponse = async (query, apiKey) => {
   const Groq = require('groq-sdk');
   const groq = new Groq({ apiKey });
 
-  const systemPrompt = `You are a helpful medical assistant chatbot for OrvantaHealth Hospital Management System. 
-  Your role is to provide general health information and guidance only. 
-  Always include the following disclaimer: "I am an AI assistant and not a medical professional. Please consult with a qualified healthcare provider for medical advice, diagnosis, or treatment."
+  const systemPrompt = `You are a dedicated Healthcare and Medical Assistant for the OrvantaHealth Hospital Management System. 
   
-  Guidelines:
-  - Only answer health, medical, and healthcare-related questions
-  - Provide general information, not specific medical advice
-  - Always recommend consulting healthcare professionals for specific concerns
-  - Be empathetic and professional
-  - If asked about non-medical topics, politely decline and say you can only help with healthcare-related topics
-  - Never provide emergency medical advice - always direct to emergency services for urgent situations
+  CRITICAL RULE: You MUST ONLY answer questions regarding healthcare, medicine, health advice, hospital operations, or wellness. 
   
-  User Query: ${query}`;
+  Strict Limitations:
+  1. DO NOT answer questions about general knowledge, history, politics, sports, entertainment, technology (unrelated to health), or any other non-healthcare topics.
+  2. If the user asks a non-healthcare question, you must politely decline and state: "I am specialized only in healthcare-related topics. Please ask me questions about health, medical conditions, doctors, medicines, or OrvantaHealth hospital services."
+  3. Always include this disclaimer: "I am an AI assistant and not a medical professional. Please consult with a qualified healthcare provider for medical advice, diagnosis, or treatment."
+  4. Never provide specific prescriptions or dosages.
+  5. For emergencies, always tell the user to contact emergency services (like 911 or their local equivalent) immediately.
+  6. Be professional, empathetic, and concise.
+
+  Remember: If it's not about health, medicine, or the hospital, DO NOT answer it.`;
 
   try {
     const chatCompletion = await groq.chat.completions.create({
@@ -63,8 +69,8 @@ const generateGroqResponse = async (query, apiKey) => {
           content: query
         }
       ],
-      model: "llama2-70b-4096",
-      temperature: 0.5,
+      model: "llama-3.3-70b-versatile", // Using a newer, more capable model
+      temperature: 0.3, // Lower temperature for more factual and constrained responses
       max_tokens: 500
     });
 
@@ -78,7 +84,7 @@ const generateGroqResponse = async (query, apiKey) => {
 // Chatbot endpoint
 router.post('/chat', [
   body('message').notEmpty().trim().isLength({ max: 500 })
-], authenticateToken, chatbotLimiter, async (req, res) => {
+], chatbotLimiter, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

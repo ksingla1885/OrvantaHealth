@@ -24,7 +24,7 @@ bash vercel-deploy.sh
 ## 🎯 Features
 
 ### 🔐 Authentication & Role System
-- **Super Admin** (Hardcoded: `admin@medicore.in` / `Welcomeadmin`)
+- **Super Admin** (Hardcoded: `admin@orvantahealth.in` / `Welcomeadmin`)
 - **Staff Accounts** (Doctor, Receptionist, Staff) - Created by Super Admin only
 - **Patient Registration** (Public signup)
 - JWT-based authentication with refresh tokens
@@ -138,7 +138,7 @@ cp backend/.env.example backend/.env
 Edit `backend/.env` with your credentials:
 ```env
 # Database
-MONGODB_URI=mongodb://localhost:27017/medicore
+MONGODB_URI=mongodb://localhost:27017/orvanta
 
 # JWT
 JWT_SECRET=your_super_secret_jwt_key_here
@@ -188,7 +188,7 @@ The application will be available at:
 ## 📱 Default Credentials
 
 ### Super Admin
-- **Email**: admin@medicore.in
+- **Email**: admin@orvantahealth.in
 - **Password**: Welcomeadmin
 
 ### First Steps
@@ -340,4 +340,4 @@ For support and questions:
 
 ---
 
-**MediCore** - Transforming Healthcare Management with Technology 🏥✨
+**OrvantaHealth** - Transforming Healthcare Management with Technology 🏥✨

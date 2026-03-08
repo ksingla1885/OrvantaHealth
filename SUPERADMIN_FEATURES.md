@@ -5,7 +5,7 @@ The SuperAdmin module provides comprehensive administrative control over the Int
 
 ## Authentication
 - **Default SuperAdmin Account:**
-  - Email: `admin@medicore.in`
+  - Email: `admin@orvantahealth.in`
   - Password: `Welcomeadmin`
   - Role: `superadmin`
 

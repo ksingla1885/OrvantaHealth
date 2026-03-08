@@ -55,13 +55,19 @@ const Chatbot = () => {
       <div className="chatbot-window open">
         {/* Header */}
         <div className="chatbot-header">
-          <div className="flex items-center space-x-2">
-            <Bot className="w-5 h-5" />
-            <h3 className="font-semibold">MediCore Assistant</h3>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Bot className="w-6 h-6" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-brand-dark rounded-full"></span>
+            </div>
+            <div>
+              <h3 className="font-bold text-base leading-tight">OrvantaHealth Assistant</h3>
+              <p className="text-[10px] text-brand-light/70 uppercase tracking-widest font-bold">Always Online</p>
+            </div>
           </div>
           <button
             onClick={toggleChatbot}
-            className="text-white hover:text-gray-200 transition-colors"
+            className="p-2 hover:bg-white/10 rounded-full transition-colors"
             aria-label="Close chatbot"
           >
             <X className="w-5 h-5" />
@@ -73,66 +79,74 @@ const Chatbot = () => {
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`chatbot-message ${message.type} flex items-start space-x-2`}
+              className={`chatbot-message ${message.type} flex items-start gap-3`}
             >
-              {message.type === 'bot' && <Bot className="w-4 h-4 mt-1 flex-shrink-0" />}
-              {message.type === 'user' && <User className="w-4 h-4 mt-1 flex-shrink-0" />}
-              <div className="flex-1">
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {new Date(message.timestamp).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
+              {message.type === 'bot' && (
+                <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center flex-shrink-0 border border-brand-dark/10">
+                  <Bot className="w-4 h-4 text-brand-dark" />
+                </div>
+              )}
+              <div className="flex-1 overflow-hidden">
+                <p className="text-[13.5px] font-medium leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
+                <div className={`flex items-center mt-1.5 gap-1.5 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <span className="text-[10px] opacity-60 font-semibold uppercase tracking-wider">
+                    {new Date(message.timestamp).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                  {message.type === 'user' && <User className="w-2.5 h-2.5 opacity-60" />}
+                </div>
               </div>
             </div>
           ))}
-          
+
           {isLoading && (
-            <div className="chatbot-message bot flex items-center space-x-2">
-              <Bot className="w-4 h-4 mt-1 flex-shrink-0" />
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="chatbot-message bot flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center flex-shrink-0 border border-brand-dark/10">
+                <Bot className="w-4 h-4 text-brand-dark" />
+              </div>
+              <div className="flex space-x-1 mt-3">
+                <div className="w-1.5 h-1.5 bg-brand-dark/30 rounded-full animate-bounce"></div>
+                <div className="w-1.5 h-1.5 bg-brand-dark/30 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-1.5 h-1.5 bg-brand-dark/30 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
               </div>
             </div>
           )}
-          
+
           {error && (
-            <div className="chatbot-message bot bg-red-100 text-red-800">
-              <p className="text-sm">{error}</p>
+            <div className="mx-4 p-3 bg-red-50 border border-red-100 rounded-xl text-center">
+              <p className="text-[11px] text-red-600 font-bold uppercase tracking-tight">{error}</p>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="chatbot-input-container">
-          <div className="flex space-x-2">
+          <div className="relative flex items-center">
             <input
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask about health, medical conditions, doctors..."
-              className="chatbot-input"
+              placeholder="Type your health query..."
+              className="chatbot-input pr-12"
               disabled={isLoading}
               maxLength={500}
             />
             <button
               type="submit"
               disabled={!inputMessage.trim() || isLoading}
-              className="btn btn-primary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute right-2 w-10 h-10 flex items-center justify-center rounded-xl bg-brand-dark text-white shadow-sm hover:bg-opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               aria-label="Send message"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            I can only help with healthcare-related topics.
+          <p className="text-[10px] text-slate-400 mt-2 text-center uppercase tracking-widest font-bold">
+            Healthcare Assistant • Medical Guidance Only
           </p>
         </form>
       </div>
