@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import {
   TrendingUp, Users, Calendar, DollarSign, Activity,
-  Download, Filter, ChevronDown
+  Download, Filter, ChevronDown, X
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
@@ -15,6 +15,10 @@ const DetailedAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('7d');
   const [chartData, setChartData] = useState([]);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportType, setExportType] = useState('users');
+  const [exportFormat, setExportFormat] = useState('csv');
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchAnalytics();
@@ -82,8 +86,30 @@ const DetailedAnalytics = () => {
 
   const [departmentData, setDepartmentData] = useState([]);
 
-  const exportReport = () => {
-    toast.success('Analytics report downloaded successfully');
+  const handleExport = async (e) => {
+    e.preventDefault();
+    setExporting(true);
+    try {
+      const response = await api.get(`/admin/export?type=${exportType}&format=${exportFormat}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${exportType}_report_${new Date().toISOString().split('T')[0]}.${exportFormat}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      setShowExportModal(false);
+      toast.success('Report downloaded successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export report');
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading) {
@@ -117,7 +143,7 @@ const DetailedAnalytics = () => {
             <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           </div>
           <button
-            onClick={exportReport}
+            onClick={() => setShowExportModal(true)}
             className="btn btn-secondary flex items-center"
           >
             <Download className="h-4 w-4 mr-2" />
@@ -328,6 +354,105 @@ const DetailedAnalytics = () => {
           <p className="text-gray-500 text-center py-8">No data available</p>
         )}
       </div>
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl animate-scale-in">
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black text-brand-dark font-display">Export Report</h3>
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  <X className="h-6 w-6 text-slate-400" />
+                </button>
+              </div>
+
+              <form onSubmit={handleExport} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">
+                    Report Category
+                  </label>
+                  <select
+                    value={exportType}
+                    onChange={(e) => setExportType(e.target.value)}
+                    className="input w-full"
+                  >
+                    <option value="users">System Users</option>
+                    <option value="patients">Patient Records</option>
+                    <option value="doctors">Doctor Directory</option>
+                    <option value="receptionists">Receptionist Team</option>
+                    <option value="appointments">Appointment History</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">
+                    File Format
+                  </label>
+                  <div className="flex gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setExportFormat('csv')}
+                      className={`flex-1 p-4 rounded-2xl border-2 transition-all font-bold ${
+                        exportFormat === 'csv'
+                          ? 'border-brand-teal bg-brand-light text-brand-teal shadow-lg'
+                          : 'border-slate-100 text-slate-400 hover:border-slate-200'
+                      }`}
+                    >
+                      CSV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExportFormat('pdf')}
+                      className={`flex-1 p-4 rounded-2xl border-2 transition-all font-bold ${
+                        exportFormat === 'pdf'
+                          ? 'border-brand-teal bg-brand-light text-brand-teal shadow-lg'
+                          : 'border-slate-100 text-slate-400 hover:border-slate-200'
+                      }`}
+                    >
+                      PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExportFormat('json')}
+                      className={`flex-1 p-4 rounded-2xl border-2 transition-all font-bold ${
+                        exportFormat === 'json'
+                          ? 'border-brand-teal bg-brand-light text-brand-teal shadow-lg'
+                          : 'border-slate-100 text-slate-400 hover:border-slate-200'
+                      }`}
+                    >
+                      JSON
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    disabled={exporting}
+                    className="btn btn-primary w-full py-4 text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all flex items-center justify-center"
+                  >
+                    {exporting ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        <span>Processing...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Download className="h-5 w-5" />
+                        <span>Download {exportType} Report</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
