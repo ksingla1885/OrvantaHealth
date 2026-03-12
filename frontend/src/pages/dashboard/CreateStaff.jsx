@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { UserPlus, Eye, EyeOff } from 'lucide-react';
 import api from '../../services/api';
@@ -24,17 +25,69 @@ const CreateStaff = () => {
             phone: ''
         }
     });
+    
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const editId = searchParams.get('edit');
+    const isEditMode = !!editId;
+
+    useEffect(() => {
+        if (isEditMode) {
+            fetchStaffDetails();
+        }
+    }, [editId]);
+
+    const fetchStaffDetails = async () => {
+        setLoading(true);
+        try {
+            const response = await api.get(`/admin/staff/${editId}`);
+            if (response.data.success) {
+                const staff = response.data.data;
+                reset({
+                    role: staff.role,
+                    email: staff.email,
+                    firstName: staff.profile.firstName,
+                    lastName: staff.profile.lastName,
+                    phone: staff.profile.phone || '',
+                    specialization: staff.specialization || '',
+                    qualifications: staff.qualifications || '',
+                    experience: staff.experience || '',
+                    licenseNumber: staff.licenseNumber || '',
+                    consultationFee: staff.consultationFee || '',
+                    department: staff.department || ''
+                });
+            }
+        } catch (error) {
+            toast.error('Failed to fetch staff details');
+        } finally {
+            setLoading(true); // Keep loading false will be set by onSubmit or after fetch
+            setLoading(false);
+        }
+    };
 
     const role = watch('role');
 
     const onSubmit = async (data) => {
         setLoading(true);
         try {
-            const response = await api.post('/admin/create-staff', data);
+            let response;
+            if (isEditMode) {
+                response = await api.patch(`/admin/update-staff/${editId}`, data);
+            } else {
+                response = await api.post('/admin/create-staff', data);
+            }
 
             if (response.data.success) {
-                toast.success(`${data.role.charAt(0).toUpperCase() + data.role.slice(1)} account created successfully`);
-                reset();
+                toast.success(isEditMode 
+                    ? 'Staff account updated successfully' 
+                    : `${data.role.charAt(0).toUpperCase() + data.role.slice(1)} account created successfully`
+                );
+                
+                if (isEditMode) {
+                    navigate(data.role === 'doctor' ? '/dashboard/doctors' : '/dashboard/staff');
+                } else {
+                    reset();
+                }
             }
         } catch (error) {
             const errorData = error.response?.data;
@@ -42,7 +95,7 @@ const CreateStaff = () => {
                 const errorMsg = errorData.errors.map(err => err.msg || err.message).join(', ');
                 toast.error(`Validation failed: ${errorMsg}`);
             } else {
-                toast.error(errorData?.message || 'Failed to create staff account');
+                toast.error(errorData?.message || 'Failed to process staff account');
             }
         } finally {
             setLoading(false);
@@ -57,10 +110,10 @@ const CreateStaff = () => {
                     <span className="text-[10px] font-black uppercase tracking-widest">Administrative Panel</span>
                 </div>
                 <h1 className="text-4xl font-extrabold text-brand-dark tracking-tight font-display mb-2">
-                    Create Staff Account
+                    {isEditMode ? 'Update Staff Account' : 'Create Staff Account'}
                 </h1>
                 <p className="text-slate-500 font-medium text-lg">
-                    Add a new doctor or receptionist to the system
+                    {isEditMode ? `Updating details for ${watch('firstName')} ${watch('lastName')}` : 'Add a new doctor or receptionist to the system'}
                 </p>
             </div>
 
@@ -75,7 +128,8 @@ const CreateStaff = () => {
                         </label>
                         <select
                             {...register('role', { required: 'Role is required' })}
-                            className="input text-lg font-bold"
+                            className={`input text-lg font-bold ${isEditMode ? 'bg-slate-50 cursor-not-allowed' : ''}`}
+                            disabled={isEditMode}
                         >
                             <option value="doctor">Doctor</option>
                             <option value="receptionist">Receptionist</option>
@@ -119,34 +173,37 @@ const CreateStaff = () => {
                         </div>
 
                         {/* Security */}
-                        <div className="space-y-6">
+                        <div className={`space-y-6 ${isEditMode ? 'opacity-50 pointer-events-none' : ''}`}>
                             <h3 className="text-sm font-black text-brand-dark uppercase tracking-widest border-l-4 border-brand-teal pl-3">Security</h3>
                             <div>
-                                <label className="label">Initial Access Password *</label>
+                                <label className="label">Initial Access Password {isEditMode ? '(Encrypted)' : '*'}</label>
                                 <div className="relative">
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         {...register('password', {
-                                            required: 'Password is required',
+                                            required: !isEditMode && 'Password is required',
                                             minLength: {
                                                 value: 6,
                                                 message: 'Password must be at least 6 characters'
                                             }
                                         })}
                                         className="input pr-12 font-mono"
-                                        placeholder="••••••••"
+                                        placeholder={isEditMode ? '••••••••' : '••••••••'}
+                                        disabled={isEditMode}
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-brand-teal transition-colors"
-                                    >
-                                        {showPassword ? (
-                                            <EyeOff className="h-5 w-5" />
-                                        ) : (
-                                            <Eye className="h-5 w-5" />
-                                        )}
-                                    </button>
+                                    {!isEditMode && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-brand-teal transition-colors"
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="h-5 w-5" />
+                                            ) : (
+                                                <Eye className="h-5 w-5" />
+                                            )}
+                                        </button>
+                                    )}
                                 </div>
                                 {errors.password && (
                                     <p className="mt-2 text-xs font-bold text-rose-500 uppercase tracking-tighter">{errors.password.message}</p>
@@ -170,13 +227,16 @@ const CreateStaff = () => {
                                             message: 'Email must end with @orvanta.com'
                                         }
                                     })}
-                                    className="input"
+                                    className={`input ${isEditMode ? 'bg-slate-50 cursor-not-allowed' : ''}`}
                                     placeholder="name@orvanta.com"
+                                    readOnly={isEditMode}
                                 />
                                 {errors.email && (
                                     <p className="mt-2 text-xs font-bold text-rose-500 uppercase tracking-tighter">{errors.email.message}</p>
                                 )}
-                                <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Verification: @orvanta.com domain required</p>
+                                <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">
+                                    {isEditMode ? 'Email address cannot be modified' : 'Verification: @orvanta.com domain required'}
+                                </p>
                             </div>
 
                             <div>
@@ -295,7 +355,9 @@ const CreateStaff = () => {
                                 ) : (
                                     <>
                                         <UserPlus className="h-5 w-5" />
-                                        <span className="font-display font-black tracking-tight">Generate Profile</span>
+                                        <span className="font-display font-black tracking-tight">
+                                            {isEditMode ? 'Save Changes' : 'Generate Profile'}
+                                        </span>
                                     </>
                                 )}
                             </button>

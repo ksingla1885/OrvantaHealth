@@ -257,6 +257,7 @@ router.get('/analytics', async (req, res) => {
       totalPatients,
       totalDoctors,
       totalStaff,
+      totalReceptionists,
       todayAppointments,
       totalRevenue,
       appointmentStats,
@@ -265,6 +266,7 @@ router.get('/analytics', async (req, res) => {
       Patient.countDocuments(),
       Doctor.countDocuments(),
       User.countDocuments({ role: { $in: ['doctor', 'receptionist'] } }),
+      User.countDocuments({ role: 'receptionist' }),
       Appointment.countDocuments({
         date: {
           $gte: new Date(new Date().setHours(0, 0, 0, 0)),
@@ -330,6 +332,7 @@ router.get('/analytics', async (req, res) => {
         totalPatients,
         totalDoctors,
         totalStaff,
+        totalReceptionists,
         todayAppointments,
         totalRevenue: revenue,
         appointmentStats,
@@ -376,6 +379,104 @@ router.patch('/user/:userId/status', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error updating user status'
+    });
+  }
+});
+
+// Get staff member by ID (User ID or Doctor ID)
+router.get('/staff/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First try finding in Doctor model
+    let doctor = await Doctor.findById(id).populate('userId', 'email profile role isActive');
+    if (doctor) {
+      return res.json({
+        success: true,
+        data: { 
+          role: 'doctor',
+          ...doctor.userId.toObject(),
+          ...doctor.toObject()
+        }
+      });
+    }
+
+    // Then try User model (for receptionists or direct user access)
+    const user = await User.findById(id).select('email profile role isActive');
+    if (user) {
+      return res.json({
+        success: true,
+        data: {
+          role: user.role,
+          ...user.toObject()
+        }
+      });
+    }
+
+    res.status(404).json({
+      success: false,
+      message: 'Staff member not found'
+    });
+  } catch (error) {
+    console.error('Get staff member error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// Update staff account
+router.patch('/update-staff/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { firstName, lastName, phone, specialization, qualifications, experience, licenseNumber, consultationFee, department } = req.body;
+
+    // First find the user/profile to know what we're updating
+    let doctor = await Doctor.findById(id);
+    let userId;
+
+    if (doctor) {
+      userId = doctor.userId;
+      
+      // Update doctor specifics
+      doctor.specialization = specialization || doctor.specialization;
+      doctor.qualifications = qualifications || doctor.qualifications;
+      doctor.experience = experience !== undefined ? Number(experience) : doctor.experience;
+      doctor.licenseNumber = licenseNumber || doctor.licenseNumber;
+      doctor.consultationFee = consultationFee !== undefined ? Number(consultationFee) : doctor.consultationFee;
+      doctor.department = department || doctor.department;
+      
+      await doctor.save();
+    } else {
+      userId = id;
+    }
+
+    // Update User profile
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User account not found'
+      });
+    }
+
+    if (firstName) user.profile.firstName = firstName;
+    if (lastName) user.profile.lastName = lastName;
+    if (phone !== undefined) user.profile.phone = phone;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Staff account updated successfully',
+      data: { user }
+    });
+  } catch (error) {
+    console.error('Update staff error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
     });
   }
 });
