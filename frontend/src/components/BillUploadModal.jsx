@@ -9,9 +9,10 @@ const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
     const [items, setItems] = useState([
         { description: '', quantity: 1, unitPrice: 0 }
     ]);
-    const [dueDate, setDueDate] = useState(
-        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const [dueDate] = useState(
+        new Date().toISOString().split('T')[0]
     );
+    const [paymentMethod, setPaymentMethod] = useState('online');
     const [prescriptions, setPrescriptions] = useState([]);
     const [prescriptionsLoading, setPrescriptionsLoading] = useState(false);
 
@@ -95,8 +96,10 @@ const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
             const billData = {
                 patientId: patient._id,
                 items: validItems,
-                dueDate: dueDate
+                dueDate: dueDate,
+                status: paymentMethod === 'cash' ? 'paid' : 'pending_payment'
             };
+            if (paymentMethod === 'cash') billData.paymentMethod = 'cash';
 
             const billResponse = await api.post('/receptionist/bill', billData);
 
@@ -258,14 +261,25 @@ const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
                                         <span className="font-black uppercase tracking-[0.2em] text-brand-teal text-[10px]">Net Payable</span>
                                         <span className="text-2xl font-black font-display">₹{calculateTotal()}</span>
                                     </div>
+
                                     <div className="pt-2">
-                                        <label className="text-[8px] font-black text-white/40 uppercase tracking-widest block mb-1">Due Date</label>
-                                        <input
-                                            type="date"
-                                            value={dueDate}
-                                            onChange={(e) => setDueDate(e.target.value)}
-                                            className="w-full bg-white/10 border-white/20 rounded-xl px-4 py-2 text-sm font-bold text-white focus:outline-none focus:bg-white/20 transition-colors"
-                                        />
+                                        <label className="text-[8px] font-black text-white/40 uppercase tracking-widest block mb-1">Payment Option</label>
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPaymentMethod('online')}
+                                                className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-colors ${paymentMethod === 'online' ? 'bg-brand-teal border-brand-teal text-white' : 'bg-white/10 border-white/20 text-white/60 hover:bg-white/20'}`}
+                                            >
+                                                Online (Later)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setPaymentMethod('cash')}
+                                                className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-colors ${paymentMethod === 'cash' ? 'bg-brand-teal border-brand-teal text-white' : 'bg-white/10 border-white/20 text-white/60 hover:bg-white/20'}`}
+                                            >
+                                                Cash (Paid Now)
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

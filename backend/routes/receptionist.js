@@ -369,7 +369,7 @@ router.post('/bill', [
       });
     }
 
-    const { patientId, appointmentId, items, dueDate } = req.body;
+    const { patientId, appointmentId, items, dueDate, paymentMethod, status } = req.body;
 
     // Process items and calculate individual totals
     const processedItems = items.map(item => ({
@@ -399,7 +399,9 @@ router.post('/bill', [
       subtotal,
       tax,
       total,
-      dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      dueDate: dueDate ? new Date(dueDate) : new Date(),
+      paymentMethod,
+      status: status || 'draft',
       createdBy: req.user._id
     });
 
@@ -597,7 +599,7 @@ router.patch('/bill/:billId/mark-paid', async (req, res) => {
     const { billId } = req.params;
     const bill = await Bill.findByIdAndUpdate(
       billId,
-      { status: 'paid' },
+      { status: 'paid', paymentMethod: 'cash' },
       { new: true }
     );
 

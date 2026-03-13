@@ -217,7 +217,7 @@ const Bills = () => {
           <h1 className="text-2xl font-bold text-gray-900 font-display">Bills & Payments</h1>
           <p className="text-gray-600 font-medium tracking-tight">View and manage medical invoices</p>
         </div>
-        {currentUser?.role === 'receptionist' && (
+        {(currentUser?.role === 'receptionist' || currentUser?.role === 'superadmin') && (
           <Link
             to="/dashboard/patients"
             className="inline-flex items-center gap-2 px-6 py-3 bg-brand-teal text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-teal/20 hover:bg-brand-teal/90 transition-all font-display"
@@ -260,7 +260,8 @@ const Bills = () => {
                       </div>
                       <div className="flex items-center font-bold text-brand-teal">
                         <FileText className="h-4 w-4 mr-2" />
-                        Status: {bill.status.toUpperCase()}
+                        Status: {bill.status.toUpperCase()} 
+                        {bill.status === 'paid' && bill.paymentMethod && ` (${bill.paymentMethod.toUpperCase()})`}
                       </div>
                     </div>
                   </div>
@@ -276,7 +277,7 @@ const Bills = () => {
                     </button>
                   )}
 
-                  {bill.status !== 'paid' && currentUser?.role === 'receptionist' && (
+                  {bill.status !== 'paid' && (currentUser?.role === 'receptionist' || currentUser?.role === 'superadmin') && (
                     <button
                       onClick={() => handleMarkAsPaid(bill._id)}
                       className="px-6 py-2 bg-brand-dark text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-lg"
