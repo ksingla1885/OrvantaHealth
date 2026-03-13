@@ -89,7 +89,7 @@ function App() {
                   {/* Receptionist Routes */}
                   <Route path="receptionist/dashboard" element={<ProtectedRoute roles={['receptionist']}><ReceptionistDashboard /></ProtectedRoute>} />
                   <Route path="receptionist/appointments" element={<ProtectedRoute roles={['receptionist']}><Appointments /></ProtectedRoute>} />
-                  <Route path="receptionist/bills" element={<ProtectedRoute roles={['receptionist']}><Bills /></ProtectedRoute>} />
+                  <Route path="receptionist/bills" element={<ProtectedRoute roles={['receptionist', 'superadmin']}><Bills /></ProtectedRoute>} />
                   <Route path="receptionist/lab-reports" element={<ProtectedRoute roles={['receptionist']}><LabReports /></ProtectedRoute>} />
                   <Route path="receptionist/doctor-availability" element={<ProtectedRoute roles={['receptionist']}><DoctorAvailability /></ProtectedRoute>} />
                   <Route path="receptionist/profile" element={<ProtectedRoute roles={['receptionist']}><Profile /></ProtectedRoute>} />

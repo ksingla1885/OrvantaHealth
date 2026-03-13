@@ -385,6 +385,7 @@ const DetailedAnalytics = () => {
                     <option value="doctors">Doctor Directory</option>
                     <option value="receptionists">Receptionist Team</option>
                     <option value="appointments">Appointment History</option>
+                    <option value="revenue">Total Revenue Report</option>
                   </select>
                 </div>
 

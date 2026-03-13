@@ -82,6 +82,12 @@ const Layout = () => {
             icon: BarChart3,
             current: location.pathname.includes('/analytics'),
           },
+          {
+            name: 'Bills',
+            href: '/receptionist/bills',
+            icon: RupeeIcon,
+            current: location.pathname.includes('/bills'),
+          },
         ];
 
       case 'doctor':

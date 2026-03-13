@@ -65,6 +65,16 @@ const BookAppointment = () => {
     }
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleBook = async () => {
     if (!selectedSlot) {
       toast.error('Please select a time slot');
@@ -72,6 +82,15 @@ const BookAppointment = () => {
     }
 
     try {
+      setLoading(true);
+      // 1. Create Appointment
+      console.log('Attempting to book appointment:', {
+        doctorId: selectedDoctor._id,
+        date: selectedDate,
+        timeSlot: selectedSlot,
+        symptoms,
+        consultationType
+      });
       const response = await api.post('/appointments/book', {
         doctorId: selectedDoctor._id,
         date: selectedDate,
@@ -81,12 +100,103 @@ const BookAppointment = () => {
       });
 
       if (response.data.success) {
-        toast.success('Appointment booked successfully!');
-        navigate('/patient/appointments');
+        const appointmentId = response.data.data.appointment._id;
+        
+        // 2. Create Payment Order
+        const orderResponse = await api.post('/payments/create-order', {
+          appointmentId
+        });
+
+        if (orderResponse.data.success) {
+          const { orderId, amount, currency, keyId } = orderResponse.data.data;
+
+          if (orderResponse.data.isMock) {
+            // 4. Verify Payment (Mock)
+            try {
+              const verifyResponse = await api.post('/payments/verify', {
+                razorpay_order_id: orderId,
+                razorpay_payment_id: 'mock_payment_' + Date.now(),
+                razorpay_signature: 'mock_signature',
+                appointmentId
+              });
+
+              if (verifyResponse.data.success) {
+                toast.success('Payment successful (Mock)!');
+                navigate('/patient/payment-success', { 
+                  state: { 
+                    bill: verifyResponse.data.data.bill,
+                    paymentId: verifyResponse.data.data.paymentId 
+                  } 
+                });
+              }
+            } catch (error) {
+              console.error('Mock verification error:', error);
+              toast.error('Payment verification failed');
+              navigate('/patient/appointments');
+            }
+            return;
+          }
+
+          // 3. Load Razorpay and Open
+          const isLoaded = await loadRazorpayScript();
+          if (!isLoaded) {
+            toast.error('Razorpay SDK failed to load. Are you online?');
+            return;
+          }
+
+          const options = {
+            key: keyId,
+            amount: amount,
+            currency: currency,
+            name: 'OrvantaHealth',
+            description: `Consultation with Dr. ${selectedDoctor.userId.profile.firstName} ${selectedDoctor.userId.profile.lastName}`,
+            order_id: orderId,
+            handler: async (response) => {
+              try {
+                // 4. Verify Payment
+                const verifyResponse = await api.post('/payments/verify', {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  appointmentId
+                });
+
+                if (verifyResponse.data.success) {
+                  toast.success('Payment successful!');
+                  navigate('/patient/payment-success', { 
+                    state: { 
+                      bill: verifyResponse.data.data.bill,
+                      paymentId: response.razorpay_payment_id 
+                    } 
+                  });
+                }
+              } catch (error) {
+                console.error('Verification error:', error);
+                toast.error('Payment verification failed');
+                navigate('/patient/appointments');
+              }
+            },
+            prefill: {
+              name: '', // Optionally get from auth context
+              email: '',
+              contact: ''
+            },
+            theme: {
+              color: '#0d9488'
+            }
+          };
+
+          const paymentObject = new window.Razorpay(options);
+          paymentObject.open();
+        }
       }
     } catch (error) {
       console.error('Booking error:', error);
-      toast.error(error.response?.data?.message || 'Failed to book appointment');
+      const errorMsg = error.response?.data?.message || 'Failed to book appointment';
+      const detailMsg = error.response?.data?.errors ? ` (${error.response.data.errors[0].msg})` : '';
+      toast.error(errorMsg + detailMsg);
+    } finally {
+      setLoading(false);
     }
   };
 

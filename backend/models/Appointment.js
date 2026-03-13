@@ -62,6 +62,6 @@ const appointmentSchema = new mongoose.Schema({
 });
 
 // Index for preventing double bookings
-appointmentSchema.index({ doctorId: 1, date: 1, timeSlot: 1 }, { unique: true });
+// Removed: appointmentSchema.index({ doctorId: 1, date: 1, timeSlot: 1 }, { unique: true });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

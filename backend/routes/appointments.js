@@ -25,10 +25,13 @@ router.post('/book', [
     }
 
     const { doctorId, date, timeSlot, symptoms, consultationType } = req.body;
+    console.log('--- NEW BOOKING REQUEST ---');
+    console.log('Body:', JSON.stringify(req.body, null, 2));
 
     // Check if doctor exists and is available
     const doctor = await Doctor.findById(doctorId);
     if (!doctor || !doctor.isAvailable) {
+      console.log('Doctor not found or not available:', doctorId);
       return res.status(404).json({
         success: false,
         message: 'Doctor not found or not available'
@@ -37,17 +40,36 @@ router.post('/book', [
 
     // Check if doctor is available on this day and time
     const appointmentDate = new Date(date);
-    const dayOfWeek = appointmentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-
-    if (!doctor.availability.days.includes(dayOfWeek)) {
+    if (isNaN(appointmentDate.getTime())) {
       return res.status(400).json({
         success: false,
-        message: `Doctor is not available on ${dayOfWeek}s. Available days: ${doctor.availability.days.join(', ')}`
+        message: 'Invalid date format'
+      });
+    }
+
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayOfWeek = dayNames[appointmentDate.getUTCDay()];
+    console.log('Appointment Date:', date, 'Day of week:', dayOfWeek);
+
+    if (!doctor.availability?.days?.includes(dayOfWeek)) {
+      console.log('Doctor not available on this day:', dayOfWeek, 'Available:', doctor.availability?.days);
+      return res.status(400).json({
+        success: false,
+        message: `Doctor is not available on ${dayOfWeek}s. Available days: ${doctor.availability?.days?.join(', ') || 'None'}`
       });
     }
 
     // Check if doctor is on leave on this date
-    const dateString = appointmentDate.toISOString().split('T')[0];
+    let dateString;
+    try {
+      dateString = appointmentDate.toISOString().split('T')[0];
+    } catch (e) {
+      return res.status(400).json({
+        success: false,
+        message: 'Could not process date'
+      });
+    }
+
     if (doctor.leaves && doctor.leaves.includes(dateString)) {
       return res.status(400).json({
         success: false,
@@ -56,9 +78,9 @@ router.post('/book', [
     }
 
     // Check if time slot is within doctor's available hours
-    const isTimeSlotValid = doctor.availability.timeSlots.some(slot => {
+    const isTimeSlotValid = doctor.availability?.timeSlots?.some(slot => {
       return timeSlot.start >= slot.start && timeSlot.end <= slot.end;
-    });
+    }) || false;
 
     if (!isTimeSlotValid) {
       return res.status(400).json({
@@ -66,7 +88,6 @@ router.post('/book', [
         message: 'Time slot not within doctor\'s available hours'
       });
     }
-
     // Check for double booking
     const existingAppointment = await Appointment.findOne({
       doctorId,
@@ -77,12 +98,14 @@ router.post('/book', [
     });
 
     if (existingAppointment) {
+      console.log('Double booking detected:', doctorId, date, timeSlot);
       return res.status(400).json({
         success: false,
         message: 'This time slot is already booked'
       });
     }
 
+    console.log('Checks passed. Finding patient for user:', req.user._id);
     // Get patient profile
     const patient = await Patient.findOne({ userId: req.user._id });
     if (!patient) {
@@ -105,10 +128,15 @@ router.post('/book', [
     await appointment.save();
 
     // Populate appointment details for response
-    await appointment.populate([
-      { path: 'doctorId', populate: { path: 'userId', select: 'profile' } },
-      { path: 'patientId', populate: { path: 'userId', select: 'profile' } }
-    ]);
+    try {
+      await appointment.populate([
+        { path: 'doctorId', populate: { path: 'userId', select: 'profile' } },
+        { path: 'patientId', populate: { path: 'userId', select: 'profile' } }
+      ]);
+    } catch (populateError) {
+      console.error('Populate error:', populateError);
+      // We still have the appointment ID, so we can return it at least
+    }
 
     res.status(201).json({
       success: true,
@@ -116,10 +144,12 @@ router.post('/book', [
       data: { appointment }
     });
   } catch (error) {
+    require('fs').writeFileSync('d:/OrvantaHealth/backend/last_error.txt', (error.stack || error.message) + '\n');
     console.error('Book appointment error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error booking appointment'
+      message: 'Server error booking appointment',
+      error: error.message
     });
   }
 });

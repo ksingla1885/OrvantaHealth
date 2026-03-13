@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Users, UserPlus, Calendar, DollarSign, TrendingUp, Activity, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 
 const SuperAdminDashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,6 +25,29 @@ const SuperAdminDashboard = () => {
       console.error('Failed to fetch analytics:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    setDownloading(true);
+    try {
+      const response = await api.get('/admin/export?type=audit&format=pdf', {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `system_audit_${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Audit report downloaded successfully');
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download audit report');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -234,8 +259,19 @@ const SuperAdminDashboard = () => {
 
             <div className="mt-10 p-5 bg-brand-light rounded-[2rem] border border-teal-50 text-center">
               <p className="text-sm font-bold text-brand-dark mb-4 tracking-tight">Need a full audit report?</p>
-              <button className="btn btn-primary w-full shadow-lg font-display">
-                Download PDF
+              <button 
+                onClick={handleDownloadPDF}
+                disabled={downloading}
+                className="btn btn-primary w-full shadow-lg font-display flex items-center justify-center gap-2"
+              >
+                {downloading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  'Download PDF'
+                )}
               </button>
             </div>
           </div>

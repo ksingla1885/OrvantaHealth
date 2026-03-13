@@ -7,7 +7,7 @@ const seedAdmin = async () => {
         console.log('Attempting to connect to MongoDB...');
         console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
 
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/medicore', {
+        await mongoose.connect(process.env.MONGODB_URI || {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             connectTimeoutMS: 30000,

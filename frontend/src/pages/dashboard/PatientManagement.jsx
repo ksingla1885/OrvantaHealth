@@ -49,6 +49,9 @@ const PatientManagement = () => {
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
+    if (age < 0 || isNaN(age) || age > 150) {
+      return '?'; // fallback for invalid future or too-old ages
+    }
     return age;
   };
 
