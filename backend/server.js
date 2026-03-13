@@ -151,15 +151,28 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     `);
   });
 
-  // Graceful shutdown
-  process.on('SIGTERM', () => {
-    console.log('SIGTERM received. Shutting down gracefully...');
+  const gracefulShutdown = (signal) => {
+    console.log(`${signal} received. Shutting down gracefully...`);
     server.close(() => {
       console.log('Server closed');
-      mongoose.connection.close(false, () => {
+      mongoose.connection.close(false).then(() => {
         console.log('MongoDB connection closed');
-        process.exit(0);
+        if (signal === 'SIGUSR2') {
+          process.kill(process.pid, 'SIGUSR2');
+        } else {
+          process.exit(0);
+        }
       });
     });
-  });
+
+    // Force close server after 3 seconds
+    setTimeout(() => {
+      console.error('Could not close connections in time, forcefully shutting down');
+      process.exit(1);
+    }, 3000);
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2'));
 }

@@ -293,7 +293,7 @@ const Landing = () => {
                                         <Github className="h-5 w-5" />
                                         <span>GitHub</span>
                                     </a>
-                                    <a href="www.linkedin.com/in/ketan-kumar1885" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-6 py-3 border-2 border-slate-100 text-brand-dark rounded-xl font-bold hover:bg-slate-50 transition-all hover:-translate-y-1">
+                                    <a href="https://www.linkedin.com/in/ketan-kumar1885" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-6 py-3 border-2 border-slate-100 text-brand-dark rounded-xl font-bold hover:bg-slate-50 transition-all hover:-translate-y-1">
                                         <Linkedin className="h-5 w-5 text-blue-600" />
                                         <span>LinkedIn</span>
                                     </a>
@@ -319,10 +319,10 @@ const Landing = () => {
                         <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">
                             &copy; 2024 OrvantaHealth OS. Crafted for Excellence.
                         </p>
-                        <div className="flex gap-6 text-slate-400">
+                        {/* <div className="flex gap-6 text-slate-400">
                             <Github className="h-5 w-5 cursor-pointer hover:text-brand-dark transition-colors" />
                             <Linkedin className="h-5 w-5 cursor-pointer hover:text-brand-dark transition-colors" />
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </footer>
