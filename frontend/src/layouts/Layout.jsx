@@ -83,6 +83,12 @@ const Layout = () => {
             current: location.pathname.includes('/analytics'),
           },
           {
+            name: 'Contact Messages',
+            href: '/dashboard/contact-messages',
+            icon: FileText,
+            current: location.pathname.includes('/contact-messages'),
+          },
+          {
             name: 'Bills',
             href: '/receptionist/bills',
             icon: RupeeIcon,

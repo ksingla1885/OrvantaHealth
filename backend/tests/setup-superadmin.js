@@ -16,10 +16,7 @@ app.get('/test', (req, res) => {
 app.post('/create-superadmin', async (req, res) => {
   try {
     console.log('Attempting to connect to MongoDB...');
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/orvanta', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/orvanta');
     console.log('Connected to MongoDB');
 
     // Define User schema inline for this test

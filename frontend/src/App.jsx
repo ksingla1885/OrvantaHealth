@@ -17,6 +17,7 @@ const PageLoader = () => (
 const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
 const Landing = lazy(() => import('./pages/Landing'));
+const ContactSales = lazy(() => import('./pages/ContactSales'));
 
 // Dashboard Pages
 const SuperAdminDashboard = lazy(() => import('./pages/dashboard/SuperAdminDashboard'));
@@ -31,6 +32,7 @@ const StaffManagement = lazy(() => import('./pages/dashboard/StaffManagement'));
 const PatientManagement = lazy(() => import('./pages/dashboard/PatientManagement'));
 const DoctorsManagement = lazy(() => import('./pages/dashboard/DoctorsManagement'));
 const DetailedAnalytics = lazy(() => import('./pages/dashboard/DetailedAnalytics'));
+const ContactMessages = lazy(() => import('./pages/dashboard/ContactMessages'));
 
 // Other Pages
 const Doctors = lazy(() => import('./pages/Doctors'));
@@ -66,6 +68,7 @@ function App() {
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Landing />} />
+                <Route path="/contact-sales" element={<ContactSales />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/doctors" element={<Doctors />} />
@@ -79,6 +82,7 @@ function App() {
                   <Route path="/dashboard/staff" element={<ProtectedRoute roles={['superadmin']}><StaffManagement /></ProtectedRoute>} />
                   <Route path="/dashboard/patients" element={<ProtectedRoute roles={['superadmin', 'receptionist']}><PatientManagement /></ProtectedRoute>} />
                   <Route path="/dashboard/analytics" element={<ProtectedRoute roles={['superadmin']}><DetailedAnalytics /></ProtectedRoute>} />
+                  <Route path="/dashboard/contact-messages" element={<ProtectedRoute roles={['superadmin']}><ContactMessages /></ProtectedRoute>} />
 
                   {/* Doctor Routes */}
                   <Route path="doctor/dashboard" element={<ProtectedRoute roles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />

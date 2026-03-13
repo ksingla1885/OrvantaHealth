@@ -55,9 +55,9 @@ app.use(limiter);
 
 // Logging
 if (NODE_ENV === 'production') {
-  app.use(morgan('combined'));
+  // app.use(morgan('combined'));
 } else {
-  app.use(morgan('dev'));
+  // app.use(morgan('dev'));
 }
 
 // Body parsing middleware
@@ -87,10 +87,7 @@ app.get('/', (req, res) => {
 });
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/orvantahealth', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/orvantahealth')
   .then(() => console.log('✓ Connected to MongoDB'))
   .catch(err => {
     console.error('✗ MongoDB connection error:', err.message);
@@ -107,6 +104,7 @@ app.use('/api/appointments', require('./routes/appointments'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/chatbot', require('./routes/chatbot'));
 app.use('/api/documents', require('./routes/documents'));
+app.use('/api/contact', require('./routes/contact'));
 
 // 404 handler
 app.use('*', (req, res) => {

@@ -252,9 +252,9 @@ const Landing = () => {
                         >
                             Open Free Account
                         </Link>
-                        <button className="btn border-2 border-white/20 text-white px-12 py-5 text-xl hover:bg-white/10">
+                        <Link to="/contact-sales" className="btn border-2 border-white/20 text-white px-12 py-5 text-xl hover:bg-white/10 text-center flex items-center justify-center">
                             Contact Sales
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </section>
