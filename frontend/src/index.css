@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 @layer base {
   body {
@@ -34,7 +33,7 @@
   }
 
   .btn-primary {
-    @apply bg-brand-dark text-white hover:bg-opacity-90 shadow-sm hover:shadow-md focus:ring-brand-dark;
+    @apply bg-brand-dark text-white hover:opacity-90 shadow-sm hover:shadow-md focus:ring-brand-dark;
   }
 
   .btn-secondary {
@@ -42,7 +41,7 @@
   }
 
   .btn-teal {
-    @apply bg-brand-teal text-white hover:bg-opacity-90 shadow-sm focus:ring-brand-teal;
+    @apply bg-brand-teal text-white hover:opacity-90 shadow-sm focus:ring-brand-teal;
   }
 
   /* Cards */

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "OrvantaHealth Hospital Management System Frontend",
   "private": true,
+  "type": "module",
   "dependencies": {
     "autoprefixer": "^10.4.27",
     "axios": "^1.13.6",
@@ -45,6 +46,7 @@
     ]
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
     "@vitejs/plugin-react": "^6.0.1",
     "vite": "^8.0.0",
     "vite-plugin-svgr": "^4.5.0"
