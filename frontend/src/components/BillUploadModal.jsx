@@ -17,15 +17,23 @@ const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
     const [prescriptionsLoading, setPrescriptionsLoading] = useState(false);
 
     useEffect(() => {
-        if (isOpen && patient?._id) {
-            fetchPrescriptions();
+        if (isOpen && patient) {
+             fetchPrescriptions();
         }
-    }, [isOpen, patient?._id]);
+    }, [isOpen, patient]);
 
     const fetchPrescriptions = async () => {
         try {
             setPrescriptionsLoading(true);
-            const res = await api.get(`/receptionist/patient/${patient._id}/prescriptions`);
+            let url = `/receptionist/patient/${patient._id}/prescriptions`;
+            if (patient.isWalkIn && patient.triageRecordId) {
+                url = `/receptionist/triage/${patient.triageRecordId}/prescriptions`;
+            } else if (patient.isWalkIn) {
+                setPrescriptions([]);
+                return;
+            }
+            
+            const res = await api.get(url);
             if (res.data.success) {
                 setPrescriptions(res.data.data.prescriptions);
             }
@@ -94,7 +102,9 @@ const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
 
             // 1. Create the bill entry
             const billData = {
-                patientId: patient._id,
+                patientId: patient.isWalkIn ? undefined : patient._id,
+                patientName: patient.isWalkIn ? `${patient.userId.profile.firstName} ${patient.userId.profile.lastName}`.trim() : undefined,
+                triageRecordId: patient.isWalkIn ? patient.triageRecordId : undefined,
                 items: validItems,
                 dueDate: dueDate,
                 status: paymentMethod === 'cash' ? 'paid' : 'pending_payment'
@@ -138,7 +148,7 @@ const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
                     <div>
                         <h2 className="text-2xl font-black font-display text-white">Generate Invoice & Bill</h2>
                         <p className="text-white/60 text-xs font-bold uppercase tracking-widest mt-1">
-                            For Patient: {patient.userId.profile.firstName} {patient.userId.profile.lastName}
+                            For Patient: {patient.userId.profile.firstName} {patient.userId.profile.lastName} {patient.isWalkIn ? '(Walk-in)' : ''}
                         </p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors">

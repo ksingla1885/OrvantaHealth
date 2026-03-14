@@ -4,7 +4,14 @@ const billSchema = new mongoose.Schema({
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Patient',
-    required: true
+    required: false
+  },
+  patientName: {
+    type: String
+  },
+  triageRecordId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TriageRecord'
   },
   appointmentId: {
     type: mongoose.Schema.Types.ObjectId,

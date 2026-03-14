@@ -4,12 +4,20 @@ const prescriptionSchema = new mongoose.Schema({
   appointmentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Appointment',
-    required: true
+    required: false   // optional — triage walk-in patients have no appointment
+  },
+  triageRecordId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TriageRecord',
+    required: false   // set when prescription is issued from triage queue
+  },
+  patientName: {    // stored for walk-in patients not registered in system
+    type: String
   },
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Patient',
-    required: true
+    required: false
   },
   doctorId: {
     type: mongoose.Schema.Types.ObjectId,

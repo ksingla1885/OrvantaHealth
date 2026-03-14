@@ -13,7 +13,9 @@ import {
   LogOut,
   Building,
   UserPlus,
-  BarChart3
+  BarChart3,
+  ShieldAlert,
+  Activity
 } from 'lucide-react';
 
 // Rupee icon as a component so it works like any lucide icon in the sidebar
@@ -89,6 +91,18 @@ const Layout = () => {
             current: location.pathname.includes('/contact-messages'),
           },
           {
+            name: 'Patient Intake',
+            href: '/dashboard/patient-intake',
+            icon: Activity,
+            current: location.pathname.includes('/patient-intake'),
+          },
+          {
+            name: 'Triage Queue',
+            href: '/dashboard/triage-queue',
+            icon: ShieldAlert,
+            current: location.pathname.includes('/triage-queue'),
+          },
+          {
             name: 'Bills',
             href: '/receptionist/bills',
             icon: RupeeIcon,
@@ -112,6 +126,12 @@ const Layout = () => {
             current: location.pathname.includes('/prescriptions'),
           },
           {
+            name: 'Triage Queue',
+            href: '/doctor/triage-queue',
+            icon: ShieldAlert,
+            current: location.pathname.includes('/triage-queue'),
+          },
+          {
             name: 'Profile',
             href: '/doctor/profile',
             icon: User,
@@ -122,6 +142,18 @@ const Layout = () => {
       case 'receptionist':
         return [
           ...baseItems,
+          {
+            name: 'Patient Intake',
+            href: '/receptionist/patient-intake',
+            icon: Activity,
+            current: location.pathname.includes('/patient-intake'),
+          },
+          {
+            name: 'Triage Queue',
+            href: '/receptionist/triage-queue',
+            icon: ShieldAlert,
+            current: location.pathname.includes('/triage-queue'),
+          },
           {
             name: 'Appointments',
             href: '/receptionist/appointments',
