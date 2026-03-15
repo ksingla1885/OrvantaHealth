@@ -353,7 +353,7 @@ router.delete('/doctors/:doctorId/leave/:date', async (req, res) => {
 
 // Create bill
 router.post('/bill', [
-  body('patientId').optional().isMongoId(),
+  body('patientId').isMongoId(),
   body('items').isArray(),
   body('items.*.description').notEmpty().trim(),
   body('items.*.quantity').isInt({ min: 1 }),
@@ -369,14 +369,7 @@ router.post('/bill', [
       });
     }
 
-    const { patientId, patientName, triageRecordId, appointmentId, items, dueDate, paymentMethod, status } = req.body;
-
-    if (!patientId && !patientName) {
-      return res.status(400).json({
-        success: false,
-        message: 'Either patientId or patientName must be provided'
-      });
-    }
+    const { patientId, appointmentId, items, dueDate, paymentMethod, status } = req.body;
 
     // Process items and calculate individual totals
     const processedItems = items.map(item => ({
@@ -384,15 +377,13 @@ router.post('/bill', [
       total: item.quantity * item.unitPrice
     }));
 
-    // Check if patient exists if patientId is provided
-    if (patientId) {
-      const patient = await Patient.findById(patientId);
-      if (!patient) {
-        return res.status(404).json({
-          success: false,
-          message: 'Patient not found'
-        });
-      }
+    // Check if patient exists
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Patient not found'
+      });
     }
 
     // Calculate totals
@@ -402,9 +393,7 @@ router.post('/bill', [
 
     // Create bill
     const bill = new Bill({
-      patientId: patientId || undefined,
-      patientName: patientName || undefined,
-      triageRecordId: triageRecordId || undefined,
+      patientId,
       appointmentId,
       items: processedItems,
       subtotal,
@@ -419,16 +408,10 @@ router.post('/bill', [
     await bill.save();
 
     // Populate for response
-    if (patientId) {
-      await bill.populate([
-        { path: 'patientId', populate: { path: 'userId', select: 'profile' } },
-        { path: 'createdBy', select: 'profile' }
-      ]);
-    } else {
-      await bill.populate([
-        { path: 'createdBy', select: 'profile' }
-      ]);
-    }
+    await bill.populate([
+      { path: 'patientId', populate: { path: 'userId', select: 'profile' } },
+      { path: 'createdBy', select: 'profile' }
+    ]);
 
     res.status(201).json({
       success: true,
@@ -742,31 +725,6 @@ router.get('/patient/:patientId/prescriptions', async (req, res) => {
     });
   } catch (error) {
     console.error('Get patient prescriptions error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error fetching prescriptions'
-    });
-  }
-});
-
-// Get prescriptions for a specific triage record (used for walk-in patients)
-router.get('/triage/:triageRecordId/prescriptions', async (req, res) => {
-  try {
-    const { triageRecordId } = req.params;
-    const prescriptions = await Prescription.find({ triageRecordId })
-      .populate('doctorId', 'userId')
-      .populate({
-        path: 'doctorId',
-        populate: { path: 'userId', select: 'profile' }
-      })
-      .sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      data: { prescriptions }
-    });
-  } catch (error) {
-    console.error('Get triage prescriptions error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error fetching prescriptions'

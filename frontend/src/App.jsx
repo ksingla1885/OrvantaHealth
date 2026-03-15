@@ -43,8 +43,6 @@ const Prescriptions = lazy(() => import('./pages/Prescriptions'));
 const LabReports = lazy(() => import('./pages/LabReports'));
 const Profile = lazy(() => import('./pages/Profile'));
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
-const SymptomChecker = lazy(() => import('./pages/SymptomChecker'));
-const TriageQueue = lazy(() => import('./pages/dashboard/TriageQueue'));
 
 // Components
 import Chatbot from './components/Chatbot';
@@ -85,15 +83,12 @@ function App() {
                   <Route path="/dashboard/patients" element={<ProtectedRoute roles={['superadmin', 'receptionist']}><PatientManagement /></ProtectedRoute>} />
                   <Route path="/dashboard/analytics" element={<ProtectedRoute roles={['superadmin']}><DetailedAnalytics /></ProtectedRoute>} />
                   <Route path="/dashboard/contact-messages" element={<ProtectedRoute roles={['superadmin']}><ContactMessages /></ProtectedRoute>} />
-                  <Route path="/dashboard/patient-intake" element={<ProtectedRoute roles={['superadmin', 'receptionist']}><SymptomChecker /></ProtectedRoute>} />
-                  <Route path="/dashboard/triage-queue" element={<ProtectedRoute roles={['superadmin', 'doctor', 'receptionist']}><TriageQueue /></ProtectedRoute>} />
 
                   {/* Doctor Routes */}
                   <Route path="doctor/dashboard" element={<ProtectedRoute roles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
                   <Route path="doctor/appointments" element={<ProtectedRoute roles={['doctor']}><Appointments /></ProtectedRoute>} />
                   <Route path="doctor/prescriptions" element={<ProtectedRoute roles={['doctor']}><Prescriptions /></ProtectedRoute>} />
                   <Route path="doctor/profile" element={<ProtectedRoute roles={['doctor']}><Profile /></ProtectedRoute>} />
-                  <Route path="doctor/triage-queue" element={<ProtectedRoute roles={['doctor', 'superadmin', 'receptionist']}><TriageQueue /></ProtectedRoute>} />
 
                   {/* Receptionist Routes */}
                   <Route path="receptionist/dashboard" element={<ProtectedRoute roles={['receptionist']}><ReceptionistDashboard /></ProtectedRoute>} />
@@ -102,8 +97,6 @@ function App() {
                   <Route path="receptionist/lab-reports" element={<ProtectedRoute roles={['receptionist']}><LabReports /></ProtectedRoute>} />
                   <Route path="receptionist/doctor-availability" element={<ProtectedRoute roles={['receptionist']}><DoctorAvailability /></ProtectedRoute>} />
                   <Route path="receptionist/profile" element={<ProtectedRoute roles={['receptionist']}><Profile /></ProtectedRoute>} />
-                  <Route path="receptionist/patient-intake" element={<ProtectedRoute roles={['receptionist', 'superadmin']}><SymptomChecker /></ProtectedRoute>} />
-                  <Route path="receptionist/triage-queue" element={<ProtectedRoute roles={['receptionist', 'doctor', 'superadmin']}><TriageQueue /></ProtectedRoute>} />
 
                   {/* Patient Routes */}
                   <Route path="patient/dashboard" element={<ProtectedRoute roles={['patient']}><PatientDashboard /></ProtectedRoute>} />
