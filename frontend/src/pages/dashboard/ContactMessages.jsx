@@ -77,7 +77,8 @@ const ContactMessages = () => {
   const filteredMessages = messages.filter(msg => 
     msg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     msg.facility.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    msg.email.toLowerCase().includes(searchTerm.toLowerCase())
+    msg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    msg.role.toLowerCase().replace('_', ' ').includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -95,7 +96,7 @@ const ContactMessages = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, email or facility..."
+              placeholder="Search by name, email, facility or role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-teal focus:border-transparent outline-none transition-all"
