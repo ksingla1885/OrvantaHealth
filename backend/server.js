@@ -12,31 +12,43 @@ const app = express();
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-// Security middleware
-app.use(helmet());
-
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:3004',
+  'http://localhost:5173',
   'https://orvanta-health.vercel.app',
   process.env.FRONTEND_URL
-].filter(Boolean);
+].filter(Boolean).map(origin => origin.replace(/\/$/, ''));
 
+
+// CORS must be before Helmet to ensure headers are set correctly
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+    const originWithoutSlash = origin.replace(/\/$/, '');
+    
+    if (allowedOrigins.indexOf(originWithoutSlash) !== -1 || allowedOrigins.includes('*')) {
       callback(null, true);
     } else {
       console.log('CORS rejected origin:', origin);
-      callback(new Error('Not allowed by CORS'));
+      // Return null, false to avoid triggering the global error handler
+      callback(null, false);
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  optionsSuccessStatus: 200
 }));
+
+
+// Security middleware - configured for cross-origin use
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginPropertyPolicy: { policy: "cross-origin" }
+}));
+
 
 // Enable trust proxy for rate limiting behind proxies
 app.set('trust proxy', 1);
@@ -107,7 +119,7 @@ app.use('/api/documents', require('./routes/documents'));
 app.use('/api/contact', require('./routes/contact'));
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: 'Route not found'
