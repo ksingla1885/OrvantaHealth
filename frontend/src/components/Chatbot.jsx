@@ -6,6 +6,14 @@ const Chatbot = () => {
   const { isOpen, messages, isLoading, error, toggleChatbot, sendMessage, clearMessages } = useChatbot();
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [inputMessage]);
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -125,21 +133,22 @@ const Chatbot = () => {
 
         {/* Input */}
         <form onSubmit={handleSubmit} className="chatbot-input-container">
-          <div className="relative flex items-center">
-            <input
-              type="text"
+          <div className="relative flex items-end gap-2">
+            <textarea
+              ref={textareaRef}
+              rows="1"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Type your health query..."
-              className="chatbot-input pr-12"
+              className="chatbot-input pr-14 min-h-[50px] max-h-[150px] resize-none py-3.5 flex-1"
               disabled={isLoading}
               maxLength={500}
             />
             <button
               type="submit"
               disabled={!inputMessage.trim() || isLoading}
-              className="absolute right-2 w-10 h-10 flex items-center justify-center rounded-xl bg-brand-dark text-white shadow-sm hover:bg-opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="absolute right-2 bottom-1.5 w-10 h-10 flex items-center justify-center rounded-xl bg-brand-dark text-white shadow-sm hover:bg-opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed mb-0.5"
               aria-label="Send message"
             >
               <Send className="w-5 h-5" />

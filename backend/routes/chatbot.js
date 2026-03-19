@@ -18,18 +18,24 @@ const chatbotLimiter = rateLimit({
 const healthKeywords = [
   'health', 'medical', 'doctor', 'medicine', 'hospital', 'clinic', 'treatment',
   'diagnosis', 'symptom', 'disease', 'condition', 'pain', 'fever', 'cough',
-  'headache', 'blood pressure', 'diabetes', 'cancer', 'heart', 'lungs',
-  'prescription', 'drug', 'medication', 'therapy', 'surgery', 'test',
-  'lab', 'x-ray', 'mri', 'checkup', 'vaccination', 'immunity', 'allergy',
-  'nutrition', 'diet', 'exercise', 'fitness', 'mental health', 'stress',
-  'anxiety', 'depression', 'sleep', 'weight', 'obesity', 'cholesterol',
-  'first aid', 'emergency', 'ambulance', 'pharmacy', 'nurse', 'specialist',
-  'cardiologist', 'physician', 'dose', 'ointment', 'syrup', 'flu', 'covid',
-  'vaccine', 'infection', 'allergy', 'bone', 'muscle', 'joint', 'brain',
-  'vision', 'dental', 'stomach', 'digestion', 'heartbeat', 'sugar', 'glucose',
-  'insulin', 'patient', 'appointment', 'scanning', 'therapy', 'rehab', 'healing',
-  'wellness', 'hygiene', 'wound', 'injury', 'fracture', 'trauma', 'sore',
-  'nausea', 'vomit', 'dizziness', 'seizure', 'spasm', 'allergen', 'fatigue'
+  'headache', 'blood pressure', 'bp', 'hypertension', 'hypotension', 'diabetes', 
+  'diabetic', 'hypertensive', 'cancer', 'heart', 'lungs', 'prescription', 'drug', 
+  'medication', 'therapy', 'surgery', 'test', 'lab', 'x-ray', 'mri', 'checkup', 
+  'vaccination', 'immunity', 'allergy', 'nutrition', 'diet', 'exercise', 'fitness', 
+  'mental health', 'stress', 'anxiety', 'depression', 'sleep', 'weight', 'obesity', 
+  'cholesterol', 'first aid', 'emergency', 'ambulance', 'pharmacy', 'nurse', 
+  'specialist', 'cardiologist', 'physician', 'dose', 'ointment', 'syrup', 'flu', 
+  'covid', 'vaccine', 'infection', 'bone', 'muscle', 'joint', 'brain', 'vision', 
+  'dental', 'stomach', 'digestion', 'heartbeat', 'sugar', 'glucose', 'insulin', 
+  'patient', 'appointment', 'scanning', 'rehab', 'healing', 'wellness', 'hygiene', 
+  'wound', 'injury', 'fracture', 'trauma', 'sore', 'nausea', 'vomit', 'dizziness', 
+  'seizure', 'spasm', 'allergen', 'fatigue', 'skin', 'rash', 'itch', 'period', 
+  'pregnancy', 'menstrual', 'cold', 'sinus', 'sneeze', 'abdominal', 'gastric', 
+  'acidity', 'vitamin', 'supplement', 'physiotherapy', 'dentist', 'eye', 'ear', 
+  'nose', 'throat', 'cardio', 'respiratory', 'orthopedic', 'pediatric',
+  'weakness', 'tired', 'tiredness', 'exhaustion', 'breathing', 'breathless', 
+  'swelling', 'inflammation', 'infection', 'bleeding', 'injury', 'wound',
+  'burn', 'allergy', 'allergic', 'toxic', 'poison', 'emergency'
 ];
 
 // Check if query is health-related
