@@ -276,11 +276,9 @@ const BookAppointment = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900">Dr. {doctor.userId.profile.firstName} {doctor.userId.profile.lastName}</h3>
                     <p className="text-sm text-gray-600">{doctor.specialization}</p>
-                    <div className="flex items-center mt-1">
-                      <span className="text-xs font-medium text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded">
-                        ★ {doctor.rating.average.toFixed(1)}
-                      </span>
-                    </div>
+                    <p className="mt-2 text-sm font-bold text-brand-teal">
+                      Fee: ₹{doctor.consultationFee || '500'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -419,6 +417,10 @@ const BookAppointment = () => {
                     <span className="text-gray-500">Time:</span>
                     <span className="font-medium">{selectedSlot?.start} - {selectedSlot?.end}</span>
                   </p>
+                  <div className="pt-2 mt-2 border-t border-gray-200 flex justify-between items-center text-brand-dark">
+                    <span className="font-bold text-[10px] uppercase tracking-widest">Payable Amount</span>
+                    <span className="text-xl font-black">₹{selectedDoctor?.consultationFee || '500'}</span>
+                  </div>
                 </div>
               </div>
 

@@ -10,13 +10,8 @@ const Bill = require('../models/Bill');
 const { sendPaymentConfirmationEmail } = require('../utils/emailService');
 
 // Initialize Razorpay
-let razorpay;
-if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
-  razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-  });
-}
+const razorpay = require('../utils/razorpay');
+
 
 // Create Razorpay order for appointment payment
 router.post('/create-order', [

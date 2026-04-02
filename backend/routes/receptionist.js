@@ -10,6 +10,7 @@ const Patient = require('../models/Patient');
 const Bill = require('../models/Bill');
 const LabReport = require('../models/LabReport');
 const Prescription = require('../models/Prescription');
+const razorpay = require('../utils/razorpay');
 
 const { labReportStorage, prescriptionStorage } = require('../config/cloudinary');
 
@@ -150,9 +151,35 @@ router.patch('/appointment/:appointmentId/cancel', [
     appointment.cancellationReason = reason;
     appointment.cancelledBy = req.user._id;
 
-    // Refund logic would go here
-    if (appointment.paymentStatus === 'paid') {
-      appointment.paymentStatus = 'refunded';
+    // Actual Razorpay Refund logic
+    if (appointment.paymentStatus === 'paid' && appointment.paymentDetails.paymentId) {
+      try {
+        // Check if it's not a mock order
+        if (!appointment.paymentDetails.orderId?.startsWith('order_mock_') && razorpay) {
+          await razorpay.payments.refund(appointment.paymentDetails.paymentId, {
+            notes: {
+              reason: reason || 'Cancelled by receptionist/admin',
+              appointmentId: appointmentId.toString()
+            }
+          });
+        }
+        appointment.paymentStatus = 'refunded';
+        console.log(`Refund processed for receptionist cancelled appointment ${appointmentId}`);
+
+        // Update associated bill if it exists
+        try {
+          await Bill.findOneAndUpdate(
+            { appointmentId: appointmentId, status: 'paid' },
+            { status: 'refunded' }
+          );
+        } catch (billUpdateError) {
+          console.error('Failed to update associated bill status during receptionist cancellation:', billUpdateError);
+        }
+      } catch (refundError) {
+        console.error('Refund processing failed during receptionist cancellation:', refundError);
+        // We still cancel but note the refund problem
+        appointment.notes = (appointment.notes || '') + '\n[Refund Failed: Please process manually]';
+      }
     }
 
     await appointment.save();

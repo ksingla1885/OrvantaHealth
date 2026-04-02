@@ -198,6 +198,7 @@ const Bills = () => {
       case 'draft': return 'bg-slate-100 text-slate-800 border border-slate-200';
       case 'sent': return 'bg-blue-100 text-blue-800 border border-blue-200';
       case 'pending_payment': return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+      case 'refunded': return 'bg-purple-600 text-white border border-purple-700 shadow-sm font-black';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -231,11 +232,16 @@ const Bills = () => {
       <div className="grid grid-cols-1 gap-4">
         {bills.length > 0 ? (
           bills.map((bill) => (
-            <div key={bill._id} className="card p-5 hover:shadow-md transition-shadow">
+            <div key={bill._id} className={`card p-5 hover:shadow-md transition-shadow relative overflow-hidden ${bill.status === 'refunded' ? 'bg-purple-50/50 border-purple-200 border-2' : ''}`}>
+              {bill.status === 'refunded' && (
+                <div className="absolute top-0 right-0 px-8 py-1 bg-purple-600 text-white text-[8px] font-black uppercase tracking-widest transform rotate-45 translate-x-[30px] translate-y-[10px] shadow-sm">
+                  Refunded
+                </div>
+              )}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start space-x-4">
-                  <div className="bg-brand-light h-12 w-12 rounded-full flex items-center justify-center shrink-0">
-                    <span className="text-brand-teal font-black text-xl">₹</span>
+                  <div className={`${bill.status === 'refunded' ? 'bg-purple-100 text-purple-600' : 'bg-brand-light text-brand-teal'} h-12 w-12 rounded-full flex items-center justify-center shrink-0`}>
+                    <span className="font-black text-xl">₹</span>
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
@@ -268,7 +274,7 @@ const Bills = () => {
                 </div>
 
                 <div className="flex items-center space-x-2 self-end md:self-center">
-                  {bill.status !== 'paid' && currentUser?.role === 'patient' && (
+                  {!['paid', 'refunded'].includes(bill.status) && currentUser?.role === 'patient' && (
                     <button
                       onClick={() => handlePayNow(bill)}
                       className="px-6 py-2 bg-brand-teal text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-brand-teal/90 transition-all shadow-lg shadow-brand-teal/20"
@@ -277,7 +283,7 @@ const Bills = () => {
                     </button>
                   )}
 
-                  {bill.status !== 'paid' && (currentUser?.role === 'receptionist' || currentUser?.role === 'superadmin') && (
+                  {!['paid', 'refunded'].includes(bill.status) && (currentUser?.role === 'receptionist' || currentUser?.role === 'superadmin') && (
                     <button
                       onClick={() => handleMarkAsPaid(bill._id)}
                       className="px-6 py-2 bg-brand-dark text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-lg"

@@ -125,12 +125,6 @@ const Doctors = () => {
                       Dr. {doctor.userId.profile.firstName} {doctor.userId.profile.lastName}
                     </h3>
                     <p className="text-primary-600 font-medium text-sm">{doctor.specialization}</p>
-                    <div className="flex items-center mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`h-3 w-3 ${i < Math.floor(doctor.rating.average) ? 'text-yellow-400 fill-current' : 'text-gray-200'}`} />
-                      ))}
-                      <span className="text-xs text-gray-500 ml-2">({doctor.rating.count} Reviews)</span>
-                    </div>
                   </div>
                 </div>
 

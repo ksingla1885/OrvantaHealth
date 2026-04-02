@@ -30,7 +30,7 @@ const billSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['draft', 'sent', 'paid', 'overdue', 'pending_payment'],
+    enum: ['draft', 'sent', 'paid', 'overdue', 'pending_payment', 'refunded'],
     default: 'draft'
   },
   dueDate: {

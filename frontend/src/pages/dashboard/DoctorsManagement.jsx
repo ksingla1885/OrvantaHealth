@@ -194,22 +194,6 @@ const DoctorsManagement = () => {
     }
   };
 
-  const getRatingStars = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-
-    for (let i = 0; i < fullStars; i++) {
-      stars.push(<Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
-    }
-    if (hasHalfStar) {
-      stars.push(<Star key="half" className="h-4 w-4 fill-yellow-200 text-yellow-400" />);
-    }
-    for (let i = stars.length; i < 5; i++) {
-      stars.push(<Star key={i} className="h-4 w-4 text-gray-300" />);
-    }
-    return stars;
-  };
 
   if (loading) {
     return (
@@ -306,10 +290,6 @@ const DoctorsManagement = () => {
                     <Calendar className="h-4 w-4 text-slate-300" />
                     <span>{doctor.experience}Y Practice Experience</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {getRatingStars(4.8)}
-                    <span className="text-[10px] font-black text-slate-400 ml-2">4.8 (Verified)</span>
-                  </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-6 border-t border-slate-50">
@@ -383,12 +363,8 @@ const DoctorsManagement = () => {
                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Qualification</p>
                   <p className="text-sm font-black text-brand-dark truncate">{selectedDoctor.qualifications}</p>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-2xl">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Reviews</p>
-                  <div className="flex items-center gap-1">
-                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                    <span className="text-sm font-black text-brand-dark">4.9/5</span>
-                  </div>
+                <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-center">
+                  <span className="text-[10px] font-black text-[#0F3A3A] uppercase tracking-widest whitespace-nowrap">Clinical Excellence Accredited</span>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-2xl">
                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Unit Status</p>
