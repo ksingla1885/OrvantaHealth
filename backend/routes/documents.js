@@ -4,6 +4,14 @@ const path = require('path');
 const axios = require('axios');
 const PDFDocument = require('pdfkit');
 const { authenticateToken } = require('../middleware/auth');
+const multer = require('multer');
+const { labReportStorage } = require('../config/cloudinary');
+
+// Configure multer for general document uploads
+const upload = multer({
+  storage: labReportStorage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 const Prescription = require('../models/Prescription');
 const { cloudinary } = require('../config/cloudinary');
 const Bill = require('../models/Bill');
@@ -12,6 +20,33 @@ const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 
 router.use(authenticateToken);
+
+// ---------------------------------------------------------------------------
+// POST: Upload document (patient/doctor)
+// ---------------------------------------------------------------------------
+router.post('/upload', upload.single('document'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'File uploaded successfully',
+            data: {
+                document: {
+                    name: req.file.originalname,
+                    url: req.file.path, // Cloudinary URL
+                    mimetype: req.file.mimetype,
+                    size: req.file.size
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Document upload error:', error);
+        res.status(500).json({ success: false, message: 'Server error during upload' });
+    }
+});
 
 // ---------------------------------------------------------------------------
 // Helper: generate a PDF invoice for a bill and pipe it to the response

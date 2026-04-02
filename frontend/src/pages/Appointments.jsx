@@ -210,6 +210,24 @@ const Appointments = () => {
                         " {appointment.symptoms} "
                       </p>
                     )}
+
+                    {/* Patient Uploaded Documents */}
+                    {appointment.patientDocuments && appointment.patientDocuments.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {appointment.patientDocuments.map((doc, idx) => (
+                          <a
+                            key={idx}
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-light text-brand-teal text-[10px] font-bold rounded-lg border border-brand-teal/10 hover:bg-brand-teal/10 transition-colors"
+                          >
+                            <FileText className="h-3 w-3" />
+                            {doc.name.length > 20 ? doc.name.substring(0, 20) + '...' : doc.name}
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

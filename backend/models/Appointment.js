@@ -46,6 +46,11 @@ const appointmentSchema = new mongoose.Schema({
   notes: {
     type: String
   },
+  patientDocuments: [{
+    name: { type: String },
+    url: { type: String },
+    documentType: { type: String } // 'report' or 'prescription'
+  }],
   prescription: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Prescription'

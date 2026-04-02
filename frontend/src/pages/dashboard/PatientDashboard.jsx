@@ -34,7 +34,9 @@ const PatientDashboard = () => {
         upcomingAppointments: appointmentsRes.data.data.appointments.filter(
           apt => new Date(apt.date) >= today && apt.status !== 'cancelled'
         ).length,
-        totalBills: billsRes.data.data.bills.filter(bill => bill.status !== 'paid').length,
+        totalBills: billsRes.data.data.bills.filter(
+          bill => !['paid', 'refunded', 'cancelled'].includes(bill.status)
+        ).length,
         prescriptions: prescriptionsRes.data.data.prescriptions.length,
         labReports: labReportsRes.data.data.labReports.length,
       });

@@ -26,7 +26,7 @@ router.post('/book', [
       });
     }
 
-    const { doctorId, date, timeSlot, symptoms, consultationType } = req.body;
+    const { doctorId, date, timeSlot, symptoms, consultationType, patientDocuments } = req.body;
     console.log('--- NEW BOOKING REQUEST ---');
     console.log('Body:', JSON.stringify(req.body, null, 2));
 
@@ -124,6 +124,7 @@ router.post('/book', [
       date: appointmentDate,
       timeSlot,
       symptoms,
+      patientDocuments: patientDocuments || [],
       consultationType: consultationType || 'in-person'
     });
 

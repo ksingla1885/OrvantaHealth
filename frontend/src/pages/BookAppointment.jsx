@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { Calendar, Clock, User, MessageSquare, ChevronRight, ChevronLeft, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, User, MessageSquare, ChevronRight, ChevronLeft, CheckCircle, Upload, X, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format, addDays, startOfToday } from 'date-fns';
 
@@ -20,6 +20,8 @@ const BookAppointment = () => {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [leaveDates, setLeaveDates] = useState([]);
   const [availableDays, setAvailableDays] = useState([]); // e.g. ['monday', 'wednesday']
+  const [patientDocuments, setPatientDocuments] = useState([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchDoctors();
@@ -96,7 +98,8 @@ const BookAppointment = () => {
         date: selectedDate,
         timeSlot: selectedSlot,
         symptoms,
-        consultationType
+        consultationType,
+        patientDocuments
       });
 
       if (response.data.success) {
@@ -205,6 +208,42 @@ const BookAppointment = () => {
     if (!availableDays.length) return true; // no filter until doctor is selected
     const weekDay = format(new Date(dateStr), 'EEEE').toLowerCase();
     return availableDays.includes(weekDay) && !leaveDates.includes(dateStr);
+  };
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const uploadPromises = files.map(file => {
+        const formData = new FormData();
+        formData.append('document', file);
+        formData.append('documentType', 'other'); 
+        return api.post('/documents/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const newDocs = results.map(res => ({
+        name: res.data.data.document.name,
+        url: res.data.data.document.url,
+        documentType: 'report' 
+      }));
+
+      setPatientDocuments(prev => [...prev, ...newDocs]);
+      toast.success('Documents uploaded successfully');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload some documents');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeDocument = (index) => {
+    setPatientDocuments(prev => prev.filter((_, i) => i !== index));
   };
 
   // When doctor is picked, jump to Step 2 and auto-select the first valid date
@@ -457,6 +496,53 @@ const BookAppointment = () => {
                   rows={6}
                   className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none resize-none"
                 />
+              </div>
+
+              {/* Document Upload Section */}
+              <div className="pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <Upload className="h-4 w-4 mr-2 text-primary-600" /> Medical Documents (Reports/Previous Prescriptions)
+                </label>
+                
+                <div className="space-y-4">
+                  <div className="flex border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-primary-400 transition-colors">
+                    <label className="flex flex-col items-center justify-center w-full cursor-pointer">
+                      <div className="flex flex-col items-center justify-center pt-2 pb-2">
+                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-500 font-bold uppercase tracking-widest text-[10px]">
+                          {uploading ? 'Uploading...' : 'Click to upload or drag and drop'}
+                        </p>
+                      </div>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        onChange={handleFileUpload} 
+                        multiple 
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        disabled={uploading}
+                      />
+                    </label>
+                  </div>
+
+                  {patientDocuments.length > 0 && (
+                    <div className="grid grid-cols-1 gap-2">
+                      {patientDocuments.map((doc, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-brand-light rounded-xl border border-brand-teal/5">
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-4 w-4 text-brand-teal" />
+                            <span className="text-xs font-black text-brand-dark truncate max-w-[200px]">{doc.name}</span>
+                          </div>
+                          <button 
+                            onClick={() => removeDocument(idx)}
+                            className="p-1 hover:bg-white rounded-full text-red-400 transition-all"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="pt-4">
