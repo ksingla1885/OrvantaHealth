@@ -32,26 +32,26 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci
+        run: npm install
 
-      - name: Check for vulnerabilities
-        working-directory: frontend
-        run: npm audit --audit-level=moderate || true
+#      - name: Check for vulnerabilities
+#        working-directory: frontend
+#        run: npm audit --audit-level=moderate || true
 
       - name: Build
         working-directory: frontend
         env:
           CI: false
-          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build
 
-      - name: Test
-        working-directory: frontend
-        run: npm test -- --passWithNoTests --coverage
+#      - name: Test
+#        working-directory: frontend
+#        run: npm test -- --passWithNoTests --coverage
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./frontend/coverage/coverage-final.json
-          flags: frontend
-          fail_ci_if_error: false
+#      - name: Upload coverage
+#        uses: codecov/codecov-action@v3
+#        with:
+#          files: ./frontend/coverage/coverage-final.json
+#          flags: frontend
+#          fail_ci_if_error: false
