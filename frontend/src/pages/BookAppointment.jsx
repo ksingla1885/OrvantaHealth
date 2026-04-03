@@ -104,7 +104,7 @@ const BookAppointment = () => {
 
       if (response.data.success) {
         const appointmentId = response.data.data.appointment._id;
-        
+
         // 2. Create Payment Order
         const orderResponse = await api.post('/payments/create-order', {
           appointmentId
@@ -125,11 +125,11 @@ const BookAppointment = () => {
 
               if (verifyResponse.data.success) {
                 toast.success('Payment successful (Mock)!');
-                navigate('/patient/payment-success', { 
-                  state: { 
+                navigate('/patient/payment-success', {
+                  state: {
                     bill: verifyResponse.data.data.bill,
-                    paymentId: verifyResponse.data.data.paymentId 
-                  } 
+                    paymentId: verifyResponse.data.data.paymentId
+                  }
                 });
               }
             } catch (error) {
@@ -166,11 +166,11 @@ const BookAppointment = () => {
 
                 if (verifyResponse.data.success) {
                   toast.success('Payment successful!');
-                  navigate('/patient/payment-success', { 
-                    state: { 
+                  navigate('/patient/payment-success', {
+                    state: {
                       bill: verifyResponse.data.data.bill,
-                      paymentId: response.razorpay_payment_id 
-                    } 
+                      paymentId: response.razorpay_payment_id
+                    }
                   });
                 }
               } catch (error) {
@@ -219,7 +219,7 @@ const BookAppointment = () => {
       const uploadPromises = files.map(file => {
         const formData = new FormData();
         formData.append('document', file);
-        formData.append('documentType', 'other'); 
+        formData.append('documentType', 'other');
         return api.post('/documents/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -229,7 +229,7 @@ const BookAppointment = () => {
       const newDocs = results.map(res => ({
         name: res.data.data.document.name,
         url: res.data.data.document.url,
-        documentType: 'report' 
+        documentType: 'report'
       }));
 
       setPatientDocuments(prev => [...prev, ...newDocs]);
@@ -366,10 +366,10 @@ const BookAppointment = () => {
                       disabled={isDisabled}
                       onClick={() => { if (!isDisabled) { setSelectedDate(dateStr); setSelectedSlot(null); } }}
                       className={`flex flex-col items-center p-3 rounded-lg border transition-all ${isOnLeave
-                          ? 'bg-red-50 border-red-200 text-red-400 cursor-not-allowed opacity-70'
-                          : isSelected
-                            ? 'bg-primary-600 border-primary-600 text-white shadow-md'
-                            : 'bg-white border-gray-200 text-gray-900 hover:border-primary-400 hover:shadow'
+                        ? 'bg-red-50 border-red-200 text-red-400 cursor-not-allowed opacity-70'
+                        : isSelected
+                          ? 'bg-primary-600 border-primary-600 text-white shadow-md'
+                          : 'bg-white border-gray-200 text-gray-900 hover:border-primary-400 hover:shadow'
                         }`}
                       title={isOnLeave ? 'Doctor is on leave' : ''}
                     >
@@ -464,7 +464,7 @@ const BookAppointment = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Consultation Type</label>
+                {/* <label className="block text-sm font-medium text-gray-700 mb-2">Consultation Type</label> */}
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setConsultationType('in-person')}
@@ -473,13 +473,13 @@ const BookAppointment = () => {
                   >
                     In-Person
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => setConsultationType('video')}
                     className={`p-3 text-sm rounded-lg border text-center transition-all ${consultationType === 'video' ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white'
                       }`}
                   >
                     Video Call
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>
@@ -503,7 +503,7 @@ const BookAppointment = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                   <Upload className="h-4 w-4 mr-2 text-primary-600" /> Medical Documents (Reports/Previous Prescriptions)
                 </label>
-                
+
                 <div className="space-y-4">
                   <div className="flex border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-primary-400 transition-colors">
                     <label className="flex flex-col items-center justify-center w-full cursor-pointer">
@@ -513,11 +513,11 @@ const BookAppointment = () => {
                           {uploading ? 'Uploading...' : 'Click to upload or drag and drop'}
                         </p>
                       </div>
-                      <input 
-                        type="file" 
-                        className="hidden" 
-                        onChange={handleFileUpload} 
-                        multiple 
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                        multiple
                         accept=".pdf,.png,.jpg,.jpeg"
                         disabled={uploading}
                       />
@@ -532,7 +532,7 @@ const BookAppointment = () => {
                             <FileText className="h-4 w-4 text-brand-teal" />
                             <span className="text-xs font-black text-brand-dark truncate max-w-[200px]">{doc.name}</span>
                           </div>
-                          <button 
+                          <button
                             onClick={() => removeDocument(idx)}
                             className="p-1 hover:bg-white rounded-full text-red-400 transition-all"
                           >

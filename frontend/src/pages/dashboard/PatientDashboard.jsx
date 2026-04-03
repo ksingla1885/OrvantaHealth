@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Calendar, DollarSign, FileText, TestTube, User, Clock,
   ChevronRight, ArrowRight, Activity, Shield, Heart, Search
 } from 'lucide-react';
@@ -127,7 +127,7 @@ const PatientDashboard = () => {
             Your comprehensive medical journey, centralized and secure.
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-premium border border-slate-50">
           <Shield className="h-4 w-4 text-emerald-500" />
           <span className="text-[10px] font-black text-slate-700 uppercase tracking-[0.2em]">Data Privacy: Encrypted</span>
@@ -158,16 +158,16 @@ const PatientDashboard = () => {
       {/* Quick Launchpad */}
       <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-premium relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-teal to-rose-400 opacity-50"></div>
-        
+
         <div className="flex items-center justify-between mb-10">
           <div>
             <h2 className="text-2xl font-black text-brand-dark font-display">Medical Actions</h2>
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Navigate your clinical workspace</p>
           </div>
-          <div className="flex bg-slate-50 p-1.5 rounded-full border border-slate-100">
+          {/* <div className="flex bg-slate-50 p-1.5 rounded-full border border-slate-100">
             <button className="px-5 py-2 bg-white shadow-sm rounded-full text-[10px] font-black text-brand-dark transition-all">GRID VIEW</button>
             <button className="px-5 py-2 text-[10px] font-black text-slate-400 hover:text-brand-dark transition-all">LIST VIEW</button>
-          </div>
+          </div> */}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -182,7 +182,7 @@ const PatientDashboard = () => {
               </div>
               <h4 className="text-lg font-black text-brand-dark group-hover:text-white transition-colors font-display mb-2">{action.name}</h4>
               <p className="text-xs text-slate-400 group-hover:text-teal-100/60 leading-relaxed transition-colors mb-6">{action.description}</p>
-              
+
               <div className="mt-auto flex items-center gap-2 text-[10px] font-black text-brand-teal group-hover:text-white uppercase tracking-widest">
                 Initialize Action
                 <ArrowRight className="h-3 w-3 group-hover:translate-x-2 transition-transform" />
@@ -196,7 +196,7 @@ const PatientDashboard = () => {
       <div className="relative overflow-hidden rounded-[3rem] bg-brand-dark p-10 md:p-14 text-white shadow-2xl group">
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-teal opacity-10 rounded-full -mr-32 -mt-32 blur-3xl transition-transform duration-1000 group-hover:scale-110"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-rose-500 opacity-5 rounded-full -ml-24 -mb-24 blur-2xl"></div>
-        
+
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-12 text-center md:text-left">
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
@@ -212,9 +212,9 @@ const PatientDashboard = () => {
               every step of the way. All within a secured, high-fidelity environment.
             </p>
           </div>
-          
+
           <div className="flex-shrink-0">
-            <button 
+            <button
               onClick={() => navigate('/patient/book-appointment')}
               className="px-10 py-6 bg-brand-teal hover:bg-white hover:text-brand-dark text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.25em] shadow-2xl transition-all hover:-translate-y-1 active:translate-y-0"
             >

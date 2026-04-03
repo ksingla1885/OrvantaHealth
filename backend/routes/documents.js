@@ -149,6 +149,116 @@ const generateBillPDF = (bill, res, filename) => {
     doc.end();
 };
 
+// ---------------------------------------------------------------------------
+// Helper: generate a PDF for a prescription and pipe it to the response
+// ---------------------------------------------------------------------------
+const generatePrescriptionPDF = (prescription, res, filename) => {
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    doc.pipe(res);
+
+    // ── Header ──────────────────────────────────────────────────────────────
+    doc.rect(0, 0, doc.page.width, 90).fill('#0d9488');
+    doc.fillColor('white').fontSize(24).font('Helvetica-Bold')
+        .text('OrvantaHealth', 50, 28);
+    doc.fontSize(10).font('Helvetica')
+        .text('CLINICAL PRESCRIPTION', 50, 58);
+    doc.fillColor('#0d9488').fontSize(20).font('Helvetica-Bold')
+        .text('RX', 0, 28, { align: 'right', width: doc.page.width - 50 });
+    doc.moveDown(4);
+
+    // ── Prescription Meta ───────────────────────────────────────────────────
+    const date = prescription.createdAt ? new Date(prescription.createdAt).toLocaleDateString('en-IN', {
+        year: 'numeric', month: 'long', day: 'numeric'
+    }) : 'N/A';
+    
+    const metaY = doc.y;
+    // Left column: Patient
+    doc.fillColor('#374151').fontSize(9).font('Helvetica-Bold').text('Patient:', 50, metaY);
+    const patientName = prescription.patientId?.userId?.profile
+        ? `${prescription.patientId.userId.profile.firstName || ''} ${prescription.patientId.userId.profile.lastName || ''}`.trim()
+        : 'Patient';
+    doc.fillColor('#111827').fontSize(11).font('Helvetica-Bold').text(patientName, 50, metaY + 16);
+
+    // Right column: Doctor
+    doc.fillColor('#374151').fontSize(9).font('Helvetica-Bold').text('Doctor:', 350, metaY);
+    const docName = prescription.doctorId?.userId?.profile
+        ? `Dr. ${prescription.doctorId.userId.profile.firstName || ''} ${prescription.doctorId.userId.profile.lastName || ''}`.trim()
+        : 'Doctor';
+    const specialization = prescription.doctorId?.specialization || 'General Physician';
+    doc.fillColor('#111827').fontSize(11).font('Helvetica-Bold').text(docName, 350, metaY + 16);
+    doc.fillColor('#6B7280').fontSize(9).font('Helvetica').text(specialization, 350, metaY + 30);
+    doc.text(`Date: ${date}`, 350, metaY + 44);
+
+    doc.moveDown(4);
+
+    // ── Diagnosis Section ───────────────────────────────────────────────────
+    doc.rect(50, doc.y, doc.page.width - 100, 25).fill('#F3F4F6');
+    doc.fillColor('#374151').fontSize(10).font('Helvetica-Bold').text(`DIAGNOSIS: ${prescription.diagnosis || 'General Checkup'}`, 55, doc.y + 7);
+    doc.moveDown(2.5);
+
+    // ── Medications Table ───────────────────────────────────────────────────
+    const tableTop = doc.y;
+    doc.fillColor('#0d9488').fontSize(11).font('Helvetica-Bold').text('PRESCRIPTION (Rx)', 50, tableTop);
+    doc.moveDown(1);
+
+    const medicationY = doc.y;
+    doc.rect(50, medicationY, doc.page.width - 100, 20).fill('#0d9488');
+    doc.fillColor('white').fontSize(9).font('Helvetica-Bold')
+        .text('Medicine Name', 55, medicationY + 6)
+        .text('Dosage', 300, medicationY + 6)
+        .text('Frequency', 380, medicationY + 6)
+        .text('Duration', 480, medicationY + 6);
+
+    let rowY = medicationY + 25;
+    (prescription.medicines || []).forEach((med, idx) => {
+        const bg = idx % 2 === 0 ? '#F9FAFB' : '#FFFFFF';
+        doc.rect(50, rowY - 4, doc.page.width - 100, 22).fill(bg);
+        doc.fillColor('#111827').fontSize(9).font('Helvetica')
+            .text(med.name || '-', 55, rowY)
+            .text(med.dosage || '-', 300, rowY)
+            .text(med.frequency || '-', 380, rowY)
+            .text(med.duration || '-', 480, rowY);
+        
+        if (med.instructions) {
+            rowY += 15;
+            doc.fillColor('#6B7280').fontSize(8).font('Helvetica-Oblique').text(`Note: ${med.instructions}`, 55, rowY);
+            rowY += 10;
+        } else {
+            rowY += 22;
+        }
+    });
+
+    // ── Tests & Advice ──────────────────────────────────────────────────────
+    if (rowY > doc.page.height - 200) { doc.addPage(); rowY = 50; }
+    
+    if (prescription.tests && prescription.tests.length > 0) {
+        rowY += 20;
+        doc.fillColor('#0d9488').fontSize(11).font('Helvetica-Bold').text('SUGGESTED TESTS', 50, rowY);
+        rowY += 20;
+        prescription.tests.forEach(test => {
+            doc.fillColor('#111827').fontSize(9).font('Helvetica').text(`\u2022 ${test.name}`, 60, rowY);
+            rowY += 14;
+        });
+    }
+
+    if (prescription.advice) {
+        rowY += 20;
+        doc.fillColor('#0d9488').fontSize(11).font('Helvetica-Bold').text('DOCTOR\'S ADVICE', 50, rowY);
+        rowY += 20;
+        doc.fillColor('#4B5563').fontSize(9).font('Helvetica').text(prescription.advice, 50, rowY, { width: 490 });
+    }
+
+    // ── Footer ────────────────────────────────────────────────────────────────
+    doc.fillColor('#9CA3AF').fontSize(8).font('Helvetica')
+        .text('This is a computer-generated prescription. Valid without physical signature.',
+            50, doc.page.height - 60, { align: 'center', width: doc.page.width - 100 });
+
+    doc.end();
+};
+
 // Download document (shared among roles)
 router.get('/download/:type/:id', async (req, res) => {
     const { type, id } = req.params;
@@ -168,7 +278,9 @@ router.get('/download/:type/:id', async (req, res) => {
 
         switch (type) {
             case 'prescription':
-                const prescription = await Prescription.findById(id);
+                const prescription = await Prescription.findById(id)
+                    .populate({ path: 'patientId', populate: { path: 'userId', select: 'profile' } })
+                    .populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } });
                 if (!prescription) {
                     console.log(`[Download] Prescription not found: ${id}`);
                     return res.status(404).json({ success: false, message: 'Prescription not found' });
@@ -176,16 +288,15 @@ router.get('/download/:type/:id', async (req, res) => {
 
                 if (role === 'patient') {
                     const patient = await Patient.findOne({ userId });
-                    console.log(`[Auth] Patient Record Check - Found: ${!!patient}, Patient ID on Doc: ${prescription.patientId}`);
-                    if (!patient || !prescription.patientId || prescription.patientId.toString() !== patient._id.toString()) {
-                        return res.status(403).json({ success: false, message: 'Access denied: You are not authorized to view this prescription' });
+                    if (!patient || !prescription.patientId || prescription.patientId._id.toString() !== patient._id.toString()) {
+                        return res.status(403).json({ success: false, message: 'Access denied' });
                     }
-                } else if (role === 'doctor') {
-                    const doctor = await Doctor.findOne({ userId });
-                    console.log(`[Auth] Doctor Record Check - Found: ${!!doctor}, Doctor ID on Doc: ${prescription.doctorId}`);
-                    if (!doctor || !prescription.doctorId || prescription.doctorId.toString() !== doctor._id.toString()) {
-                        return res.status(403).json({ success: false, message: 'Access denied: You are not authorized to view this prescription' });
-                    }
+                }
+
+                // If no receipt file, generate PDF on the fly
+                if (!prescription.receipt) {
+                    console.log(`[Download] No receipt on prescription ${id} — generating PDF on the fly`);
+                    return generatePrescriptionPDF(prescription, res, `prescription_${id}.pdf`);
                 }
 
                 filePath = prescription.receipt;
