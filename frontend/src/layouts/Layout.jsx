@@ -89,12 +89,6 @@ const Layout = () => {
             icon: FileText,
             current: location.pathname.includes('/contact-messages'),
           },
-          {
-            name: 'Bills',
-            href: '/receptionist/bills',
-            icon: RupeeIcon,
-            current: location.pathname.includes('/bills'),
-          },
         ];
 
       case 'doctor':

@@ -184,6 +184,7 @@ router.get('/', authenticateToken, async (req, res) => {
           });
         }
         query.doctorId = doctor._id;
+        query.status = { $ne: 'pending' }; // Doctors should not see pending appointments
         break;
 
       case 'receptionist':
@@ -210,9 +211,20 @@ router.get('/', authenticateToken, async (req, res) => {
       };
     }
 
-    // Add status filter if provided
+    // Add status filter if provided — but never let it override role-based guards.
+    // Doctors already have query.status = { $ne: 'pending' }; we must not overwrite it
+    // with a raw string that could expose pending appointments back to the doctor.
     if (req.query.status) {
-      query.status = req.query.status;
+      if (req.user.role === 'doctor') {
+        // Doctors can only filter within the statuses they're allowed to see
+        const allowedDoctorStatuses = ['confirmed', 'checked_in', 'checked_out', 'completed', 'cancelled'];
+        if (allowedDoctorStatuses.includes(req.query.status)) {
+          query.status = req.query.status; // safe to override with a specific allowed status
+        }
+        // ignore any other status (e.g. 'pending') — leave the $ne guard intact
+      } else {
+        query.status = req.query.status;
+      }
     }
 
     appointments = await Appointment.find(query)
@@ -242,7 +254,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
 // Update appointment status (receptionist, doctor, superadmin)
 router.patch('/:appointmentId/status', [
-  body('status').isIn(['confirmed', 'cancelled', 'completed'])
+  body('status').isIn(['confirmed', 'pending', 'checked_in', 'checked_out', 'cancelled', 'completed'])
 ], authenticateToken, authorizeRoles('receptionist', 'doctor', 'superadmin'), async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -265,7 +277,7 @@ router.patch('/:appointmentId/status', [
       });
     }
 
-    // Additional validation based on role
+    // Strict workflow state-machine enforcement
     if (req.user.role === 'doctor') {
       const doctor = await Doctor.findOne({ userId: req.user._id });
       if (!doctor || appointment.doctorId.toString() !== doctor._id.toString()) {
@@ -275,11 +287,42 @@ router.patch('/:appointmentId/status', [
         });
       }
 
-      // Doctors can only confirm or complete appointments
-      if (!['confirmed', 'completed'].includes(status)) {
+      // Doctors can ONLY perform these transitions (in sequence):
+      //   confirmed  → checked_in
+      //   checked_in → checked_out
+      // Prescription creation (which sets 'completed') is handled separately in /doctor/prescription
+      const allowedDoctorTransitions = {
+        confirmed: 'checked_in',
+        checked_in: 'checked_out'
+      };
+
+      const expectedNext = allowedDoctorTransitions[appointment.status];
+      if (!expectedNext || status !== expectedNext) {
         return res.status(403).json({
           success: false,
-          message: 'Doctors can only confirm or complete appointments'
+          message: `Cannot transition from '${appointment.status}' to '${status}'. Allowed: ${expectedNext ? `'${expectedNext}'` : 'none'}`
+        });
+      }
+    }
+
+    // Receptionist / superadmin state-machine:
+    //   pending    → confirmed  (confirm the booking)
+    //   pending    → cancelled  (reject it)
+    //   confirmed  → cancelled  (cancel after confirmation)
+    //   checked_in → cancelled  (emergency cancel)
+    // Anything else is invalid — receptionists must NOT jump over statuses.
+    if (req.user.role === 'receptionist' || req.user.role === 'superadmin') {
+      const allowedReceptionistTransitions = {
+        pending:    ['confirmed', 'cancelled'],
+        confirmed:  ['cancelled'],
+        checked_in: ['cancelled'],
+        // checked_out & completed: visit is done — cancellation not permitted
+      };
+      const allowed = allowedReceptionistTransitions[appointment.status] || [];
+      if (!allowed.includes(status)) {
+        return res.status(403).json({
+          success: false,
+          message: `Cannot transition appointment from '${appointment.status}' to '${status}'.`
         });
       }
     }

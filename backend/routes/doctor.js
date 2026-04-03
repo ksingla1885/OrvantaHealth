@@ -114,7 +114,8 @@ router.get('/dashboard-stats', async (req, res) => {
 
     const todayPatients = await Appointment.countDocuments({
       doctorId: doctor._id,
-      date: { $gte: startOfToday, $lte: endOfToday }
+      date: { $gte: startOfToday, $lte: endOfToday },
+      status: { $ne: 'pending' }
     });
 
     // Total Network (Unique Patients)
@@ -223,6 +224,8 @@ router.get('/appointments', async (req, res) => {
     // Add status filter if provided
     if (req.query.status) {
       query.status = req.query.status;
+    } else {
+      query.status = { $ne: 'pending' }; // Doctors should NOT see pending appointments
     }
 
     const appointments = await Appointment.find(query)
@@ -325,6 +328,14 @@ router.post('/prescription', [
       return res.status(403).json({
         success: false,
         message: 'Access denied'
+      });
+    }
+
+    // Check if appointment is checked_out
+    if (appointment.status !== 'checked_out') {
+      return res.status(403).json({
+        success: false,
+        message: 'Prescription can only be created after patient checkout'
       });
     }
 

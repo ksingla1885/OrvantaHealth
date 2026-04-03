@@ -212,7 +212,7 @@ router.post('/verify', [
     // Update appointment payment status
     appointment.paymentDetails.paymentId = razorpay_payment_id;
     appointment.paymentStatus = 'paid';
-    appointment.status = 'confirmed';
+    // Status remains 'pending' until receptionist confirms
     await appointment.save();
 
     // Create a bill for the appointment

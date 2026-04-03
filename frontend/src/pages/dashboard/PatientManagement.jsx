@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Users, Search, Filter, Eye, Calendar, Phone, Mail, FileUp, DollarSign, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import LabReportUploadModal from '../../components/LabReportUploadModal';
 import BillUploadModal from '../../components/BillUploadModal';
 
 const PatientManagement = () => {
+  const { user } = useAuth();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -219,39 +221,41 @@ const PatientManagement = () => {
                 <p className="text-slate-400 font-bold tracking-[0.2em] text-[10px]">{selectedPatient.userId.email?.toLowerCase()}</p>
               </div>
 
-              {/* Service Actions - NEW SECTION */}
-              <div className="grid grid-cols-2 gap-4 mb-10">
-                <button
-                  onClick={() => {
-                    setShowPatientModal(false);
-                    setShowLabModal(true);
-                  }}
-                  className="p-4 rounded-2xl bg-brand-dark text-white hover:bg-slate-800 transition-all flex items-center gap-4 group"
-                >
-                  <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-brand-teal group-hover:scale-110 transition-transform">
-                    <FileUp className="h-5 w-5" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Lab Services</p>
-                    <p className="font-bold text-sm">Upload Report</p>
-                  </div>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPatientModal(false);
-                    setShowBillModal(true);
-                  }}
-                  className="p-4 rounded-2xl bg-brand-teal text-white hover:bg-brand-teal/90 transition-all flex items-center gap-4 group"
-                >
-                  <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                    <DollarSign className="h-5 w-5" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Accounts</p>
-                    <p className="font-bold text-sm">Generate Bill</p>
-                  </div>
-                </button>
-              </div>
+              {/* Service Actions - ONLY FOR RECEPTIONIST */}
+              {user?.role !== 'superadmin' && (
+                <div className="grid grid-cols-2 gap-4 mb-10">
+                  <button
+                    onClick={() => {
+                      setShowPatientModal(false);
+                      setShowLabModal(true);
+                    }}
+                    className="p-4 rounded-2xl bg-brand-dark text-white hover:bg-slate-800 transition-all flex items-center gap-4 group"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-brand-teal group-hover:scale-110 transition-transform">
+                      <FileUp className="h-5 w-5" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Lab Services</p>
+                      <p className="font-bold text-sm">Upload Report</p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPatientModal(false);
+                      setShowBillModal(true);
+                    }}
+                    className="p-4 rounded-2xl bg-brand-teal text-white hover:bg-brand-teal/90 transition-all flex items-center gap-4 group"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                      <DollarSign className="h-5 w-5" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Accounts</p>
+                      <p className="font-bold text-sm">Generate Bill</p>
+                    </div>
+                  </button>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                 <div className="p-5 bg-brand-light rounded-2xl border border-brand-teal/5">
