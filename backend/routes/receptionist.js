@@ -164,7 +164,6 @@ router.patch('/appointment/:appointmentId/cancel', [
           });
         }
         appointment.paymentStatus = 'refunded';
-        console.log(`Refund processed for receptionist cancelled appointment ${appointmentId}`);
 
         // Update associated bill if it exists
         try {

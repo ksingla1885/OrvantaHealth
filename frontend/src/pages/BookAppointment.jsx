@@ -86,13 +86,6 @@ const BookAppointment = () => {
     try {
       setLoading(true);
       // 1. Create Appointment
-      console.log('Attempting to book appointment:', {
-        doctorId: selectedDoctor._id,
-        date: selectedDate,
-        timeSlot: selectedSlot,
-        symptoms,
-        consultationType
-      });
       const response = await api.post('/appointments/book', {
         doctorId: selectedDoctor._id,
         date: selectedDate,

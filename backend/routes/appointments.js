@@ -27,13 +27,10 @@ router.post('/book', [
     }
 
     const { doctorId, date, timeSlot, symptoms, consultationType, patientDocuments } = req.body;
-    console.log('--- NEW BOOKING REQUEST ---');
-    console.log('Body:', JSON.stringify(req.body, null, 2));
 
     // Check if doctor exists and is available
     const doctor = await Doctor.findById(doctorId);
     if (!doctor || !doctor.isAvailable) {
-      console.log('Doctor not found or not available:', doctorId);
       return res.status(404).json({
         success: false,
         message: 'Doctor not found or not available'
@@ -51,10 +48,8 @@ router.post('/book', [
 
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const dayOfWeek = dayNames[appointmentDate.getUTCDay()];
-    console.log('Appointment Date:', date, 'Day of week:', dayOfWeek);
 
     if (!doctor.availability?.days?.includes(dayOfWeek)) {
-      console.log('Doctor not available on this day:', dayOfWeek, 'Available:', doctor.availability?.days);
       return res.status(400).json({
         success: false,
         message: `Doctor is not available on ${dayOfWeek}s. Available days: ${doctor.availability?.days?.join(', ') || 'None'}`
@@ -100,14 +95,12 @@ router.post('/book', [
     });
 
     if (existingAppointment) {
-      console.log('Double booking detected:', doctorId, date, timeSlot);
       return res.status(400).json({
         success: false,
         message: 'This time slot is already booked'
       });
     }
 
-    console.log('Checks passed. Finding patient for user:', req.user._id);
     // Get patient profile
     const patient = await Patient.findOne({ userId: req.user._id });
     if (!patient) {
@@ -347,7 +340,6 @@ router.patch('/:appointmentId/status', [
             });
           }
           appointment.paymentStatus = 'refunded';
-          console.log(`Refund processed for appointment ${appointment._id}`);
 
           // Update associated bill if it exists
           try {
@@ -446,7 +438,6 @@ router.patch('/:appointmentId/cancel', [
           });
         }
         appointment.paymentStatus = 'refunded';
-        console.log(`Refund processed for cancelled appointment ${appointmentId}`);
 
         // Update associated bill if it exists
         try {

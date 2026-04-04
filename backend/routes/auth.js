@@ -86,7 +86,6 @@ router.post('/register', [
   body('lastName').notEmpty().trim(),
   body('phone').optional(),
 ], async (req, res) => {
-  console.log('Register Request Body:', req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

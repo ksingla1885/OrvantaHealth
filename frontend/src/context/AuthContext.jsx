@@ -105,11 +105,8 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      console.log('Sending registration request to:', '/auth/register');
-      console.log('Registration data:', userData);
       
       const response = await api.post('/auth/register', userData);
-      console.log('Registration response:', response.data);
 
       if (response.data.success) {
         const { user, tokens } = response.data.data;

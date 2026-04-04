@@ -60,9 +60,7 @@ const Register = () => {
         address: formData.address?.trim() || undefined,
       };
 
-      console.log('Submitting registration data:', userData);
       const result = await register(userData);
-      console.log('Registration result:', result);
 
       if (result.success) {
         toast.success('Registration successful!');

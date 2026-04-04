@@ -124,7 +124,6 @@ router.post('/create-staff', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Staff creation validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation errors',
