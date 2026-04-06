@@ -49,7 +49,7 @@ const Landing = () => {
                                 Orvanta<span className="text-brand-teal">Health</span>
                             </span>
                         </div>
-                        
+
                         <div className="hidden lg:flex items-center gap-12">
                             {['Innovations', 'Intelligence', 'Security', 'Enterprise'].map((item) => (
                                 <a key={item} href={`#${item.toLowerCase()}`} className="text-slate-500 hover:text-brand-dark font-bold transition-all text-xs uppercase tracking-[0.25em] hover:tracking-[0.4em] relative group">
@@ -83,17 +83,17 @@ const Landing = () => {
                                 <Sparkles className="h-4 w-4 fill-brand-teal animate-pulse" />
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">Redefining Clinical Workflow</span>
                             </div>
-                            
+
                             <h1 className="text-7xl sm:text-8xl md:text-9xl font-black tracking-tighter font-display leading-[0.85] mb-12">
                                 <span className="block text-brand-dark opacity-0 animate-slide-up stagger-1">Future Of</span>
-                                <span className="relative inline-block mt-4 text-transparent bg-clip-text bg-gradient-to-r from-brand-dark via-brand-teal to-brand-teal opacity-0 animate-slide-up stagger-2">
-                                    <span className="relative z-10 italic">Healthcare.</span>
+                                <span className="relative inline-block mt-4 text-brand-teal opacity-0 animate-slide-up stagger-2">
+                                    <span className="relative z-10 italic">HealthCare.</span>
                                     <div className="absolute -bottom-4 left-0 w-full h-4 bg-brand-teal/10 blur-xl"></div>
                                 </span>
                             </h1>
-                            
+
                             <p className="mt-12 text-2xl text-slate-500 font-medium leading-relaxed max-w-2xl mx-auto xl:mx-0 opacity-0 animate-slide-up stagger-3">
-                                Experience the fusion of clinical precision and generative intelligence. 
+                                Experience the fusion of clinical precision and generative intelligence.
                                 <span className="font-bold text-brand-dark"> Elevate your practice beyond conventional boundaries.</span>
                             </p>
 
@@ -140,15 +140,15 @@ const Landing = () => {
                             <div className="relative group transition-all duration-1000 animate-fade-in stagger-3">
                                 {/* Decorative Glow */}
                                 <div className="absolute -inset-20 bg-brand-teal/10 blur-[150px] rounded-full opacity-30 group-hover:opacity-60 transition-opacity"></div>
-                                
+
                                 <div className="relative rounded-[4rem] overflow-hidden shadow-[0_80px_160px_-40px_rgba(0,0,0,0.2)] border-[12px] border-white group-hover:rotate-1 group-hover:scale-[1.02] transition-all duration-700">
-                                    <img 
-                                        src="/hospital_hero.png" 
-                                        alt="Intelligence Dashboard" 
+                                    <img
+                                        src="/hospital_hero.png"
+                                        alt="Intelligence Dashboard"
                                         className="w-full h-[700px] object-cover"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/60 via-transparent to-transparent"></div>
-                                    
+
                                     {/* HUD Overlays */}
                                     <div className="absolute top-10 left-10 glass-card-dark p-6 rounded-[2rem] border-white/10 shadow-2xl animate-float">
                                         <Activity className="h-8 w-8 text-brand-teal mb-3" />
@@ -307,7 +307,7 @@ const Landing = () => {
                                     <div className="p-10 rounded-[3rem] bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group">
                                         <ShieldCheck className="h-10 w-10 text-brand-teal mb-6 group-hover:scale-110 transition-transform" />
                                         <p className="text-4xl font-black font-display mb-2">Tier-4</p>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-teal-100/20">Datacenter Security</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-teal-100/20">Security Architecture</p>
                                     </div>
                                 </div>
                             </div>
@@ -347,15 +347,15 @@ const Landing = () => {
                 <div className="max-w-6xl mx-auto px-10">
                     <div className="relative glass-card rounded-[5rem] p-16 md:p-32 border-white shadow-[0_120px_240px_-60px_rgba(0,0,0,0.15)] overflow-hidden">
                         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-teal/10 rounded-full blur-[150px] -mr-64 -mt-64 animate-pulse-slow"></div>
-                        
+
                         <div className="relative z-10 flex flex-col md:flex-row items-center gap-24">
                             <div className="relative group shrink-0 perspective-1000">
                                 <div className="absolute inset-0 bg-brand-dark rounded-[4rem] rotate-12 group-hover:rotate-0 transition-all duration-700 shadow-2xl"></div>
                                 <div className="relative w-80 h-80 rounded-[4rem] overflow-hidden shadow-2xl transition-all duration-700 group-hover:-translate-y-6 group-hover:scale-105 active:scale-100">
-                                    <img 
-                                        src="/developer.jpg" 
-                                        alt="Ketan Kumar" 
-                                        className="w-full h-full object-cover object-top scale-110 group-hover:scale-100 transition-all duration-1000 grayscale hover:grayscale-0"
+                                    <img
+                                        src="/developer.jpg"
+                                        alt="Ketan Kumar"
+                                        className="w-full h-full object-cover object-top scale-110 group-hover:scale-100 transition-all duration-1000"
                                     />
                                     <div className="absolute inset-0 bg-brand-dark/20 mix-blend-overlay"></div>
                                 </div>
@@ -370,18 +370,18 @@ const Landing = () => {
                                 <p className="text-2xl text-slate-500 font-medium leading-relaxed mb-12">
                                     Dedicated to the intersection of code and care. Ketan designed OrvantaHealth to eliminate the friction between medical experts and technical systems, creating a seamless environment for healing.
                                 </p>
-                                
+
                                 <div className="flex flex-wrap justify-center md:justify-start gap-6">
                                     {[
                                         { label: 'Network', icon: Linkedin, link: 'https://www.linkedin.com/in/ketan-kumar1885', bg: 'bg-brand-dark', text: 'text-white' },
                                         { label: 'Source', icon: Github, link: 'https://github.com/Ksingla1885', bg: 'bg-white', text: 'text-brand-dark shadow-xl' },
                                         { label: 'Direct', icon: Mail, link: 'mailto:ketansingla7988@gmail.com', bg: 'bg-brand-teal/10', text: 'text-brand-teal shadow-none' }
                                     ].map((social, i) => (
-                                        <a 
-                                            key={i} 
-                                            href={social.link} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
+                                        <a
+                                            key={i}
+                                            href={social.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
                                             className={`flex items-center gap-4 px-10 py-5 rounded-[1.75rem] font-black text-xs uppercase tracking-[0.25em] ${social.bg} ${social.text} hover:-translate-y-2 transition-all duration-500 shadow-2xl active:scale-95 border border-transparent hover:border-brand-teal/20`}
                                         >
                                             <social.icon className="h-5 w-5" />
@@ -415,15 +415,15 @@ const Landing = () => {
                         >
                             Get Started
                         </Link>
-                        <Link 
-                            to="/contact-sales" 
+                        <Link
+                            to="/contact-sales"
                             className="w-full sm:w-auto px-20 py-8 glass-card rounded-[2.5rem] text-2xl font-black text-brand-dark uppercase tracking-[0.3em] border-slate-200 hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all duration-500 shadow-xl text-center"
                         >
                             Consult Sales
                         </Link>
                     </div>
                 </div>
-                
+
                 {/* Visual Anchor */}
                 <div className="absolute bottom-0 left-0 w-full h-[6px] bg-gradient-to-r from-transparent via-brand-teal/30 to-transparent"></div>
             </section>
@@ -441,7 +441,7 @@ const Landing = () => {
                                 &copy; 2024 • Clinical Operating System <br /> Crafted for Human Excellence.
                             </p>
                         </div>
-                        
+
                         <div className="lg:col-span-7 flex flex-wrap justify-center lg:justify-end gap-16 text-slate-400 font-black text-xs uppercase tracking-[0.3em]">
                             {['Intelligence', 'Security', 'Enterprise', 'Privacy', 'Network'].map(link => (
                                 <a key={link} href="#" className="hover:text-brand-dark hover:tracking-[0.5em] transition-all duration-500 relative group">
