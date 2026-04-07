@@ -3,7 +3,7 @@ import { X, Upload, DollarSign, Plus, Trash2, FileText, CheckCircle, Pill, Clipb
 import { toast } from 'react-hot-toast';
 import api from '../services/api';
 
-const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
+const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) => {
     const [loading, setLoading] = useState(false);
     const [file, setFile] = useState(null);
     const [items, setItems] = useState([
@@ -17,10 +17,14 @@ const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
     const [prescriptionsLoading, setPrescriptionsLoading] = useState(false);
 
     useEffect(() => {
-        if (isOpen && patient?._id) {
-            fetchPrescriptions();
+        if (isOpen) {
+            if (patient?._id) {
+                fetchPrescriptions();
+            } else if (triageRecord?.triageId) {
+                fetchTriagePrescriptions();
+            }
         }
-    }, [isOpen, patient?._id]);
+    }, [isOpen, patient?._id, triageRecord?.triageId]);
 
     const fetchPrescriptions = async () => {
         try {
@@ -31,6 +35,26 @@ const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
             }
         } catch (err) {
             console.error('Failed to fetch prescriptions:', err);
+        } finally {
+            setPrescriptionsLoading(false);
+        }
+    };
+
+    const fetchTriagePrescriptions = async () => {
+        try {
+            setPrescriptionsLoading(true);
+            const res = await api.get(`/triage/walk-in/${triageRecord.triageId}/prescriptions`);
+            if (res.data.success) {
+                // Formatting triage prescription correctly for the sidebar
+                setPrescriptions([{
+                    _id: triageRecord._id,
+                    doctorId: { userId: { profile: { lastName: 'Triage' } } },
+                    createdAt: triageRecord.resolvedAt,
+                    medicines: res.data.data.medicines || []
+                }]);
+            }
+        } catch (err) {
+            console.error('Failed to fetch triage prescriptions:', err);
         } finally {
             setPrescriptionsLoading(false);
         }
@@ -94,7 +118,8 @@ const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
 
             // 1. Create the bill entry
             const billData = {
-                patientId: patient._id,
+                patientId: patient?._id || undefined,
+                triageId: triageRecord?.triageId || undefined,
                 items: validItems,
                 dueDate: dueDate,
                 status: paymentMethod === 'cash' ? 'paid' : 'pending_payment'
@@ -138,7 +163,7 @@ const BillUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
                     <div>
                         <h2 className="text-2xl font-black font-display text-white">Generate Invoice & Bill</h2>
                         <p className="text-white/60 text-xs font-bold uppercase tracking-widest mt-1">
-                            For Patient: {patient.userId.profile.firstName} {patient.userId.profile.lastName}
+                            For: {patient ? `${patient.userId.profile.firstName} ${patient.userId.profile.lastName}` : (triageRecord?.patientName || 'Walk-in Patient')}
                         </p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors">

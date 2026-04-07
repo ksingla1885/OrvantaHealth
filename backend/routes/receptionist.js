@@ -395,7 +395,7 @@ router.post('/bill', [
       });
     }
 
-    const { patientId, appointmentId, items, dueDate, paymentMethod, status } = req.body;
+    const { patientId, triageId, appointmentId, items, dueDate, paymentMethod, status } = req.body;
 
     // Process items and calculate individual totals
     const processedItems = items.map(item => ({
@@ -403,13 +403,15 @@ router.post('/bill', [
       total: item.quantity * item.unitPrice
     }));
 
-    // Check if patient exists
-    const patient = await Patient.findById(patientId);
-    if (!patient) {
-      return res.status(404).json({
-        success: false,
-        message: 'Patient not found'
-      });
+    // Check if patient exists (only if patientId is provided)
+    if (patientId) {
+      const patient = await Patient.findById(patientId);
+      if (!patient) {
+        return res.status(404).json({
+          success: false,
+          message: 'Patient not found'
+        });
+      }
     }
 
     // Calculate totals
@@ -419,7 +421,8 @@ router.post('/bill', [
 
     // Create bill
     const bill = new Bill({
-      patientId,
+      patientId: patientId || undefined,
+      triageId: triageId || undefined,
       appointmentId,
       items: processedItems,
       subtotal,

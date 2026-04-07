@@ -366,7 +366,17 @@ const Landing = () => {
                                     <Code className="h-4 w-4 text-brand-teal animate-pulse" />
                                     <span className="text-[11px] font-black uppercase tracking-[0.4em] leading-none mt-1">Founding Visionary</span>
                                 </div>
-                                <h3 className="text-7xl font-black text-brand-dark font-display mb-8 tracking-tighter uppercase leading-none">Ketan Kumar</h3>
+                                <div className="flex items-center mb-10 font-display select-none">
+                                    <span className="text-[11rem] md:text-[15rem] font-medium text-brand-dark leading-none tracking-tighter -mt-2">K</span>
+                                    <div className="flex flex-col -ml-4 md:-ml-7 space-y-[-0.5rem] md:space-y-[-1rem]">
+                                        <div className="overflow-hidden">
+                                            <span className="block text-4xl md:text-7xl font-black text-brand-dark uppercase tracking-tighter animate-slide-up">etan</span>
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <span className="block text-4xl md:text-7xl font-black text-brand-dark uppercase tracking-tighter animate-slide-up stagger-1">umar</span>
+                                        </div>
+                                    </div>
+                                </div>
                                 <p className="text-2xl text-slate-500 font-medium leading-relaxed mb-12">
                                     Dedicated to the intersection of code and care. Ketan designed OrvantaHealth to eliminate the friction between medical experts and technical systems, creating a seamless environment for healing.
                                 </p>

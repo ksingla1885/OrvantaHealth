@@ -107,6 +107,12 @@ const Layout = () => {
             current: location.pathname.includes('/prescriptions'),
           },
           {
+            name: 'Triage Lobby',
+            href: '/receptionist/triage/queue',
+            icon: BarChart3,
+            current: location.pathname.includes('/triage/queue'),
+          },
+          {
             name: 'Profile',
             href: '/doctor/profile',
             icon: User,
@@ -117,6 +123,18 @@ const Layout = () => {
       case 'receptionist':
         return [
           ...baseItems,
+          {
+            name: 'AI Triage Intake',
+            href: '/receptionist/triage/intake',
+            icon: Building,
+            current: location.pathname.includes('/triage/intake'),
+          },
+          {
+            name: 'Triage Lobby',
+            href: '/receptionist/triage/queue',
+            icon: BarChart3,
+            current: location.pathname.includes('/triage/queue'),
+          },
           {
             name: 'Appointments',
             href: '/receptionist/appointments',

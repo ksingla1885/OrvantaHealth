@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Calendar, Users, DollarSign, FileText, AlertCircle, 
-  ChevronRight, ArrowRight, Activity, CreditCard, Clipboard 
+  ChevronRight, ArrowRight, Activity, CreditCard, Clipboard,
+  Stethoscope, Zap, Target
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
@@ -13,7 +14,8 @@ const ReceptionistDashboard = () => {
     todaysAppointments: 0,
     newPatients: 0,
     pendingBills: 0,
-    labReports: 0
+    labReports: 0,
+    triageQueue: 0
   });
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -29,21 +31,24 @@ const ReceptionistDashboard = () => {
       const today = new Date().toISOString().split('T')[0];
 
       // Fetch data in parallel for efficiency
-      const [appointmentsRes, billsRes, labReportsRes] = await Promise.all([
+      const [appointmentsRes, billsRes, labReportsRes, triageRes] = await Promise.all([
         api.get('/receptionist/appointments', { params: { date: today } }),
         api.get('/receptionist/bills'),
-        api.get('/receptionist/lab-reports')
+        api.get('/receptionist/lab-reports'),
+        api.get('/triage/queue')
       ]);
 
       const todaysAppointments = appointmentsRes.data.data?.appointments?.length || 0;
       const pendingBills = billsRes.data.data?.bills?.filter(b => b.status === 'pending')?.length || 0;
       const labReports = labReportsRes.data.data?.labReports?.length || 0;
+      const triageQueue = triageRes.data.data?.queue?.length || 0;
 
       setStats({
         todaysAppointments,
         newPatients: 0, // Simplified for now
         pendingBills,
-        labReports
+        labReports,
+        triageQueue
       });
     } catch (error) {
       console.error('Failed to fetch dashboard stats:', error);
@@ -64,9 +69,9 @@ const ReceptionistDashboard = () => {
 
   const metrics = [
     { label: "Today's Queue", value: stats.todaysAppointments, icon: Calendar, color: "text-brand-teal", bg: "bg-brand-light", border: "border-brand-teal/20" },
+    { label: "Triage Lobby", value: stats.triageQueue, icon: Target, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
     { label: "Pending Dues", value: stats.pendingBills, icon: DollarSign, iconColor: "text-rose-500", color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-100" },
     { label: "Lab Analytics", value: stats.labReports, icon: Activity, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-    { label: "System Status", value: "Active", icon: Activity, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
   ];
 
   return (
@@ -135,9 +140,11 @@ const ReceptionistDashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { title: 'Appointments', desc: 'Secure patient bookings and scheduling.', icon: Calendar, path: '/receptionist/appointments', color: 'text-brand-teal', bg: 'bg-brand-light' },
+                { title: 'Triage Lobby', desc: 'Monitor the clinical queue and AI analysis.', icon: Target, path: '/receptionist/triage/queue', color: 'text-amber-500', bg: 'bg-amber-50' },
                 { title: 'Billing Center', desc: 'Process invoices and revenue collection.', icon: DollarSign, path: '/receptionist/bills', color: 'text-rose-500', bg: 'bg-rose-50' },
                 { title: 'Lab Reports', desc: 'Clinical result distribution and tracking.', icon: FileText, path: '/receptionist/lab-reports', color: 'text-blue-500', bg: 'bg-blue-50' },
                 { title: 'Staff Mapping', desc: 'Clinician availability and ward shifts.', icon: Users, path: '/receptionist/doctor-availability', color: 'text-violet-500', bg: 'bg-violet-50' },
+                { title: 'Fast-track Intake', desc: 'Quickly admit walk-ins with AI analysis.', icon: Zap, path: '/receptionist/triage/intake', color: 'text-emerald-500', bg: 'bg-emerald-50' },
               ].map((action) => (
                 <button
                   key={action.title}
@@ -169,11 +176,27 @@ const ReceptionistDashboard = () => {
               
               <div className="space-y-4">
                 <button 
-                  onClick={() => navigate('/dashboard/patients')}
+                  onClick={() => navigate('/receptionist/triage/intake')}
                   className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[2rem] transition-all group"
                 >
                   <div className="flex items-center gap-4 text-left">
                     <div className="p-3 bg-brand-teal rounded-xl">
+                      <Stethoscope className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-white">Triage Intake</p>
+                      <p className="text-[10px] text-teal-100/40 uppercase tracking-widest font-black">AI Assessment</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                </button>
+
+                <button 
+                  onClick={() => navigate('/dashboard/patients')}
+                  className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[2rem] transition-all group"
+                >
+                  <div className="flex items-center gap-4 text-left">
+                    <div className="p-3 bg-brand-teal/40 rounded-xl">
                       <Users className="h-5 w-5 text-white" />
                     </div>
                     <div>

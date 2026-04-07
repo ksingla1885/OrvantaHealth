@@ -117,6 +117,7 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/chatbot', require('./routes/chatbot'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/contact', require('./routes/contact'));
+app.use('/api/triage', require('./routes/triage'));
 
 // 404 handler
 app.use((req, res) => {

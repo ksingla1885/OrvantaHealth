@@ -6,30 +6,47 @@ import {
 import api from '../../services/api';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
+import TriagePrescriptionModal from './triage/TriagePrescriptionModal';
 
 const DoctorDashboard = () => {
   const [data, setData] = useState(null);
+  const [triageReferrals, setTriageReferrals] = useState([]);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [showPrescribeModal, setShowPrescribeModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuth();
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await api.get('/doctor/dashboard-stats');
-        if (response.data.success) {
-          setData(response.data.data);
-        }
-      } catch (err) {
-        console.error('Error fetching dashboard stats:', err);
-        setError('Failed to load dashboard data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      const [statsRes, triageRes] = await Promise.all([
+        api.get('/doctor/dashboard-stats'),
+        api.get('/triage/doctor/referred')
+      ]);
+
+      if (statsRes.data.success) {
+        setData(statsRes.data.data);
+      }
+      if (triageRes.data.success) {
+        setTriageReferrals(triageRes.data.data.referred);
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTreat = (referral) => {
+    setSelectedRecord(referral);
+    setShowPrescribeModal(true);
+  };
 
   if (loading) {
     return (
@@ -137,6 +154,73 @@ const DoctorDashboard = () => {
         </div>
       </div>
 
+      {/* Urgent Transfers Section */}
+      {triageReferrals.length > 0 && (
+        <div className="bg-brand-dark rounded-[3.5rem] p-10 text-white shadow-2xl relative overflow-hidden animate-slide-up border border-white/5">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-brand-teal opacity-10 rounded-full blur-[100px] -mr-48 -mt-48 transition-transform duration-1000 group-hover:scale-110"></div>
+          
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+            <div className="flex items-center gap-6">
+              <div className="h-16 w-16 rounded-[1.75rem] bg-brand-teal/20 flex items-center justify-center border border-white/10 shadow-inner">
+                <AlertCircle className="h-8 w-8 text-brand-teal animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3">
+                   <h2 className="text-3xl font-black font-display tracking-tight uppercase italic">Urgent Triage <span className="text-brand-teal">Transfers</span></h2>
+                   <div className="px-3 py-1 bg-brand-teal rounded-full text-[9px] font-black uppercase tracking-widest">{triageReferrals.length} Cases</div>
+                </div>
+                <p className="text-teal-100/40 text-[10px] font-black uppercase tracking-widest mt-1">Immediate evaluation required based on AI clinical markers</p>
+              </div>
+            </div>
+            <button className="px-8 py-4 bg-brand-light/10 hover:bg-brand-light/20 text-white border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">VIEW ALL TRANSFERS</button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {triageReferrals.map((referral) => (
+              <div key={referral._id} className="group relative bg-white/5 hover:bg-white/10 border border-white/10 rounded-[2.5rem] p-8 transition-all duration-300 hover:shadow-2xl">
+                 <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                       <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-lg font-black">{referral.patientName[0]}</div>
+                       <div>
+                          <p className="font-bold text-white text-lg font-display">{referral.patientName}</p>
+                          <p className="text-[10px] text-teal-100/30 uppercase font-black tracking-widest">{referral.age}y • {referral.gender}</p>
+                       </div>
+                    </div>
+                    <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg ${
+                      referral.aiAnalysis.urgencyLevel === 'Emergency' ? 'bg-rose-500 text-white' : 
+                      referral.aiAnalysis.urgencyLevel === 'Urgent' ? 'bg-amber-500 text-white' : 'bg-brand-teal text-white'
+                    }`}>
+                      {referral.aiAnalysis.urgencyLevel}
+                    </div>
+                 </div>
+
+                 <div className="space-y-6">
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5 group-hover:bg-white/10 transition-colors">
+                       <p className="text-[10px] font-black text-teal-100/30 uppercase tracking-widest mb-2 flex items-center gap-2">
+                          <Activity size={12} className="text-brand-teal" /> AI SCAN: {referral.aiAnalysis.possibleConditions[0] || 'Unknown'}
+                       </p>
+                       <p className="text-xs text-white/80 leading-relaxed font-medium">"{referral.aiAnalysis.reasoning}"</p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                       <div className="flex flex-col">
+                          <p className="text-[9px] font-black text-teal-100/40 uppercase tracking-widest">Risk Score</p>
+                          <p className="text-xl font-black text-brand-teal font-display">{referral.aiAnalysis.riskScore}/10</p>
+                       </div>
+                       <button 
+                        onClick={() => handleTreat(referral)}
+                        className="p-4 bg-brand-teal text-white rounded-2xl shadow-lg shadow-brand-teal/20 hover:scale-110 transition-all flex items-center gap-2 font-black text-[10px] uppercase tracking-widest"
+                       >
+                          TREAT NOW <ArrowRight className="h-5 w-5" />
+                       </button>
+                    </div>
+                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Main Workspace Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Interaction Log */}
@@ -206,7 +290,10 @@ const DoctorDashboard = () => {
               <h3 className="text-2xl font-black font-display mb-8">Clinical Actions</h3>
               
               <div className="space-y-4">
-                <button className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[2rem] transition-all group">
+                <button 
+                  onClick={() => window.location.href = '/doctor/appointments'}
+                  className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[2rem] transition-all group"
+                >
                   <div className="flex items-center gap-4 text-left">
                     <div className="p-3 bg-brand-teal rounded-xl">
                       <Calendar className="h-5 w-5 text-white" />
@@ -219,7 +306,10 @@ const DoctorDashboard = () => {
                   <ArrowRight className="h-5 w-5 text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
                 </button>
 
-                <button className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[2rem] transition-all group">
+                <button 
+                  onClick={() => window.location.href = '/doctor/prescriptions'}
+                  className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[2rem] transition-all group"
+                >
                   <div className="flex items-center gap-4 text-left">
                     <div className="p-3 bg-blue-500 rounded-xl">
                       <Clipboard className="h-5 w-5 text-white" />
@@ -232,7 +322,10 @@ const DoctorDashboard = () => {
                   <ArrowRight className="h-5 w-5 text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
                 </button>
 
-                <button className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[2rem] transition-all group">
+                <button 
+                  onClick={() => window.location.href = '/dashboard/patients'}
+                  className="w-full flex items-center justify-between p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[2rem] transition-all group"
+                >
                   <div className="flex items-center gap-4 text-left">
                     <div className="p-3 bg-emerald-500 rounded-xl">
                       <Users className="h-5 w-5 text-white" />
@@ -258,6 +351,15 @@ const DoctorDashboard = () => {
           </div>
         </div>
       </div>
+
+      {showPrescribeModal && selectedRecord && (
+        <TriagePrescriptionModal 
+          isOpen={showPrescribeModal} 
+          onClose={() => setShowPrescribeModal(false)}
+          record={selectedRecord}
+          onSuccess={fetchStats}
+        />
+      )}
     </div>
   );
 };
@@ -280,4 +382,3 @@ const ArrowRight = ({ className }) => (
 );
 
 export default DoctorDashboard;
-
