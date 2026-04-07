@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Search, Filter, Eye, Edit, Star, Calendar, Phone, Mail, Save, Edit2, XCircle, Clock } from 'lucide-react';
+import { Users, UserPlus, Search, Filter, Eye, Edit, Star, Calendar, Phone, Mail, Save, Edit2, XCircle, Clock, UserCheck, UserX } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 
@@ -37,6 +37,21 @@ const DoctorsManagement = () => {
       toast.error('Failed to fetch doctors data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleUserStatus = async (userId, currentStatus) => {
+    try {
+      const response = await api.patch(`/admin/user/${userId}/status`, {
+        isActive: !currentStatus
+      });
+
+      if (response.data.success) {
+        toast.success(`Doctor ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+        fetchDoctors();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -273,13 +288,21 @@ const DoctorsManagement = () => {
                   <div className="h-16 w-16 rounded-2xl bg-brand-dark flex items-center justify-center text-white text-xl font-black shadow-lg shadow-brand-dark/20 transform group-hover:rotate-6 transition-transform">
                     {doctor.userId?.profile?.firstName?.[0] || 'D'}{doctor.userId?.profile?.lastName?.[0] || 'C'}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-xl font-black font-display text-brand-dark leading-tight truncate">
-                      Dr. {doctor.userId?.profile?.firstName || 'Unknown'} {doctor.userId?.profile?.lastName || 'Doctor'}
-                    </h3>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-teal mt-1">{doctor.department} unit</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-xl font-black font-display text-brand-dark leading-tight truncate">
+                          Dr. {doctor.userId?.profile?.firstName || 'Unknown'} {doctor.userId?.profile?.lastName || 'Doctor'}
+                        </h3>
+                        {doctor.userId?.isActive === false && (
+                          <div className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-500 text-[8px] font-black uppercase tracking-widest border border-rose-100 flex items-center gap-1">
+                            <div className="w-1 h-1 rounded-full bg-rose-500 animate-pulse"></div>
+                            Locked
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-teal mt-1">{doctor.department} unit</p>
+                    </div>
                   </div>
-                </div>
 
                 <div className="space-y-4 mb-8">
                   <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
@@ -296,24 +319,31 @@ const DoctorsManagement = () => {
                   <div className="text-2xl font-black text-brand-dark font-display tracking-tight">
                     <span className="text-sm font-bold text-slate-400 mr-1 italic">₹</span>{doctor.consultationFee}
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedDoctor(doctor);
-                        setShowDoctorModal(true);
-                        fetchDoctorLeaves(doctor._id);
-                      }}
-                      className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-brand-dark hover:bg-brand-light transition-all"
-                    >
-                      <Eye className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => window.location.href = `/dashboard/create-staff?edit=${doctor._id}`}
-                      className="p-3 bg-brand-dark rounded-xl text-white shadow-lg hover:shadow-brand-dark/30 hover:scale-105 active:scale-95 transition-all"
-                    >
-                      <Edit className="h-5 w-5" />
-                    </button>
-                  </div>
+                    <div className="flex gap-2">
+                       <button
+                        onClick={() => toggleUserStatus(doctor.userId._id, doctor.userId.isActive)}
+                        className={`p-3 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all bg-white border border-slate-100 ${doctor.userId.isActive ? 'text-rose-400 hover:text-rose-600' : 'text-emerald-400 hover:text-emerald-600'}`}
+                        title={doctor.userId.isActive ? 'Deactivate Doctor' : 'Activate Doctor'}
+                      >
+                        {doctor.userId.isActive ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedDoctor(doctor);
+                          setShowDoctorModal(true);
+                          fetchDoctorLeaves(doctor._id);
+                        }}
+                        className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-brand-dark hover:bg-brand-light transition-all"
+                      >
+                        <Eye className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => window.location.href = `/dashboard/create-staff?edit=${doctor._id}`}
+                        className="p-3 bg-brand-dark rounded-xl text-white shadow-lg hover:shadow-brand-dark/30 hover:scale-105 active:scale-95 transition-all"
+                      >
+                        <Edit className="h-5 w-5" />
+                      </button>
+                    </div>
                 </div>
               </div>
             </div>
@@ -366,9 +396,11 @@ const DoctorsManagement = () => {
                 <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-center">
                   <span className="text-[10px] font-black text-[#0F3A3A] uppercase tracking-widest whitespace-nowrap">Clinical Excellence Accredited</span>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-2xl">
+                 <div className="p-4 bg-slate-50 rounded-2xl">
                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Unit Status</p>
-                  <span className="text-[10px] font-black text-emerald-500 uppercase">On Duty</span>
+                  <span className={`text-[10px] font-black uppercase ${selectedDoctor.userId.isActive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {selectedDoctor.userId.isActive ? 'Authorization Active' : 'Account Locked'}
+                  </span>
                 </div>
               </div>
 
