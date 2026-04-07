@@ -169,7 +169,7 @@ const CreateStaff = () => {
                                             } ${isEditMode ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <Briefcase className={`h-5 w-5 mb-3 ${role === 'receptionist' ? 'text-brand-teal' : 'text-slate-300'}`} />
-                                        <p className="text-xs font-black uppercase tracking-widest">Staff</p>
+                                        <p className="text-xs font-black uppercase tracking-widest">Receptionist</p>
                                     </button>
                                 </div>
                             </div>

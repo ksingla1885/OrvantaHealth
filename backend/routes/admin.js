@@ -230,10 +230,9 @@ router.post('/create-staff', [
 router.get('/staff', async (req, res) => {
   try {
     const staff = await User.find({
-      role: { $in: ['doctor', 'receptionist'] },
-      isActive: true
+      role: { $in: ['doctor', 'receptionist'] }
     })
-      .select('email profile role createdAt lastLogin')
+      .select('email profile role isActive createdAt lastLogin')
       .sort({ createdAt: -1 });
 
     res.json({
@@ -386,13 +385,13 @@ router.patch('/user/:userId/status', async (req, res) => {
 router.get('/staff/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // First try finding in Doctor model
     let doctor = await Doctor.findById(id).populate('userId', 'email profile role isActive');
     if (doctor) {
       return res.json({
         success: true,
-        data: { 
+        data: {
           role: 'doctor',
           ...doctor.userId.toObject(),
           ...doctor.toObject()
@@ -437,7 +436,7 @@ router.patch('/update-staff/:id', async (req, res) => {
 
     if (doctor) {
       userId = doctor.userId;
-      
+
       // Update doctor specifics
       doctor.specialization = specialization || doctor.specialization;
       doctor.qualifications = qualifications || doctor.qualifications;
@@ -445,7 +444,7 @@ router.patch('/update-staff/:id', async (req, res) => {
       doctor.licenseNumber = licenseNumber || doctor.licenseNumber;
       doctor.consultationFee = consultationFee !== undefined ? Number(consultationFee) : doctor.consultationFee;
       doctor.department = department || doctor.department;
-      
+
       await doctor.save();
     } else {
       userId = id;

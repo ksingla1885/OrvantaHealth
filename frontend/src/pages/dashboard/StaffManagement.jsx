@@ -211,6 +211,12 @@ const StaffManagement = () => {
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
+                          onClick={() => window.location.href = `/dashboard/create-staff?edit=${member._id}`}
+                          className="p-2 rounded-lg bg-white shadow-sm border border-slate-100 text-slate-400 hover:text-brand-teal transition-colors"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => toggleUserStatus(member._id, member.isActive)}
                           className={`p-2 rounded-lg bg-white shadow-sm border border-slate-100 transition-colors ${member.isActive ? 'text-rose-400 hover:text-rose-600' : 'text-emerald-400 hover:text-emerald-600'
                             }`}
