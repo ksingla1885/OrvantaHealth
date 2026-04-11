@@ -343,7 +343,7 @@ const Landing = () => {
             </section>
 
             {/* About Section */}
-            <section id="enterprise" className="py-40 bg-brand-light relative">
+            {/* <section id="enterprise" className="py-40 bg-brand-light relative">
                 <div className="max-w-6xl mx-auto px-10">
                     <div className="relative glass-card rounded-[5rem] p-16 md:p-32 border-white shadow-[0_120px_240px_-60px_rgba(0,0,0,0.15)] overflow-hidden">
                         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-teal/10 rounded-full blur-[150px] -mr-64 -mt-64 animate-pulse-slow"></div>
@@ -403,7 +403,7 @@ const Landing = () => {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section> */}
 
             {/* Ultimate CTA */}
             <section className="py-60 bg-white relative overflow-hidden">

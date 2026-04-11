@@ -2,13 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Eye, EyeOff, Building } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowRight, ShieldCheck, Heart, Activity } from 'lucide-react';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -16,44 +13,28 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const result = await login(formData.email, formData.password);
-
       if (result.success) {
-        toast.success('Login successful!');
-
-        // Redirect based on role
+        toast.success('Welcome back!');
         const user = JSON.parse(localStorage.getItem('user'));
         switch (user.role) {
-          case 'superadmin':
-            navigate('/dashboard');
-            break;
-          case 'doctor':
-            navigate('/doctor/dashboard');
-            break;
-          case 'receptionist':
-            navigate('/receptionist/dashboard');
-            break;
-          case 'patient':
-            navigate('/patient/dashboard');
-            break;
-          default:
-            navigate('/dashboard');
+          case 'superadmin': navigate('/dashboard'); break;
+          case 'doctor': navigate('/doctor/dashboard'); break;
+          case 'receptionist': navigate('/receptionist/dashboard'); break;
+          case 'patient': navigate('/patient/dashboard'); break;
+          default: navigate('/dashboard');
         }
       } else {
         toast.error(result.message || 'Login failed');
       }
-    } catch (error) {
+    } catch {
       toast.error('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -61,154 +42,350 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-light py-12 px-4 sm:px-6 lg:px-8 selection:bg-brand-dark selection:text-white">
-      <div className="max-w-md w-full animate-fade-in">
-        <div className="text-center mb-10">
-          <div className="mx-auto h-20 w-20 bg-brand-dark rounded-[2rem] flex items-center justify-center shadow-premium transform hover:rotate-12 transition-transform duration-300">
-            <Building className="h-10 w-10 text-white" />
+    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'Inter', sans-serif" }}>
+
+      {/* ── Left branded panel ── */}
+      <div style={{
+        flex: '0 0 45%',
+        background: 'linear-gradient(145deg, #0a3d35 0%, #0e5548 40%, #0a7b68 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: '3rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+        className="auth-left-panel"
+      >
+        {/* Decorative blobs */}
+        <div style={{
+          position: 'absolute', top: '-80px', right: '-80px',
+          width: '350px', height: '350px', borderRadius: '50%',
+          background: 'rgba(255,255,255,0.04)', pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-100px', left: '-60px',
+          width: '400px', height: '400px', borderRadius: '50%',
+          background: 'rgba(255,255,255,0.04)', pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%,-50%)',
+          width: '600px', height: '600px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Logo */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '48px', height: '48px',
+              background: 'rgba(255,255,255,0.12)',
+              borderRadius: '14px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+            }}>
+              <Heart size={24} color="#6ee7b7" strokeWidth={2} />
+            </div>
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em' }}>
+              OrvantaHealth
+            </span>
           </div>
-          <h2 className="mt-8 text-4xl font-extrabold text-brand-dark tracking-tight font-display">
-            Welcome Back
-          </h2>
-          <p className="mt-3 text-slate-500 font-medium tracking-wide">
-            Login to access your OrvantaHealth portal
-          </p>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] shadow-premium p-10 border border-slate-50 relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-full h-2 bg-brand-dark opacity-10 group-hover:opacity-100 transition-opacity duration-500"></div>
+        {/* Main copy */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            background: 'rgba(110,231,183,0.15)',
+            border: '1px solid rgba(110,231,183,0.3)',
+            borderRadius: '999px',
+            padding: '6px 16px',
+            marginBottom: '1.5rem',
+          }}>
+            <ShieldCheck size={14} color="#6ee7b7" />
+            <span style={{ color: '#6ee7b7', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              Secure Portal
+            </span>
+          </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-1">
-              <label htmlFor="email" className="label">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="input"
-                placeholder="name@company.com"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
+          <h1 style={{
+            color: '#fff', fontSize: '2.8rem', fontWeight: 800,
+            lineHeight: 1.15, letterSpacing: '-0.03em', marginBottom: '1rem',
+          }}>
+            Your Health,<br />
+            <span style={{ color: '#6ee7b7' }}>Our Priority.</span>
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', lineHeight: 1.7, maxWidth: '340px' }}>
+            Manage appointments, access records, and collaborate with your care team — all in one place.
+          </p>
 
-            <div className="space-y-1">
-              <label htmlFor="password" className="label">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  className="input pr-12"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-brand-dark transition-colors"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
+          {/* Stats row */}
+          <div style={{ display: 'flex', gap: '2rem', marginTop: '2.5rem' }}>
+            {[
+              { val: '10K+', label: 'Patients' },
+              { val: '500+', label: 'Doctors' },
+              { val: '99.9%', label: 'Uptime' },
+            ].map((s) => (
+              <div key={s.label}>
+                <div style={{ color: '#6ee7b7', fontSize: '1.5rem', fontWeight: 800 }}>{s.val}</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', marginTop: '2px' }}>{s.label}</div>
               </div>
-            </div>
+            ))}
+          </div>
+        </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-brand-dark focus:ring-brand-teal border-slate-300 rounded-md transition-all cursor-pointer"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600 font-medium cursor-pointer">
-                  Keep me signed in
+        {/* Feature cards */}
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {[
+            { icon: <Activity size={16} color="#6ee7b7" />, text: 'Real-time health monitoring & AI triage' },
+            { icon: <ShieldCheck size={16} color="#6ee7b7" />, text: 'HIPAA-compliant & end-to-end encrypted' },
+          ].map((f, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: '12px',
+              background: 'rgba(255,255,255,0.06)',
+              borderRadius: '12px', padding: '12px 16px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(8px)',
+            }}>
+              {f.icon}
+              <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.85rem' }}>{f.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Right form panel ── */}
+      <div style={{
+        flex: 1,
+        background: '#f8fafb',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
+      }}>
+        <div style={{ width: '100%', maxWidth: '420px' }}>
+
+          {/* Heading */}
+          <div style={{ marginBottom: '2.5rem' }}>
+            <h2 style={{
+              fontSize: '2rem', fontWeight: 800, color: '#0a3d35',
+              letterSpacing: '-0.03em', marginBottom: '0.5rem',
+            }}>
+              Welcome back
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
+              Sign in to your OrvantaHealth account
+            </p>
+          </div>
+
+          {/* Form card */}
+          <div style={{
+            background: '#fff',
+            borderRadius: '24px',
+            padding: '2.5rem',
+            boxShadow: '0 4px 40px rgba(10,61,53,0.08)',
+            border: '1px solid rgba(10,61,53,0.06)',
+          }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+              {/* Email */}
+              <div>
+                <label htmlFor="email" style={labelStyle}>Email Address</label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={17} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                  <input
+                    id="email" name="email" type="email" autoComplete="email" required
+                    placeholder="name@company.com"
+                    value={formData.email} onChange={handleChange}
+                    style={{ ...inputStyle, paddingLeft: '42px' }}
+                    onFocus={e => e.target.style.borderColor = '#0a7b68'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label htmlFor="password" style={labelStyle}>Password</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={17} color="#94a3b8" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                  <input
+                    id="password" name="password" type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password" required
+                    placeholder="••••••••"
+                    value={formData.password} onChange={handleChange}
+                    style={{ ...inputStyle, paddingLeft: '42px', paddingRight: '44px' }}
+                    onFocus={e => e.target.style.borderColor = '#0a7b68'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute', right: '12px', top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#94a3b8', display: 'flex', padding: '4px',
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Remember + Forgot */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    id="remember-me" name="remember-me" type="checkbox"
+                    style={{ accentColor: '#0a7b68', width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '0.85rem', color: '#475569', fontWeight: 500 }}>Keep me signed in</span>
                 </label>
-              </div>
-
-              <div className="text-sm">
                 <button
                   type="button"
-                  className="font-semibold text-brand-teal hover:text-brand-dark transition-colors"
-                  onClick={() => toast.error('Forgot password functionality not implemented yet')}
+                  onClick={() => toast.error('Forgot password not implemented yet')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0a7b68', fontSize: '0.85rem', fontWeight: 600 }}
                 >
                   Forgot password?
                 </button>
               </div>
-            </div>
 
-            <div className="pt-4">
+              {/* Submit */}
               <button
-                type="submit"
-                disabled={loading}
-                className="w-full btn btn-primary py-4 text-lg"
+                type="submit" disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  background: loading ? '#64748b' : 'linear-gradient(135deg, #0a3d35 0%, #0a7b68 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '14px',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginTop: '0.5rem',
+                  transition: 'opacity 0.2s, transform 0.1s',
+                  boxShadow: '0 4px 20px rgba(10,61,53,0.3)',
+                }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '0.92'; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                onMouseDown={e => { if (!loading) e.currentTarget.style.transform = 'scale(0.98)'; }}
+                onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
               >
                 {loading ? (
-                  <span className="flex items-center justify-center">
-                    <div className="loading-spinner mr-3 border-white/30 border-t-white"></div>
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 0.8s linear infinite' }}>
+                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                    </svg>
                     Authenticating...
-                  </span>
+                  </>
                 ) : (
-                  'Sign in'
+                  <>Sign in <ArrowRight size={18} /></>
                 )}
               </button>
-            </div>
-          </form>
+            </form>
 
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase tracking-widest font-bold">
-                <span className="px-3 bg-white text-slate-400">or join us</span>
-              </div>
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '1.75rem 0 1.25rem' }}>
+              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+              <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                New here?
+              </span>
+              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
             </div>
 
-            <div className="mt-8 text-center">
-              <Link
-                to="/register"
-                className="text-brand-dark font-bold hover:underline decoration-brand-teal decoration-2 underline-offset-4 transition-all"
-              >
-                Create a new account
-              </Link>
-            </div>
+            <Link
+              to="/register"
+              style={{
+                display: 'block', textAlign: 'center',
+                padding: '13px',
+                border: '2px solid #0a3d35',
+                borderRadius: '14px',
+                color: '#0a3d35',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                textDecoration: 'none',
+                transition: 'background 0.2s, color 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#0a3d35'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#0a3d35'; }}
+            >
+              Create a new account
+            </Link>
           </div>
 
-          {/* Super Admin Credentials Info - Simplified for Professional look */}
-          <div className="mt-8 p-6 bg-brand-light rounded-2xl border border-teal-50/50">
-            <h4 className="text-xs font-bold text-brand-dark uppercase tracking-widest mb-3 flex items-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-teal mr-2"></span>
-              Demo Access
-            </h4>
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <p className="text-slate-500 mb-0.5">Admin Email</p>
-                <p className="font-semibold text-brand-dark">admin@orvantahealth.com</p>
-              </div>
-              <div>
-                <p className="text-slate-500 mb-0.5">Password</p>
-                <p className="font-semibold text-brand-dark">Welcomeadmin</p>
-              </div>
+          {/* Demo credentials */}
+          <div style={{
+            marginTop: '1.5rem',
+            background: 'linear-gradient(135deg, rgba(10,61,53,0.04), rgba(10,123,104,0.06))',
+            border: '1px solid rgba(10,61,53,0.1)',
+            borderRadius: '16px',
+            padding: '1.25rem 1.5rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem' }}>
+              <span style={{
+                width: '8px', height: '8px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #0a7b68, #6ee7b7)',
+                display: 'inline-block',
+              }} />
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#0a3d35', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                Demo Access
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {[
+                { label: 'Admin Email', val: 'admin@orvantahealth.com' },
+                { label: 'Password', val: 'Welcomeadmin' },
+              ].map(item => (
+                <div key={item.label}>
+                  <p style={{ color: '#94a3b8', fontSize: '0.7rem', marginBottom: '2px' }}>{item.label}</p>
+                  <p style={{ color: '#0a3d35', fontSize: '0.8rem', fontWeight: 700 }}>{item.val}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Spin keyframe */}
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+          .auth-left-panel { display: none !important; }
+        }
+      `}</style>
     </div>
   );
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '13px 16px',
+  border: '1.5px solid #e2e8f0',
+  borderRadius: '12px',
+  fontSize: '0.95rem',
+  color: '#0f172a',
+  background: '#f8fafb',
+  outline: 'none',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+  boxSizing: 'border-box',
+};
+
+const labelStyle = {
+  display: 'block',
+  fontSize: '0.82rem',
+  fontWeight: 700,
+  color: '#374151',
+  marginBottom: '6px',
+  letterSpacing: '0.01em',
 };
 
 export default Login;

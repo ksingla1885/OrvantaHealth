@@ -200,7 +200,7 @@ const StaffManagement = () => {
                       }
                     </td>
                     <td className="px-8 py-5 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end space-x-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end space-x-3 transition-opacity">
                         <button
                           onClick={() => {
                             setSelectedUser(member);
