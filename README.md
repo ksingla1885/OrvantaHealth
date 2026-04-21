@@ -1,60 +1,95 @@
-# 🏥 OrvantaHealth — Hospital Management System
+# 🏥 OrvantaHealth — Enterprise Hospital Management System
 
-A production-ready, feature-rich Hospital Management System (HMS) built with the **MERN stack**. OrvantaHealth streamlines hospital workflows, empowers medical staff with AI-driven tools, and provides patients with a seamless healthcare experience.
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](http://makeapullrequest.com)
+[![MERN Stack](https://img.shields.io/badge/Stack-MERN-informational)](https://www.mongodb.com/mern-stack)
+[![AI Powered](https://img.shields.io/badge/AI-Powered-purple.svg)](https://groq.com/)
+
+OrvantaHealth is a production-ready, feature-rich **Hospital Management System (HMS)** engineered with the **MERN stack** (MongoDB, Express, React, Node.js). It is designed to modernize hospital administration, empower medical professionals with AI-driven diagnostics, and deliver a frictionless patient experience through secure digital portals and automated workflows.
+
+---
+
+## 🏗 Architecture Overview
+
+The system follows a decoupled **Client-Server architecture** with a modular backend and a component-driven frontend.
+
+```mermaid
+graph TD
+    %% Define Nodes
+    User([User / Staff / Admin])
+    Frontend[React + Tailwind CSS 4]
+    Backend[Express + Node.js]
+    Auth[JWT + RBAC Security]
+    ORM[Mongoose ODM]
+    AI[Groq AI & Triage]
+    Files[Cloudinary & PDF Reports]
+    Database[(MongoDB)]
+
+    %% Define Connections
+    User --> Frontend
+    Frontend --> |"API Requests"| Backend
+    
+    Backend --> |"Auth"| Auth
+    Backend --> |"ORM"| ORM
+    Backend --> |"AI Core"| AI
+    Backend --> |"Files"| Files
+    
+    ORM --> |"Query"| Database
+```
 
 ---
 
 ## 🌟 Key Features
 
-### 🔐 Multi-Role Authentication
-- **Super Admin**: Complete control over staff, patients, analytics, and system health.
-- **Doctors**: Manage appointments, patient history, and digital prescriptions.
-- **Receptionists**: Handle billing, lab reports, and appointment scheduling.
-- **Patients**: Secure portal for booking, payments, and accessing medical records.
+### 🔐 Enterprise-Grade RBAC
+- **Super Admin**: Centralized command center for managing hospital branches, staff, audit logs, and global analytics.
+- **Doctors**: Advanced portal for digital prescriptions, patient history lookup, and appointment management.
+- **Receptionists**: Streamlined workflows for front-desk operations: billing, lab report uploads, and scheduling.
+- **Patients**: Self-service portal for appointment booking, instant payments, and secure access to medical records.
 
-### 🧠 AI-Powered Healthcare
-- **AI Symptom Checker**: Smart triage system using Groq AI (LLaMA 3.3-70B) to analyze symptoms and vitals.
-- **Medical Assistant**: 24/7 AI chatbot specialized in medical queries with restricted topics for safety.
-- **Risk Assessment**: Real-time risk scoring (0-100) for emergency prioritization.
-- [Read the AI Architecture & Triage Guide](./ai_symptom_checker_architecture.md)
+### 🧠 AI-Driven Healthcare (Triage & Assistant)
+- **AI Triage System**: Uses **Groq LLaMA 3.3-70B** to analyze symptoms and vitals, providing a risk score (0-100) for emergency prioritization.
+- **24/7 AI Medical Assistant**: A specialized chatbot for medical FAQs and hospital guidance, strictly sanitized for safety.
+- **Automated Risk Assessment**: Real-time triage flags high-priority patients for immediate clinical attention.
+- 🔗 [Read the AI Architecture Guide](./ai_symptom_checker_architecture.md)
 
-### 💳 Financial & Document Management
-- **Razorpay Integration**: Secure, one-click payments for appointments and bills.
-- **Automated Billing**: Instant receipt generation and payment tracking.
-- **Digital Records**: Secure storage for prescriptions (Doctors) and Lab Reports (Receptionists).
+### 💳 Financials & Documentation
+- **One-Click Payments**: Deep integration with **Razorpay** for seamless appointment and billing transactions.
+- **Automated Billing Engine**: Dynamic receipt generation (PDF) with persistent payment history tracking.
+- **Secure Cloud Storage**: Medical documents and lab reports are encrypted and stored via **Cloudinary**.
 
-### 📊 Performance Analytics
-- **SuperAdmin Dashboard**: Real-time charts for revenue, patient influx, and department performance.
-- **Data Export**: Support for exporting crucial system data for auditing.
-- [Read the SuperAdmin Module Guide](./SUPERADMIN_FEATURES.md)
+### 📊 Professional Analytics
+- **SuperAdmin Dashboard**: High-fidelity charts (Recharts) visualizing revenue, department load, and patient trends.
+- **Audit Ready**: Comprehensive data logging for compliance and operational auditing.
+- 🔗 [Read the SuperAdmin Module Guide](./SUPERADMIN_FEATURES.md)
 
 ---
 
 ## 🛠 Tech Stack
 
 ### Frontend
-- **React 19** & **Vite** — Lightning-fast development and optimized bundles.
-- **Tailwind CSS 4** — Modern, utility-first styling.
-- **Lucide React** — Premium iconography.
-- **Recharts** — Dynamic data visualization.
-- **React Hook Form** — Robust form management.
+- **React 19 & Vite**: Ultra-fast component rendering and HMR.
+- **Tailwind CSS 4**: Modern utility-first styling with high performance.
+- **React Hook Form**: Zod-validated, performant form handling.
+- **Lucide React**: Clean, semantic iconography.
+- **Recharts**: Responsive data visualization.
 
 ### Backend
-- **Node.js** & **Express 5** — Scalable, high-performance API architecture.
-- **MongoDB** & **Mongoose** — Reliable NoSQL data persistence.
-- **Groq SDK** — Cutting-edge AI integration.
-- **Cloudinary/Multer** — Secure medical document storage.
-- **Nodemailer** — Professional email communication.
+- **Node.js 20+ & Express 5**: Modern, asynchronous API architecture.
+- **MongoDB & Mongoose**: Scalable NoSQL persistence with schema validation.
+- **JWT & Passport**: Secure authentication with Refresh Token rotation.
+- **Groq SDK**: High-performance LLM integration for AI features.
+- **Cloudinary / Multer**: Robust handling of medical media and assets.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18+)
-- MongoDB (Local or Atlas)
-- Groq API Key (for AI features)
-- Razorpay API Credentials (for payments)
+- **Node.js** (v20.x recommended)
+- **MongoDB** (Local instance or Atlas Cluster)
+- **Groq API Key** (Sourced from [Groq Cloud](https://console.groq.com/))
+- **Razorpay API Key** (Available on [Razorpay Dashboard](https://dashboard.razorpay.com/))
 
 ### 1. Installation
 ```bash
@@ -62,20 +97,17 @@ A production-ready, feature-rich Hospital Management System (HMS) built with the
 git clone https://github.com/ksingla1885/OrvantaHealth.git
 cd OrvantaHealth
 
-# Install Backend Dependencies
-cd backend
-npm install
+# Setup Backend
+cd backend && npm install
 
-# Install Frontend Dependencies
-cd ../frontend
-npm install
+# Setup Frontend
+cd ../frontend && npm install
 ```
 
-### 2. Environment Setup
-Configure your `.env` files based on the examples provided:
-
-**Backend (`backend/.env`):**
+### 2. Environment Configuration
+Create a `.env` file in the `backend/` directory:
 ```env
+PORT=5000
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 JWT_REFRESH_SECRET=your_refresh_secret
@@ -83,22 +115,22 @@ RAZORPAY_KEY_ID=your_razorpay_id
 RAZORPAY_KEY_SECRET=your_razorpay_secret
 GROQ_API_KEY_PRIMARY=your_groq_api_key
 CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_key
+CLOUDINARY_API_SECRET=your_cloudinary_secret
+EMAIL_SERVICE=gmail
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
 ```
 
-### 3. Run Locally
-**Terminal 1 (Backend):**
+### 3. Execution
+**Development Mode:**
 ```bash
-cd backend
-npm run dev
-```
+# Terminal 1: Backend
+cd backend && npm run dev
 
-**Terminal 2 (Frontend):**
-```bash
-cd frontend
-npm run dev
+# Terminal 2: Frontend
+cd frontend && npm run dev
 ```
-
-The app will be available at `http://localhost:5173` (Frontend) and `http://localhost:5000` (Backend).
 
 ---
 
@@ -107,45 +139,40 @@ The app will be available at `http://localhost:5173` (Frontend) and `http://loca
 ```text
 OrvantaHealth/
 ├── backend/
-│   ├── config/          # DB & Auth config
-│   ├── controllers/     # API logic
-│   ├── middleware/      # Auth & RBAC
-│   ├── models/          # Mongoose schemas
-│   ├── routes/          # API endpoints
-│   ├── services/        # AI & Payment logic
-│   └── tests/           # Unit & Integration tests
+│   ├── config/          # Database, Passport, & Multi-Cloud configs
+│   ├── controllers/     # Controller logic (Auth, Appointment, Triage)
+│   ├── middleware/      # Auth (JWT/RBAC), Error Handlers, File Uploads
+│   ├── models/          # Mongoose Schemas (User, Patient, Report, etc.)
+│   ├── routes/          # Express Route definitions
+│   ├── services/        # Third-party integrations (AI, Payments, Mailer)
+│   └── utils/           # Helper functions & constants
 ├── frontend/
 │   ├── src/
-│   │   ├── components/  # Atomic UI components
-│   │   ├── context/     # Auth & App state
-│   │   ├── pages/       # Route-level views
-│   │   └── services/    # API abstraction layer
-│   └── public/          # Static assets
-└── docs/                # Feature documentation
+│   │   ├── components/  # Atomic & Shared UI Components
+│   │   ├── context/     # Global State (Auth, UI, Theme)
+│   │   ├── pages/       # Route components (Dashboards, Auth, Landing)
+│   │   ├── services/    # API abstraction layer (Axios interceptors)
+│   │   └── assets/      # Global styles & static assets
+└── docs/                # Comprehensive technical documentation
 ```
 
 ---
 
 ## 🛡 Security & Compliance
-- **RBAC (Role Based Access Control)**: Enforced across all API routes.
-- **JWT Protection**: Secure fingerprinting with refresh token rotation.
-- **Input Sanitization**: Protection against XSS, NoSQL Injection, and Rate Limiting.
-- **HIPAA-Ready Considerations**: Secure file handling and encrypted data transmission.
+- **RBAC Enforcement**: Granular access control for SuperAdmins, Doctors, and Staff.
+- **Data Integrity**: JWT fingerprinting and protection against XSS/CSRF.
+- **Secure Pay**: Encrypted payment processing via Razorpay.
+- **Medical Privacy**: HIPAA-aligned data handling strategies (work in progress).
 
 ---
 
-## 🤝 Contributing
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📝 License
+##  License
 Distributed under the MIT License. See `LICENSE` for more information.
 
-**OrvantaHealth** — Modernizing Healthcare One Patient at a Time. 🏥✨
+---
+
+<p align="center">
+  <b>Built with ❤️ by Ketan</b><br/>
+  <i>Modernizing Healthcare, One Patient at a Time.</i>
+</p>
+
