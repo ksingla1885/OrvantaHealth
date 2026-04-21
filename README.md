@@ -1,6 +1,6 @@
 # 🏥 OrvantaHealth — Enterprise Hospital Management System
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](http://makeapullrequest.com)
 [![MERN Stack](https://img.shields.io/badge/Stack-MERN-informational)](https://www.mongodb.com/mern-stack)
 [![AI Powered](https://img.shields.io/badge/AI-Powered-purple.svg)](https://groq.com/)
@@ -167,7 +167,7 @@ OrvantaHealth/
 ---
 
 ##  License
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 ---
 
