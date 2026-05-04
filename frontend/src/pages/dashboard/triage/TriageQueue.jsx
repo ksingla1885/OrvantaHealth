@@ -121,12 +121,14 @@ const TriageQueue = () => {
         </div>
 
         <div className="flex bg-slate-50 p-1.5 rounded-[2rem] border border-slate-100 shadow-sm">
-          <button 
-            onClick={() => setFilter('resolved')}
-            className={`px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all ${filter === 'resolved' ? 'bg-white text-brand-dark shadow-md' : 'text-slate-400 hover:text-brand-dark'}`}
-          >
-            Resolved Cases
-          </button>
+          {user?.role !== 'receptionist' && (
+            <button 
+              onClick={() => setFilter('resolved')}
+              className={`px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all ${filter === 'resolved' ? 'bg-white text-brand-dark shadow-md' : 'text-slate-400 hover:text-brand-dark'}`}
+            >
+              Resolved Cases
+            </button>
+          )}
           {user?.role === 'doctor' && (
             <button 
                 onClick={() => setFilter('my-referrals')}

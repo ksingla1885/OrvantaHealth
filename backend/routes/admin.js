@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
+const Prescription = require('../models/Prescription');
 const Bill = require('../models/Bill');
 const { authenticateToken, superAdminOnly, superAdminOrReceptionist, authorizeRoles } = require('../middleware/auth');
 const {
@@ -73,7 +74,7 @@ router.use(authenticateToken);
 router.get('/doctors', authorizeRoles('superadmin', 'receptionist', 'doctor'), async (req, res) => {
   try {
     const doctors = await Doctor.find()
-      .populate('userId', 'email profile isActive lastLogin')
+      .populate('userId', 'email profile isActive isOffboarded lastLogin')
       .sort({ createdAt: -1 });
 
     res.json({
@@ -86,6 +87,58 @@ router.get('/doctors', authorizeRoles('superadmin', 'receptionist', 'doctor'), a
       success: false,
       message: 'Server error'
     });
+  }
+});
+
+// Get doctor history (Appointments & Prescriptions) - Dossier for Audit
+router.get('/doctor-history/:id', superAdminOnly, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Find doctor by doctorId or userId
+    let doctor = await Doctor.findById(id).populate({
+      path: 'userId',
+      select: 'email profile isActive isOffboarded offboardedAt offboardedBy lastLogin',
+      populate: { path: 'offboardedBy', select: 'profile email' }
+    });
+    if (!doctor) {
+      doctor = await Doctor.findOne({ userId: id }).populate({
+        path: 'userId',
+        select: 'email profile isActive isOffboarded offboardedAt offboardedBy lastLogin',
+        populate: { path: 'offboardedBy', select: 'profile email' }
+      });
+    }
+
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: 'Doctor not found in archives' });
+    }
+
+    const [appointments, prescriptions] = await Promise.all([
+      Appointment.find({ doctorId: doctor._id })
+        .populate({
+          path: 'patientId',
+          populate: { path: 'userId' }
+        })
+        .sort({ date: -1 }),
+      Prescription.find({ doctorId: doctor._id })
+        .populate({
+          path: 'patientId',
+          populate: { path: 'userId' }
+        })
+        .sort({ createdAt: -1 })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        doctor,
+        appointments,
+        prescriptions
+      }
+    });
+  } catch (error) {
+    console.error('Get doctor history error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -232,7 +285,7 @@ router.get('/staff', async (req, res) => {
     const staff = await User.find({
       role: { $in: ['doctor', 'receptionist'] }
     })
-      .select('email profile role isActive createdAt lastLogin')
+      .select('email profile role isActive isOffboarded createdAt lastLogin')
       .sort({ createdAt: -1 });
 
     res.json({
@@ -490,5 +543,65 @@ router.get('/department-stats', getDepartmentStats);
 
 // Export data
 router.get('/export', exportData);
+
+// Delete staff account (Soft Delete / Archive)
+router.delete('/staff/:id', authorizeRoles('superadmin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if the ID is a doctor profile
+    let doctor = await Doctor.findById(id);
+    let userId = id;
+
+    if (doctor) {
+      userId = doctor.userId;
+      // Mark doctor as unavailable
+      doctor.isAvailable = false;
+      await doctor.save();
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Staff account not found'
+      });
+    }
+
+    // Security checks
+    if (user.role === 'superadmin') {
+      return res.status(400).json({
+        success: false,
+        message: 'Super Admin accounts cannot be removed'
+      });
+    }
+
+    // Check if user is trying to deactivate themselves
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot remove your own account'
+      });
+    }
+
+    // Perform Soft Delete (Archive)
+    user.isActive = false;
+    user.isOffboarded = true;
+    user.offboardedAt = new Date();
+    user.offboardedBy = req.user._id;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Staff credentials removed successfully. Record preserved in archive.'
+    });
+  } catch (error) {
+    console.error('Remove staff error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
 
 module.exports = router;

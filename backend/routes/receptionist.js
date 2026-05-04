@@ -736,8 +736,8 @@ router.post('/bill/:billId/receipt', receiptUpload.single('receipt'), async (req
   }
 });
 
-// Get prescriptions for a specific patient
-router.get('/patient/:patientId/prescriptions', async (req, res) => {
+// Get prescriptions for a specific patient (Super Admin only in this router, Doctors use doctor routes)
+router.get('/patient/:patientId/prescriptions', authorizeRoles('superadmin'), async (req, res) => {
   try {
     const { patientId } = req.params;
     const prescriptions = await Prescription.find({ patientId })

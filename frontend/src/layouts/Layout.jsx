@@ -14,7 +14,8 @@ import {
   Building,
   UserPlus,
   BarChart3,
-  ArrowLeft
+  ArrowLeft,
+  ShieldAlert
 } from 'lucide-react';
 
 // Rupee icon as a component so it works like any lucide icon in the sidebar
@@ -88,6 +89,12 @@ const Layout = () => {
             href: '/dashboard/contact-messages',
             icon: FileText,
             current: location.pathname.includes('/contact-messages'),
+          },
+          {
+            name: 'Archive & Audit',
+            href: '/dashboard/archive',
+            icon: ShieldAlert,
+            current: location.pathname.includes('/archive'),
           },
         ];
 
@@ -305,20 +312,20 @@ const Layout = () => {
               </button>
 
               {/* Intelligent Back Button */}
-              {!(location.pathname === '/dashboard' || 
-                 location.pathname === `/${user?.role}/dashboard` || 
-                 location.pathname === '/login' ||
-                 location.pathname === '/') && (
-                <button
-                  onClick={() => navigate(-1)}
-                  className="group flex flex-row items-center gap-2 pr-4 pl-0 py-2 text-brand-dark font-bold hover:bg-brand-light rounded-2xl transition-all border border-transparent"
-                >
-                  <div className="h-9 w-9 rounded-full bg-white border border-slate-200 flex items-center justify-center group-hover:bg-brand-teal group-hover:border-brand-teal shadow-sm group-hover:shadow-lg transition-all transform group-active:scale-95">
-                    <ArrowLeft className="h-4 w-4 group-hover:text-white" />
-                  </div>
-                  <span className="hidden sm:inline text-[10px] tracking-widest uppercase font-black text-slate-400 group-hover:text-brand-dark transition-colors">GO BACK</span>
-                </button>
-              )}
+              {!(location.pathname === '/dashboard' ||
+                location.pathname === `/${user?.role}/dashboard` ||
+                location.pathname === '/login' ||
+                location.pathname === '/') && (
+                  <button
+                    onClick={() => navigate(-1)}
+                    className="group flex flex-row items-center gap-2 pr-4 pl-0 py-2 text-brand-dark font-bold hover:bg-brand-light rounded-2xl transition-all border border-transparent"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-white border border-slate-200 flex items-center justify-center group-hover:bg-brand-teal group-hover:border-brand-teal shadow-sm group-hover:shadow-lg transition-all transform group-active:scale-95">
+                      <ArrowLeft className="h-4 w-4 group-hover:text-white" />
+                    </div>
+                    <span className="hidden sm:inline text-[10px] tracking-widest uppercase font-black text-slate-400 group-hover:text-brand-dark transition-colors">GO BACK</span>
+                  </button>
+                )}
 
               <div className="hidden lg:block">
                 <h1 className="text-xl font-bold text-brand-dark font-display tracking-tight capitalize">

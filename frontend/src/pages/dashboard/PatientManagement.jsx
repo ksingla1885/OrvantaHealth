@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Users, Search, Eye, FileUp, DollarSign, MapPin, Droplets, User2,
+  Users, Search, Eye, FileUp, DollarSign, MapPin, User2,
   ShieldCheck, X, Stethoscope, Activity, Hash, LayoutGrid, LayoutList,
   Phone, Mail, Filter, UserCheck, UserX, ChevronRight, TrendingUp
 } from 'lucide-react';
@@ -48,13 +48,10 @@ const PatientManagement = () => {
     return nameMatch && statusMatch;
   });
 
-  const uniqueBloodGroups = [...new Set(patients.map(p => p.bloodGroup).filter(Boolean))].sort();
-
   const stats = {
     total: patients.length,
     active: patients.filter(p => p.userId.isActive).length,
     inactive: patients.filter(p => !p.userId.isActive).length,
-    bloodTypes: uniqueBloodGroups.length > 0 ? (uniqueBloodGroups.length <= 3 ? uniqueBloodGroups.join(', ') : `${uniqueBloodGroups.slice(0, 2).join(', ')} +${uniqueBloodGroups.length - 2}`) : 'None',
   };
 
   if (loading) return (
@@ -82,12 +79,11 @@ const PatientManagement = () => {
       </div>
 
       {/* ── STAT CARDS ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {[
           { icon: Users,     label: 'Total Patients', value: stats.total,    color: 'bg-brand-teal',  text: 'text-white', bg: 'from-brand-teal to-teal-600' },
           { icon: UserCheck, label: 'Active',          value: stats.active,   color: 'bg-emerald-500', text: 'text-white', bg: 'from-emerald-400 to-emerald-600' },
           { icon: UserX,     label: 'Inactive',        value: stats.inactive, color: 'bg-rose-500',    text: 'text-white', bg: 'from-rose-400 to-rose-600' },
-          { icon: Droplets,  label: 'Blood Groups',    value: stats.bloodTypes,color: 'bg-rose-500',    text: 'text-white', bg: 'from-rose-400 to-rose-600' },
         ].map((s, i) => (
           <div key={i} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all relative overflow-hidden">
             <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-br ${s.bg} opacity-10 rounded-bl-[2rem]`} />
@@ -193,11 +189,6 @@ const PatientManagement = () => {
                       #{patient.medicalRecordNumber}
                     </span>
                   )}
-                  {patient.bloodGroup && (
-                    <span className="text-[9px] font-black px-2 py-1 rounded-lg bg-rose-50 text-rose-500 border border-rose-100 uppercase">
-                      {patient.bloodGroup}
-                    </span>
-                  )}
                   <span className="text-[9px] font-bold px-2 py-1 rounded-lg bg-slate-50 text-slate-500 capitalize">
                     {getAge(patient.userId.profile.dateOfBirth)}y · {patient.userId.profile.gender || '—'}
                   </span>
@@ -224,8 +215,8 @@ const PatientManagement = () => {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-slate-50/70 border-b border-slate-100">
-                  {['Patient Identity', 'MRN', 'Contact', 'Profile', 'Blood', 'Status', ''].map((h, i) => (
-                    <th key={i} className={`px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ${i === 6 ? 'text-right' : 'text-left'}`}>
+                  {['Patient Identity', 'MRN', 'Contact', 'Profile', 'Status', ''].map((h, i) => (
+                    <th key={i} className={`px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ${i === 5 ? 'text-right' : 'text-left'}`}>
                       {h}
                     </th>
                   ))}
@@ -264,12 +255,7 @@ const PatientManagement = () => {
                         {getAge(patient.userId.profile.dateOfBirth)}y · {patient.userId.profile.gender || '—'}
                       </p>
                     </td>
-                    {/* Blood */}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg bg-rose-50 text-rose-500 border border-rose-100">
-                        {patient.bloodGroup || 'UNK'}
-                      </span>
-                    </td>
+
                     {/* Status */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
@@ -358,7 +344,6 @@ const PatientManagement = () => {
                 {[
                   { label: 'Age',    value: `${getAge(selectedPatient.userId.profile.dateOfBirth)}`, unit: 'yr',  icon: User2,      bg: 'bg-brand-teal/10',  color: 'text-brand-teal' },
                   { label: 'Gender', value: selectedPatient.userId.profile.gender || '—', unit: '', icon: Stethoscope, bg: 'bg-violet-50',    color: 'text-violet-500', capitalize: true },
-                  { label: 'Blood',  value: selectedPatient.bloodGroup || '??',          unit: '', icon: Droplets,    bg: 'bg-rose-50',     color: 'text-rose-500',   uppercase: true },
                 ].map((s, i) => (
                   <div key={i} className="flex flex-col gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all">
                     <div className={`h-8 w-8 rounded-xl ${s.bg} flex items-center justify-center`}>

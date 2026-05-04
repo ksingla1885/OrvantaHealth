@@ -32,6 +32,17 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isOffboarded: {
+    type: Boolean,
+    default: false
+  },
+  offboardedAt: {
+    type: Date
+  },
+  offboardedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   lastLogin: {
     type: Date
   },

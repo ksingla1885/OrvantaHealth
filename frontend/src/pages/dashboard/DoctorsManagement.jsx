@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Search, Filter, Eye, Edit, Star, Calendar, Phone, Mail, Save, Edit2, XCircle, Clock, UserCheck, UserX } from 'lucide-react';
+import { Users, UserPlus, Search, Filter, Eye, Edit, Star, Calendar, Phone, Mail, Save, Edit2, XCircle, Clock, UserCheck, UserX, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const DoctorsManagement = () => {
   const [doctors, setDoctors] = useState([]);
@@ -22,6 +23,11 @@ const DoctorsManagement = () => {
 
   const ALL_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   const DAY_LABELS = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' };
+
+  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'archive'
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [doctorToDelete, setDoctorToDelete] = useState(null);
 
   useEffect(() => {
     fetchDoctors();
@@ -53,6 +59,23 @@ const DoctorsManagement = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update status');
     }
+  };
+
+  const deleteDoctor = async (id) => {
+    try {
+      const response = await api.delete(`/admin/staff/${id}`);
+      if (response.data.success) {
+        toast.success('Doctor credentials removed. Record archived.');
+        fetchDoctors();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to remove doctor');
+    }
+  };
+
+  const handleDeleteClick = (id) => {
+    setDoctorToDelete(id);
+    setShowConfirmModal(true);
   };
 
   const startEditingAvailability = () => {
@@ -193,7 +216,8 @@ const DoctorsManagement = () => {
       specialization.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesDepartment = filterDepartment === 'all' || doctor.department === filterDepartment;
-    return matchesSearch && matchesDepartment;
+    const matchesTab = activeTab === 'active' ? doctor.userId.isActive : !doctor.userId.isActive;
+    return matchesSearch && matchesDepartment && matchesTab;
   });
 
   const getDepartmentBadgeColor = (department) => {
@@ -239,34 +263,51 @@ const DoctorsManagement = () => {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="card-dark group">
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 group-hover:text-brand-teal transition-colors" />
-            <input
-              type="text"
-              placeholder="Search doctors by name, email, or specialization..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input bg-white/10 border-white/10 text-white placeholder:text-white/40 pl-12 focus:bg-white/20"
-            />
-          </div>
-          <div className="md:w-64">
-            <select
-              value={filterDepartment}
-              onChange={(e) => setFilterDepartment(e.target.value)}
-              className="input bg-white/10 border-white/10 text-white focus:bg-white/20"
-            >
-              <option value="all" className="text-brand-dark">All Units</option>
-              <option value="cardiology" className="text-brand-dark">Cardiology</option>
-              <option value="neurology" className="text-brand-dark">Neurology</option>
-              <option value="orthopedics" className="text-brand-dark">Orthopedics</option>
-              <option value="pediatrics" className="text-brand-dark">Pediatrics</option>
-              <option value="gynecology" className="text-brand-dark">Gynecology</option>
-              <option value="dermatology" className="text-brand-dark">Dermatology</option>
-              <option value="general" className="text-brand-dark">General Medicine</option>
-            </select>
+      {/* Tabs & Filters */}
+      <div className="flex flex-col gap-6">
+        <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit">
+          <button
+            onClick={() => setActiveTab('active')}
+            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-white text-brand-dark shadow-sm' : 'text-slate-400 hover:text-brand-dark'}`}
+          >
+            Active Practitioners
+          </button>
+          <button
+            onClick={() => setActiveTab('archive')}
+            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'archive' ? 'bg-white text-brand-dark shadow-sm' : 'text-slate-400 hover:text-brand-dark'}`}
+          >
+            Former Practitioners (Archive)
+          </button>
+        </div>
+
+        <div className="card-dark group">
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 group-hover:text-brand-teal transition-colors" />
+              <input
+                type="text"
+                placeholder="Search doctors by name, email, or specialization..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input bg-white/10 border-white/10 text-white placeholder:text-white/40 pl-12 focus:bg-white/20"
+              />
+            </div>
+            <div className="md:w-64">
+              <select
+                value={filterDepartment}
+                onChange={(e) => setFilterDepartment(e.target.value)}
+                className="input bg-white/10 border-white/10 text-white focus:bg-white/20"
+              >
+                <option value="all" className="text-brand-dark">All Units</option>
+                <option value="cardiology" className="text-brand-dark">Cardiology</option>
+                <option value="neurology" className="text-brand-dark">Neurology</option>
+                <option value="orthopedics" className="text-brand-dark">Orthopedics</option>
+                <option value="pediatrics" className="text-brand-dark">Pediatrics</option>
+                <option value="gynecology" className="text-brand-dark">Gynecology</option>
+                <option value="dermatology" className="text-brand-dark">Dermatology</option>
+                <option value="general" className="text-brand-dark">General Medicine</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -293,12 +334,17 @@ const DoctorsManagement = () => {
                         <h3 className="text-xl font-black font-display text-brand-dark leading-tight truncate">
                           Dr. {doctor.userId?.profile?.firstName || 'Unknown'} {doctor.userId?.profile?.lastName || 'Doctor'}
                         </h3>
-                        {doctor.userId?.isActive === false && (
+                        {doctor.userId?.isOffboarded ? (
                           <div className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-500 text-[8px] font-black uppercase tracking-widest border border-rose-100 flex items-center gap-1">
-                            <div className="w-1 h-1 rounded-full bg-rose-500 animate-pulse"></div>
-                            Locked
+                            <div className="w-1 h-1 rounded-full bg-rose-500"></div>
+                            Left Institution
                           </div>
-                        )}
+                        ) : !doctor.userId?.isActive ? (
+                          <div className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-500 text-[8px] font-black uppercase tracking-widest border border-amber-100 flex items-center gap-1">
+                            <div className="w-1 h-1 rounded-full bg-amber-500"></div>
+                            Deactivated
+                          </div>
+                        ) : null}
                       </div>
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-teal mt-1">{doctor.department} unit</p>
                     </div>
@@ -326,6 +372,13 @@ const DoctorsManagement = () => {
                         title={doctor.userId.isActive ? 'Deactivate Doctor' : 'Activate Doctor'}
                       >
                         {doctor.userId.isActive ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(doctor._id)}
+                        className="p-3 bg-white rounded-xl text-rose-500 border border-slate-100 shadow-lg hover:bg-rose-50 transition-all"
+                        title="Remove Credentials Permanently"
+                      >
+                        <Trash2 className="h-5 w-5" />
                       </button>
                       <button
                         onClick={() => {
@@ -593,6 +646,16 @@ const DoctorsManagement = () => {
           </div>
         </div>
       )}
+      {/* Confirm Deletion Modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={() => deleteDoctor(doctorToDelete)}
+        title="Remove Doctor Credentials?"
+        message="Are you sure you want to remove this doctor? Their credentials will be disabled, but their medical records and patient associations will be preserved for legal and verification purposes."
+        confirmText="Remove Credentials"
+        type="danger"
+      />
     </div>
   );
 };

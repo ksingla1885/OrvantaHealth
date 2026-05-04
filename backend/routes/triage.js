@@ -101,6 +101,14 @@ router.get('/queue', authenticateToken, async (req, res) => {
     const { status } = req.query;
     let query = {};
     if (status === 'resolved') {
+        // Only Doctors and SuperAdmins can see resolved patient history
+        if (req.user.role === 'receptionist') {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied. Patient history is restricted to clinical staff.'
+            });
+        }
+        
         query.status = 'resolved';
         // If doctor, they only see THEIR resolved patients
         if (req.user.role === 'doctor') {
