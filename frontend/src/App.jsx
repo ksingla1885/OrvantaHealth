@@ -49,6 +49,7 @@ const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 // Components
 import Chatbot from './components/Chatbot';
 
+
 function App() {
   return (
     <AuthProvider>
@@ -112,6 +113,9 @@ function App() {
                   <Route path="patient/profile" element={<ProtectedRoute roles={['patient']}><Profile /></ProtectedRoute>} />
                   <Route path="patient/payment-success" element={<ProtectedRoute roles={['patient']}><PaymentSuccess /></ProtectedRoute>} />
                 </Route>
+
+                {/* UI Demo Route */}
+
 
                 {/* 404 Route */}
                 <Route path="*" element={<Navigate to="/login" replace />} />

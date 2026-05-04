@@ -46,9 +46,9 @@ const parseDosage = (dosageStr) => {
     if (match) {
         const value = match[1] || '';
         const unit = match[2]?.trim() || 'mg';
-        return { 
-            value, 
-            unit: COMMON_DOSAGE_UNITS.includes(unit) ? unit : (unit ? unit : 'mg') 
+        return {
+            value,
+            unit: COMMON_DOSAGE_UNITS.includes(unit) ? unit : (unit ? unit : 'mg')
         };
     }
     return { value: dosageStr, unit: 'mg' };
@@ -62,8 +62,8 @@ const parseDuration = (durationStr) => {
         const unit = match[2]?.trim() || 'Days';
         // Capitalize for consistency
         const capUnit = unit.charAt(0).toUpperCase() + unit.slice(1).toLowerCase();
-        return { 
-            value, 
+        return {
+            value,
             unit: COMMON_DURATION_UNITS.includes(capUnit) ? capUnit : (capUnit ? capUnit : 'Days')
         };
     }
@@ -100,7 +100,7 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                         durationUnit: durUnit
                     };
                 });
-                
+
                 // Determine which meds have custom names not in our common list
                 const initialOtherModes = {};
                 initialMeds.forEach((m, idx) => {
@@ -149,7 +149,7 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                         durationUnit: durUnit
                     };
                 });
-                
+
                 const initialOtherModes = {};
                 initialMeds.forEach((m, idx) => {
                     if (m.name && !COMMON_MEDICINES.includes(m.name)) {
@@ -183,7 +183,7 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
     const handleRemoveMedicine = (index) => {
         const newMedicines = formData.medicines.filter((_, i) => i !== index);
         setFormData({ ...formData, medicines: newMedicines });
-        
+
         // Clean up otherModes for the removed index and shift others
         const newOtherModes = {};
         Object.keys(otherModes).forEach(k => {
@@ -196,17 +196,13 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
 
     const handleMedicineChange = (index, field, value) => {
         const newMedicines = [...formData.medicines];
-        
+
         if (field === 'name') {
             if (value === 'Other') {
                 setOtherModes({ ...otherModes, [index]: true });
                 newMedicines[index][field] = ''; // Clear for user input
             } else {
-                // If switching from 'Other' back to a selection
-                if (otherModes[index]) {
-                    const { [index]: removed, ...rest } = otherModes;
-                    setOtherModes(rest);
-                }
+                // Only update the value. otherModes[index] should only be cleared by handleBackToSelect
                 newMedicines[index][field] = value;
             }
         } else {
@@ -304,16 +300,19 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-            <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md animate-fade-in" onClick={onClose}></div>
-            
-            <div className="bg-white rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] w-full max-w-5xl relative animate-scale-in overflow-hidden border border-slate-100 flex flex-col h-full max-h-[90vh]">
-                
+        <div className="fixed inset-0 z-[100] flex justify-end">
+            <div 
+                className="absolute inset-0 bg-brand-dark/40 backdrop-blur-[8px] animate-fade-in transition-all duration-500" 
+                onClick={onClose}
+            ></div>
+
+            <div className="bg-white w-full max-w-3xl h-full relative animate-slide-in-right shadow-[-20px_0_50px_rgba(0,0,0,0.1)] border-l border-slate-100 flex flex-col overflow-hidden">
+
                 {/* ── HEADER SECTION ── */}
                 <div className="relative shrink-0 overflow-hidden">
                     <div className="absolute inset-0 bg-premium-gradient" />
                     <div className="absolute top-0 right-0 w-64 h-64 bg-brand-teal/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2" />
-                    
+
                     <div className="relative z-10 px-8 py-8 flex items-center justify-between">
                         <div className="flex items-center gap-5">
                             <div className="h-16 w-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
@@ -333,8 +332,8 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                                 </p>
                             </div>
                         </div>
-                        <button 
-                            onClick={onClose} 
+                        <button
+                            onClick={onClose}
                             className="p-3 rounded-2xl bg-white/5 text-white hover:bg-white/10 hover:scale-110 active:scale-95 transition-all border border-white/10"
                         >
                             <X className="h-6 w-6" />
@@ -345,19 +344,22 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                 {/* ── FORM CONTENT ── */}
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar">
                     <div className="p-8 md:p-10 space-y-12">
-                        
+
                         {/* 1. Clinical Investigation */}
                         <section className="space-y-6">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-xl bg-brand-light flex items-center justify-center text-brand-dark">
-                                    <Activity className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h3 className="font-black font-display text-xl text-brand-dark">Clinical Investigation</h3>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Primary complaints & Diagnosis</p>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-xl bg-brand-light flex items-center justify-center text-brand-dark relative">
+                                        <Activity className="h-5 w-5" />
+                                        <span className="absolute -top-2 -right-2 h-5 w-5 bg-brand-dark text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">01</span>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black font-display text-xl text-brand-dark">Clinical Investigation</h3>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Primary complaints & Diagnosis</p>
+                                    </div>
                                 </div>
                             </div>
-                            
+
                             <div className="group relative">
                                 <div className="absolute inset-0 bg-brand-teal/5 rounded-[2rem] -m-1.5 opacity-0 group-focus-within:opacity-100 transition-opacity" />
                                 <textarea
@@ -374,8 +376,9 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                         <section className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
+                                    <div className="h-10 w-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600 relative">
                                         <Pill className="h-5 w-5" />
+                                        <span className="absolute -top-2 -right-2 h-5 w-5 bg-violet-600 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">02</span>
                                     </div>
                                     <div>
                                         <h3 className="font-black font-display text-xl text-brand-dark">Medication Plan</h3>
@@ -387,7 +390,7 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                                     onClick={handleAddMedicine}
                                     className="group flex items-center gap-2 px-5 py-2.5 bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg active:scale-95"
                                 >
-                                    <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform" /> 
+                                    <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform" />
                                     <span>Add Medication</span>
                                 </button>
                             </div>
@@ -397,7 +400,7 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                                     <div key={index} className="relative group/card">
                                         {/* Accent side bar */}
                                         <div className="absolute left-0 top-6 bottom-6 w-1 bg-brand-teal rounded-full opacity-0 group-hover/card:opacity-100 transition-opacity" />
-                                        
+
                                         <div className="bg-white border-2 border-slate-50 rounded-[2rem] p-6 md:p-8 hover:border-brand-teal/20 hover:shadow-xl transition-all duration-300">
                                             {formData.medicines.length > 1 && (
                                                 <button
@@ -408,7 +411,7 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                                                     <Trash2 className="h-5 w-5" />
                                                 </button>
                                             )}
-                                            
+
                                             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                                                 {/* Med info - Row 1 */}
                                                 <div className="md:col-span-12 lg:col-span-7 space-y-2">
@@ -548,8 +551,9 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                             <section className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
+                                        <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 relative">
                                             <FileText className="h-5 w-5" />
+                                            <span className="absolute -top-2 -right-2 h-5 w-5 bg-amber-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">03</span>
                                         </div>
                                         <div>
                                             <h3 className="font-black font-display text-xl text-brand-dark">Clinical Tests</h3>
@@ -607,8 +611,9 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                             <section className="space-y-8">
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
+                                        <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 relative">
                                             <AlertCircle className="h-5 w-5" />
+                                            <span className="absolute -top-2 -right-2 h-5 w-5 bg-blue-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">04</span>
                                         </div>
                                         <div>
                                             <h3 className="font-black font-display text-xl text-brand-dark">Clinical Advice</h3>
@@ -642,8 +647,8 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                                             <Plus className="h-2.5 w-2.5 text-white" />
                                         </div>
                                         <p className="text-[9px] font-bold text-slate-500 leading-normal uppercase tracking-widest">
-                                            {isEditing 
-                                                ? "Submitting updates will not modify encounter status." 
+                                            {isEditing
+                                                ? "Submitting updates will not modify encounter status."
                                                 : "Issuing this prescription will formally close this clinical encounter."}
                                         </p>
                                     </div>
@@ -654,11 +659,11 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                 </form>
 
                 {/* ── STICKY FOOTER ACTIONS ── */}
-                <div className="shrink-0 p-8 pt-0 flex gap-4 animate-slide-up">
+                <div className="shrink-0 p-8 bg-slate-50/80 backdrop-blur-md border-t border-slate-100 flex gap-4 animate-slide-up">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 py-4 px-6 border-2 border-slate-100 rounded-2xl font-black text-[10px] text-slate-400 uppercase tracking-[0.2em] hover:bg-slate-50 hover:text-slate-600 transition-all active:scale-95"
+                        className="flex-1 py-4 px-6 bg-white border-2 border-slate-200 rounded-2xl font-black text-[10px] text-slate-400 uppercase tracking-[0.2em] hover:bg-slate-50 hover:text-slate-600 transition-all active:scale-95 shadow-sm"
                     >
                         Discard
                     </button>

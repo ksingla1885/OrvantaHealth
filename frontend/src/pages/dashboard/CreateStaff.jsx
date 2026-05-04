@@ -5,13 +5,48 @@ import { toast } from 'react-hot-toast';
 import {
     UserPlus, Eye, EyeOff, ShieldCheck, Mail, Phone,
     Stethoscope, Briefcase, Award, CreditCard, Landmark,
-    ChevronRight, ArrowLeft, Save, Sparkles, UserCircle
+    ChevronRight, ArrowLeft, Save, Sparkles, UserCircle,
+    ChevronDown
 } from 'lucide-react';
 import api from '../../services/api';
 
 const CreateStaff = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [isOtherDept, setIsOtherDept] = useState(false);
+    const [isOtherQual, setIsOtherQual] = useState(false);
+    const [newDeptName, setNewDeptName] = useState('');
+    const [newDeptValue, setNewDeptValue] = useState('');
+    const [newQualName, setNewQualName] = useState('');
+
+    const [deptGroups, setDeptGroups] = useState({
+        "Clinical Units": [
+            { value: "cardiology", label: "Cardiology Unit" },
+            { value: "neurology", label: "Neurology Ward" },
+            { value: "orthopedics", label: "Orthopedics Dept" },
+            { value: "pediatrics", label: "Pediatrics Wing" },
+            { value: "gynecology", label: "Gynecology Dept" },
+            { value: "dermatology", label: "Dermatology Unit" },
+            { value: "oncology", label: "Oncology Center" },
+            { value: "psychiatry", label: "Psychiatry Dept" },
+        ],
+        "Diagnostic & Support": [
+            { value: "general", label: "General Medicine" },
+            { value: "radiology", label: "Radiology & Imaging" },
+            { value: "pathology", label: "Pathology Lab" },
+            { value: "physiotherapy", label: "Physiotherapy" },
+            { value: "emergency", label: "Emergency Medicine" },
+        ],
+        "Surgical Units": [
+            { value: "general_surgery", label: "General Surgery" },
+            { value: "plastic_surgery", label: "Plastic Surgery" },
+            { value: "urology", label: "Urology Dept" },
+        ]
+    });
+
+    const [qualOptions, setQualOptions] = useState([
+        "MBBS", "MD", "MS", "BDS", "MDS", "BPT", "MPT", "B.Sc Nursing", "PhD", "Diploma"
+    ]);
 
     const {
         register,
@@ -70,6 +105,47 @@ const CreateStaff = () => {
     };
 
     const role = watch('role');
+    const deptValue = watch('department');
+    const qualValue = watch('qualifications');
+
+    useEffect(() => {
+        setIsOtherDept(deptValue === 'others');
+    }, [deptValue]);
+
+    useEffect(() => {
+        setIsOtherQual(qualValue === 'others');
+    }, [qualValue]);
+
+    const handleAddNewDept = () => {
+        if (!newDeptName.trim()) return toast.error('Enter department name');
+        if (!newDeptValue.trim()) return toast.error('Enter department identifier (value)');
+        
+        const newValue = newDeptValue.toLowerCase().replace(/\s+/g, '_');
+        const groupKey = newDeptName;
+        
+        setDeptGroups(prev => ({
+            ...prev,
+            [groupKey]: [
+                { value: newValue, label: newValue }
+            ]
+        }));
+        
+        setValue('department', newValue);
+        setNewDeptName('');
+        setNewDeptValue('');
+        setIsOtherDept(false);
+        toast.success('Department unit initialized');
+    };
+
+    const handleAddNewQual = () => {
+        if (!newQualName.trim()) return toast.error('Enter credential name');
+        
+        setQualOptions(prev => [...prev, newQualName]);
+        setValue('qualifications', newQualName);
+        setNewQualName('');
+        setIsOtherQual(false);
+        toast.success('Credential added to list');
+    };
 
     const onSubmit = async (data) => {
         setLoading(true);
@@ -319,14 +395,41 @@ const CreateStaff = () => {
                                                 <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Academic Credentials</label>
                                                 <div className="relative group">
                                                     <Award className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-brand-teal transition-colors" />
-                                                    <input
-                                                        type="text"
+                                                    <select
                                                         {...register('qualifications', { required: role === 'doctor' })}
-                                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-5 py-4 text-sm font-bold text-brand-dark focus:ring-0 focus:border-brand-teal transition-all placeholder:text-slate-300"
-                                                        placeholder="MBBS, MD"
-                                                    />
+                                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-12 py-4 text-sm font-bold text-brand-dark focus:ring-0 focus:border-brand-teal transition-all appearance-none cursor-pointer"
+                                                    >
+                                                        <option value="">Select Credentials</option>
+                                                        {qualOptions.map(q => (
+                                                            <option key={q} value={q}>{q}</option>
+                                                        ))}
+                                                        <option value="others" className="text-brand-teal font-bold">+ Add New Credential</option>
+                                                    </select>
+                                                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none group-focus-within:text-brand-teal transition-colors" />
                                                 </div>
                                             </div>
+
+                                            {isOtherQual && (
+                                                <div className="space-y-2 animate-fade-in md:col-span-2">
+                                                    <label className="text-[11px] font-black text-brand-teal uppercase tracking-widest ml-1 italic">Define New Credential</label>
+                                                    <div className="flex gap-3">
+                                                        <input
+                                                            type="text"
+                                                            value={newQualName}
+                                                            onChange={(e) => setNewQualName(e.target.value)}
+                                                            className="flex-1 bg-white border-2 border-brand-teal/20 rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark focus:border-brand-teal outline-none transition-all"
+                                                            placeholder="e.g. Fellow of Royal College"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleAddNewQual}
+                                                            className="px-6 bg-brand-teal text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-dark transition-all"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -369,19 +472,59 @@ const CreateStaff = () => {
                                                 <Landmark className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-brand-teal transition-colors" />
                                                 <select
                                                     {...register('department', { required: role === 'doctor' })}
-                                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-5 py-4 text-sm font-bold text-brand-dark focus:ring-0 focus:border-brand-teal transition-all flex appearance-none"
+                                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-12 py-4 text-sm font-bold text-brand-dark focus:ring-0 focus:border-brand-teal transition-all flex appearance-none cursor-pointer"
                                                 >
                                                     <option value="">Select Department Node</option>
-                                                    <option value="cardiology">Cardiology Unit</option>
-                                                    <option value="neurology">Neurology Ward</option>
-                                                    <option value="orthopedics">Orthopedics Dept</option>
-                                                    <option value="pediatrics">Pediatrics Wing</option>
-                                                    <option value="gynecology">Gynecology Dept</option>
-                                                    <option value="dermatology">Dermatology Unit</option>
-                                                    <option value="general">General Medicine</option>
+                                                    {Object.entries(deptGroups).map(([group, depts]) => (
+                                                        <optgroup key={group} label={group} className="font-black text-[10px] uppercase tracking-widest bg-slate-50 text-slate-400">
+                                                            {depts.map(d => (
+                                                                <option key={d.value} value={d.value} className="font-bold text-sm text-brand-dark bg-white uppercase">{d.label}</option>
+                                                            ))}
+                                                        </optgroup>
+                                                    ))}
+                                                    <option value="others" className="text-brand-teal font-bold">+ Add New Department</option>
                                                 </select>
+                                                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none group-focus-within:text-brand-teal transition-colors" />
                                             </div>
                                         </div>
+
+                                        {isOtherDept && (
+                                            <div className="md:col-span-2 space-y-4 animate-fade-in bg-slate-50/50 p-6 rounded-[2rem] border border-dashed border-brand-teal/20">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Sparkles className="h-4 w-4 text-brand-teal" />
+                                                    <label className="text-[11px] font-black text-brand-teal uppercase tracking-widest italic">Initialize New Diagnostic Unit</label>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Unit Display Name</p>
+                                                        <input
+                                                            type="text"
+                                                            value={newDeptName}
+                                                            onChange={(e) => setNewDeptName(e.target.value)}
+                                                            className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark focus:border-brand-teal outline-none transition-all"
+                                                            placeholder="e.g. Critical Care Unit"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">System Identifier (Value)</p>
+                                                        <input
+                                                            type="text"
+                                                            value={newDeptValue}
+                                                            onChange={(e) => setNewDeptValue(e.target.value)}
+                                                            className="w-full bg-white border-2 border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark focus:border-brand-teal outline-none transition-all"
+                                                            placeholder="e.g. critical_care"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleAddNewDept}
+                                                    className="w-full py-4 bg-brand-teal text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-brand-dark transition-all shadow-lg shadow-brand-teal/20 flex items-center justify-center gap-2"
+                                                >
+                                                    <Save className="h-4 w-4" /> Save New Unit Node
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

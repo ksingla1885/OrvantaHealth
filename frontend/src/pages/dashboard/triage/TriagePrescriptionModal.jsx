@@ -152,10 +152,7 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                 setOtherModes({ ...otherModes, [index]: true });
                 newMedicines[index][field] = ''; 
             } else {
-                if (otherModes[index]) {
-                    const { [index]: removed, ...rest } = otherModes;
-                    setOtherModes(rest);
-                }
+                // Only update name. otherModes[index] is cleared by handleBackToSelect
                 newMedicines[index][field] = value;
             }
         } else {
@@ -236,10 +233,13 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-            <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md animate-fade-in" onClick={onClose}></div>
+        <div className="fixed inset-0 z-[100] flex justify-end">
+            <div 
+                className="absolute inset-0 bg-brand-dark/40 backdrop-blur-[8px] animate-fade-in transition-all duration-500" 
+                onClick={onClose}
+            ></div>
             
-            <div className="bg-white rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] w-full max-w-5xl relative animate-scale-in overflow-hidden border border-slate-100 flex flex-col h-full max-h-[90vh]">
+            <div className="bg-white w-full max-w-3xl h-full relative animate-slide-in-right shadow-[-20px_0_50px_rgba(0,0,0,0.1)] border-l border-slate-100 flex flex-col overflow-hidden">
                 
                 {/* Header */}
                 <div className="relative shrink-0 overflow-hidden">
@@ -275,8 +275,9 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                         
                         <section className="space-y-6">
                             <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-xl bg-brand-light flex items-center justify-center text-brand-dark">
+                                <div className="h-10 w-10 rounded-xl bg-brand-light flex items-center justify-center text-brand-dark relative">
                                     <Activity className="h-5 w-5" />
+                                    <span className="absolute -top-2 -right-2 h-5 w-5 bg-brand-dark text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">01</span>
                                 </div>
                                 <div>
                                     <h3 className="font-black font-display text-xl text-brand-dark">Clinical Investigation</h3>
@@ -295,8 +296,9 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                         <section className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
+                                    <div className="h-10 w-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600 relative">
                                         <Pill className="h-5 w-5" />
+                                        <span className="absolute -top-2 -right-2 h-5 w-5 bg-violet-600 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">02</span>
                                     </div>
                                     <div>
                                         <h3 className="font-black font-display text-xl text-brand-dark">Medication Plan</h3>
@@ -395,8 +397,9 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                             <section className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
+                                        <div className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 relative">
                                             <FileText className="h-5 w-5" />
+                                            <span className="absolute -top-2 -right-2 h-5 w-5 bg-amber-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">03</span>
                                         </div>
                                         <div>
                                             <h3 className="font-black font-display text-xl text-brand-dark">Clinical Tests</h3>
@@ -418,8 +421,9 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                             <section className="space-y-8">
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
+                                        <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 relative">
                                             <AlertCircle className="h-5 w-5" />
+                                            <span className="absolute -top-2 -right-2 h-5 w-5 bg-blue-500 text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">04</span>
                                         </div>
                                         <h3 className="font-black font-display text-xl text-brand-dark">Clinical Advice</h3>
                                     </div>
@@ -435,9 +439,10 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                     </div>
                 </form>
 
-                <div className="shrink-0 p-8 pt-0 flex gap-4">
-                    <button type="button" onClick={onClose} className="flex-1 py-4 px-6 border-2 border-slate-100 rounded-2xl font-black text-[10px] text-slate-400 uppercase tracking-widest">Discard</button>
-                    <button type="button" onClick={handleSubmit} disabled={loading} className="flex-[2.5] py-4 px-8 bg-brand-dark text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:bg-brand-teal transition-all">
+                {/* Footer */}
+                <div className="shrink-0 p-8 bg-slate-50/80 backdrop-blur-md border-t border-slate-100 flex gap-4">
+                    <button type="button" onClick={onClose} className="flex-1 py-4 px-6 bg-white border-2 border-slate-200 rounded-2xl font-black text-[10px] text-slate-400 uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">Discard</button>
+                    <button type="button" onClick={handleSubmit} disabled={loading} className="flex-[2.5] py-4 px-8 bg-brand-dark text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:bg-[#0c4038] hover:-translate-y-1 transition-all active:scale-95">
                         {loading ? <div className="loading-spinner h-5 w-5 border-white/30 border-t-white" /> : <><Save className="h-4 w-4" /> Finalize & Issue Prescription</>}
                     </button>
                 </div>

@@ -107,42 +107,54 @@ router.post('/register', [
       });
     }
 
-    // Create new user
-    const user = new User({
-      email,
-      password,
-      role: 'patient',
-      profile: {
-        firstName,
-        lastName,
-        phone: phone || undefined,
-        dateOfBirth: dateOfBirth || undefined,
-        gender: gender || undefined,
-        address: address || undefined
+    try {
+      // Create new user
+      const user = new User({
+        email,
+        password,
+        role: 'patient',
+        profile: {
+          firstName,
+          lastName,
+          phone: phone || undefined,
+          dateOfBirth: dateOfBirth || undefined,
+          gender: gender || undefined,
+          address: address || undefined
+        }
+      });
+
+      await user.save();
+
+      // Create patient profile
+      const patient = new Patient({ userId: user._id });
+      await patient.save();
+
+      // Generate tokens
+      const tokens = generateTokens(user._id);
+
+      // Save refresh token to user
+      user.refreshToken = tokens.refreshToken;
+      await user.save();
+
+      res.status(201).json({
+        success: true,
+        message: 'Patient registered successfully',
+        data: {
+          user,
+          tokens
+        }
+      });
+    } catch (saveError) {
+      // If user was created but something failed afterwards, delete the user to allow retry
+      // This prevents "half-created" accounts
+      const createdUser = await User.findOne({ email });
+      if (createdUser) {
+        await User.findByIdAndDelete(createdUser._id);
+        // Also try to delete patient profile if it was somehow created
+        await Patient.deleteOne({ userId: createdUser._id });
       }
-    });
-
-    await user.save();
-
-    // Create patient profile
-    const patient = new Patient({ userId: user._id });
-    await patient.save();
-
-    // Generate tokens
-    const tokens = generateTokens(user._id);
-
-    // Save refresh token to user
-    user.refreshToken = tokens.refreshToken;
-    await user.save();
-
-    res.status(201).json({
-      success: true,
-      message: 'Patient registered successfully',
-      data: {
-        user,
-        tokens
-      }
-    });
+      throw saveError;
+    }
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({
