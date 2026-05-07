@@ -27,19 +27,21 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    const originWithoutSlash = origin.replace(/\/$/, '');
-
-    if (allowedOrigins.indexOf(originWithoutSlash) !== -1 || allowedOrigins.includes('*')) {
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    const isAllowed = allowedOrigins.includes(normalizedOrigin) || 
+                     normalizedOrigin.endsWith('.vercel.app'); // Allow all Vercel deployments
+    
+    if (isAllowed) {
       callback(null, true);
     } else {
-      console.log('CORS rejected origin:', origin);
-      // Return null, false to avoid triggering the global error handler
+      console.warn(`⚠️ CORS blocked for origin: ${origin}`);
       callback(null, false);
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  optionsSuccessStatus: 200
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 204
 }));
 
 

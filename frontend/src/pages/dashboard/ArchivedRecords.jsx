@@ -7,26 +7,31 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
+
+const safeFormat = (date, formatStr, fallback = 'N/A') => {
+  if (!date) return fallback;
+  const d = new Date(date);
+  if (!isValid(d)) return fallback;
+  return format(d, formatStr);
+};
 
 // ── COMPONENT: ARCHIVED DOCTOR DOSSIER ──
-const getPatientName = (data) => {
-  if (!data) return 'Anonymous Patient';
+const getPatientMRN = (data) => {
+  if (!data) return 'MRN-PENDING';
   
-  // Check if it's a patient object with a populated userId
-  if (data.userId?.profile) {
-    return `${data.userId.profile.firstName} ${data.userId.profile.lastName}`;
-  }
+  // 1. Return MRN if available
+  if (data.medicalRecordNumber) return data.medicalRecordNumber;
   
-  // Check if the data itself is a user object (direct reference)
-  if (data.profile) {
-    return `${data.profile.firstName} ${data.profile.lastName}`;
-  }
+  // 2. If MRN is missing but we have a name, show Name + Temp ID
+  const name = data.userId?.profile ? `${data.userId.profile.firstName} ${data.userId.profile.lastName}` : '';
+  if (name) return `${name} (MRN-N/A)`;
 
-  // Fallback for medicalRecordNumber or other fields
-  if (data.medicalRecordNumber) return `Patient ${data.medicalRecordNumber}`;
-  
-  return 'Anonymous Patient';
+  // 3. Last resort: derive from ID
+  if (data._id) return `MRN-TEMP-${data._id.slice(-6).toUpperCase()}`;
+  if (typeof data === 'string') return `MRN-ID-${data.slice(-6).toUpperCase()}`;
+
+  return 'MRN-UNAVAILABLE';
 };
 
 const DoctorAuditDossier = ({ doctorId, onClose }) => {
@@ -62,9 +67,33 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in" onClick={onClose} />
-      <div className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl h-[85vh] overflow-hidden flex flex-col animate-slide-up border border-white/20">
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          .print-dossier, .print-dossier * { visibility: visible; }
+          .print-dossier { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: auto;
+            background: white !important;
+          }
+          .print-hidden { display: none !important; }
+          .shadow-2xl, .shadow-sm { shadow: none !important; }
+          .rounded-[3rem] { border-radius: 0 !important; }
+        }
+      `}</style>
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md animate-fade-in print:hidden" onClick={onClose} />
+      <div className="relative bg-white rounded-[3rem] shadow-2xl w-full max-w-5xl h-[85vh] overflow-hidden flex flex-col animate-slide-up border border-white/20 print-dossier print:h-auto">
         
+        {/* Certification Watermark (Print Only) */}
+        <div className="hidden print:block absolute top-10 right-10 border-4 border-brand-teal/20 p-4 rounded-full rotate-12 flex flex-col items-center opacity-30">
+          <ShieldAlert className="h-8 w-8 text-brand-teal mb-1" />
+          <p className="text-[10px] font-black text-brand-teal uppercase tracking-widest">OFFICIAL AUDIT</p>
+          <p className="text-[8px] font-bold text-brand-teal uppercase tracking-tighter">ORVANTA HEALTH</p>
+        </div>
+
         {/* Header */}
         <div className="p-8 bg-brand-dark text-white relative">
           <div className="absolute top-0 right-0 w-64 h-full bg-white/5 skew-x-12 transform translate-x-32" />
@@ -83,7 +112,7 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                 </div>
               </div>
             </div>
-            <button onClick={onClose} className="p-4 hover:bg-white/10 rounded-2xl transition-all">
+            <button onClick={onClose} className="p-4 hover:bg-white/10 rounded-2xl transition-all print:hidden">
               <History className="h-6 w-6" />
             </button>
           </div>
@@ -162,13 +191,13 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-1">
                           <p className="font-black text-brand-dark text-lg tracking-tight">
-                            {getPatientName(apt.patientId)}
+                            {getPatientMRN(apt.patientId)}
                           </p>
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 py-0.5 bg-slate-50 rounded">ID: {apt.patientId?.medicalRecordNumber || 'N/A'}</span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 py-0.5 bg-slate-50 rounded">Patient Identification</span>
                         </div>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                           <Clock className="h-3.5 w-3.5" /> 
-                          {format(new Date(apt.date), 'EEEE, do MMMM yyyy')} • {apt.timeSlot?.start}
+                          {safeFormat(apt.date, 'EEEE, do MMMM yyyy', 'Date N/A')} • {apt.timeSlot?.start || 'Time N/A'}
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-1">
@@ -206,7 +235,7 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Patient Ledger Record</p>
                           </div>
                           <h4 className="text-xl font-black text-brand-dark font-display mb-2">
-                            {getPatientName(pre.patientId)}
+                            {getPatientMRN(pre.patientId)}
                           </h4>
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] font-black text-brand-teal uppercase tracking-widest px-2 py-0.5 bg-brand-teal/10 rounded">Diagnosis: {pre.diagnosis}</span>
@@ -214,7 +243,7 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                         </div>
                         <div className="text-right">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Authored On</p>
-                          <p className="text-sm font-bold text-brand-dark">{format(new Date(pre.createdAt), 'dd MMM yyyy')}</p>
+                          <p className="text-sm font-bold text-brand-dark">{safeFormat(pre.createdAt, 'dd MMM yyyy', 'Date N/A')}</p>
                         </div>
                       </div>
                       
@@ -250,7 +279,7 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                         <div className="flex items-center justify-between pt-6 border-t border-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                           <span className="flex items-center gap-2">
                             <User className="h-3 w-3" />
-                            Identity Verified: {getPatientName(pre.patientId)}
+                            MRN Verified: {getPatientMRN(pre.patientId)}
                           </span>
                           <span>Audit ID: {pre._id.slice(-8).toUpperCase()}</span>
                         </div>
@@ -285,7 +314,7 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                       <div className="w-0.5 h-12 bg-brand-teal/30" />
                       <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Account Establishment</p>
-                        <p className="text-sm font-bold">{format(new Date(doctor.userId.createdAt), 'PPP p')}</p>
+                        <p className="text-sm font-bold">{safeFormat(doctor.userId.createdAt, 'PPP p', 'Creation Date N/A')}</p>
                         <p className="text-[9px] font-medium text-slate-500 mt-0.5">Initial credential issuance date.</p>
                       </div>
                     </div>
@@ -295,7 +324,7 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                         <div>
                           <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Institutional Offboarding</p>
                           <p className="text-sm font-bold text-rose-100">
-                            {doctor.userId.offboardedAt ? format(new Date(doctor.userId.offboardedAt), 'PPP p') : 'Archived via Legacy Migration'}
+                            {safeFormat(doctor.userId.offboardedAt, 'PPP p', 'Archived via Legacy Migration')}
                           </p>
                           <p className="text-[9px] font-medium text-slate-500 mt-0.5">
                             Authorized By: {doctor.userId.offboardedBy?.profile ? `${doctor.userId.offboardedBy.profile.firstName} ${doctor.userId.offboardedBy.profile.lastName}` : 'System Root'}
@@ -325,8 +354,11 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                     System Hash: {doctor._id.toUpperCase()}
                   </div>
                   <button 
-                    onClick={() => toast.success("Generating Certified PDF Audit Report...")}
-                    className="flex items-center gap-2 px-6 py-3 bg-brand-teal text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg"
+                    onClick={() => {
+                      toast.success("Preparing certified audit document...");
+                      setTimeout(() => window.print(), 500);
+                    }}
+                    className="flex items-center gap-2 px-6 py-3 bg-brand-teal text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg print:hidden"
                   >
                     <Download className="h-4 w-4" />
                     Download Legal Dossier
@@ -339,7 +371,7 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end print:hidden">
           <button onClick={onClose} className="px-8 py-3 bg-brand-dark text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl">
             Close Dossier
           </button>
@@ -493,7 +525,7 @@ const ArchivedRecords = () => {
                       <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Last Active</p>
                         <p className="text-xs font-bold text-brand-dark">
-                          {staff.userId?.lastLogin ? format(new Date(staff.userId.lastLogin), 'PPP') : 'Never'}
+                          {safeFormat(staff.userId?.lastLogin, 'PPP', 'Never')}
                         </p>
                       </div>
                     </div>
@@ -561,7 +593,7 @@ const ArchivedRecords = () => {
                 <div className="flex items-center gap-6 px-6 border-l border-slate-50 hidden md:flex">
                   <div>
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Resolved On</p>
-                    <p className="text-xs font-bold text-brand-dark">{format(new Date(item.updatedAt), 'dd MMM yyyy')}</p>
+                    <p className="text-xs font-bold text-brand-dark">{safeFormat(item.updatedAt, 'dd MMM yyyy', 'Date N/A')}</p>
                   </div>
                   <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-brand-teal group-hover:text-white transition-all cursor-pointer">
                     <Eye className="h-5 w-5" />

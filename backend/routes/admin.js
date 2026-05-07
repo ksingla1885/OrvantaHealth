@@ -98,13 +98,13 @@ router.get('/doctor-history/:id', superAdminOnly, async (req, res) => {
     // Find doctor by doctorId or userId
     let doctor = await Doctor.findById(id).populate({
       path: 'userId',
-      select: 'email profile isActive isOffboarded offboardedAt offboardedBy lastLogin',
+      select: 'email profile isActive isOffboarded offboardedAt offboardedBy lastLogin createdAt',
       populate: { path: 'offboardedBy', select: 'profile email' }
     });
     if (!doctor) {
       doctor = await Doctor.findOne({ userId: id }).populate({
         path: 'userId',
-        select: 'email profile isActive isOffboarded offboardedAt offboardedBy lastLogin',
+        select: 'email profile isActive isOffboarded offboardedAt offboardedBy lastLogin createdAt',
         populate: { path: 'offboardedBy', select: 'profile email' }
       });
     }
@@ -113,20 +113,35 @@ router.get('/doctor-history/:id', superAdminOnly, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Doctor not found in archives' });
     }
 
-    const [appointments, prescriptions] = await Promise.all([
-      Appointment.find({ doctorId: doctor._id })
-        .populate({
-          path: 'patientId',
-          populate: { path: 'userId' }
-        })
-        .sort({ date: -1 }),
-      Prescription.find({ doctorId: doctor._id })
-        .populate({
-          path: 'patientId',
-          populate: { path: 'userId' }
-        })
-        .sort({ createdAt: -1 })
+    // Fetch raw records first to handle deep resolution
+    let [appointments, prescriptions] = await Promise.all([
+      Appointment.find({ doctorId: doctor._id }).sort({ date: -1 }).lean(),
+      Prescription.find({ doctorId: doctor._id }).sort({ createdAt: -1 }).lean()
     ]);
+
+    // Helper to resolve patient data from any ID (Patient ID or User ID)
+    const resolvePatient = async (id) => {
+      if (!id) return null;
+      // 1. Try finding by direct Patient ID
+      let patient = await Patient.findById(id).select('medicalRecordNumber userId').populate('userId', 'profile email');
+      if (patient) return patient;
+      
+      // 2. Try finding by User ID (fallback for legacy/unconventional records)
+      patient = await Patient.findOne({ userId: id }).select('medicalRecordNumber userId').populate('userId', 'profile email');
+      return patient;
+    };
+
+    // Resolve all appointments
+    appointments = await Promise.all(appointments.map(async (apt) => ({
+      ...apt,
+      patientId: await resolvePatient(apt.patientId)
+    })));
+
+    // Resolve all prescriptions
+    prescriptions = await Promise.all(prescriptions.map(async (pre) => ({
+      ...pre,
+      patientId: await resolvePatient(pre.patientId)
+    })));
 
     res.json({
       success: true,
