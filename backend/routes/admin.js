@@ -181,7 +181,7 @@ router.get('/patients', authorizeRoles('superadmin', 'receptionist', 'doctor'), 
 router.use(superAdminOnly);
 
 // Create staff account (doctor, receptionist, staff)
-router.post('/create-staff', [
+router.post('/staff', [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
   body('firstName').notEmpty().trim(),
@@ -493,7 +493,7 @@ router.get('/staff/:id', async (req, res) => {
 });
 
 // Update staff account
-router.patch('/update-staff/:id', async (req, res) => {
+router.patch('/staff/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { firstName, lastName, phone, specialization, qualifications, experience, licenseNumber, consultationFee, department } = req.body;

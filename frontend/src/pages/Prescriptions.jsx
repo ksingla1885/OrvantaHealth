@@ -185,8 +185,13 @@ const Prescriptions = () => {
                         <h3 className="font-black text-brand-dark font-display leading-tight text-lg">
                           {currentUser.role === 'patient'
                             ? `Dr. ${p.doctorId?.userId?.profile?.firstName || ''} ${p.doctorId?.userId?.profile?.lastName || 'Expert'}`
-                            : `Patient: ${p.patientId?.userId?.profile?.firstName || ''} ${p.patientId?.userId?.profile?.lastName || 'Unknown'}`}
+                            : `${p.patientId?.userId?.profile?.firstName || ''} ${p.patientId?.userId?.profile?.lastName || 'Unknown'}`}
                         </h3>
+                        {currentUser.role !== 'patient' && p.patientId?.medicalRecordNumber && (
+                          <span className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full bg-teal-50 border border-teal-100 text-[9px] font-black text-teal-700 uppercase tracking-widest">
+                            # {p.patientId.medicalRecordNumber}
+                          </span>
+                        )}
                       </div>
                     </div>
 

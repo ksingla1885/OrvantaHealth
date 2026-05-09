@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Pill, Activity, AlertCircle, Save, Clipboard, Calendar, FileText, Sparkles, Clock, Beaker } from 'lucide-react';
+import ReactDOM from 'react-dom';
+import { X, Plus, Trash2, Pill, Activity, AlertCircle, Save, Clipboard, Calendar, FileText, Sparkles, Clock, Beaker, ArrowLeft } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../../services/api';
 
@@ -152,7 +153,6 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                 setOtherModes({ ...otherModes, [index]: true });
                 newMedicines[index][field] = ''; 
             } else {
-                // Only update name. otherModes[index] is cleared by handleBackToSelect
                 newMedicines[index][field] = value;
             }
         } else {
@@ -232,46 +232,74 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-[100] flex justify-end">
-            <div 
-                className="absolute inset-0 bg-brand-dark/40 backdrop-blur-[8px] animate-fade-in transition-all duration-500" 
-                onClick={onClose}
-            ></div>
-            
-            <div className="bg-white w-full max-w-3xl h-full relative animate-slide-in-right shadow-[-20px_0_50px_rgba(0,0,0,0.1)] border-l border-slate-100 flex flex-col overflow-hidden">
-                
-                {/* Header */}
-                <div className="relative shrink-0 overflow-hidden">
-                    <div className="absolute inset-0 bg-premium-gradient" />
-                    <div className="relative z-10 px-8 py-8 flex items-center justify-between">
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[300] bg-white flex flex-col overflow-hidden animate-fade-in">
+            {/* ── HEADER SECTION ── */}
+            <div className="relative shrink-0 bg-brand-dark overflow-hidden border-b border-white/5">
+                <div className="absolute inset-0 bg-premium-gradient opacity-90" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-teal/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-violet-500/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
+
+                <div className="relative z-10 px-6 lg:px-12 py-6 flex items-center justify-between">
+                    <div className="flex items-center gap-8">
+                        <button
+                            onClick={onClose}
+                            className="group flex items-center gap-3 px-5 py-2.5 bg-white/5 text-white border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95"
+                        >
+                            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Back to Queue</span>
+                        </button>
+
+                        <div className="h-px w-12 bg-white/10" />
+
                         <div className="flex items-center gap-5">
-                            <div className="h-16 w-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
-                                <Clipboard className="h-8 w-8 text-brand-teal" />
+                            <div className="h-14 w-14 rounded-2xl bg-brand-teal flex items-center justify-center shadow-xl shadow-brand-teal/20">
+                                <Clipboard className="h-7 w-7 text-white" />
                             </div>
                             <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <Sparkles className="h-4 w-4 text-brand-teal animate-pulse" />
-                                    <span className="text-[10px] font-black text-brand-teal uppercase tracking-[0.25em]">Immediate Care Module</span>
+                                <div className="flex items-center gap-2 mb-0.5">
+                                    <Sparkles className="h-3 w-3 text-brand-teal animate-pulse" />
+                                    <span className="text-[9px] font-black text-brand-teal uppercase tracking-[0.3em]">Immediate Care Module</span>
                                 </div>
-                                <h2 className="text-3xl font-black font-display text-white tracking-tight leading-none">
+                                <h2 className="text-2xl lg:text-3xl font-black font-display text-white tracking-tight leading-none">
                                     Clinical Prescription
                                 </h2>
-                                <p className="text-white/50 text-xs font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-brand-teal" />
-                                    Patient: <span className="text-white">{record.patientName}</span>
-                                </p>
+                                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                                    <div className="flex items-center gap-2 px-2.5 py-1 bg-white/5 rounded-full border border-white/5">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span className="text-[9px] font-black text-white/70 uppercase tracking-widest">
+                                            Patient: {record.patientName}
+                                        </span>
+                                    </div>
+                                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-teal/20 border border-brand-teal/30 text-[9px] font-black text-brand-teal uppercase tracking-widest">
+                                        # {record.triageId}
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-3 rounded-2xl bg-white/5 text-white hover:bg-white/10 transition-all border border-white/10">
-                            <X className="h-6 w-6" />
-                        </button>
+                    </div>
+
+                    <div className="hidden lg:flex items-center gap-4">
+                        <div className="text-right mr-4">
+                            <p className="text-[9px] font-black text-white/30 uppercase tracking-widest">Clinical Status</p>
+                            <p className="text-xs font-bold text-brand-teal">Direct Triage Response</p>
+                        </div>
+                        <div className="h-10 w-10 rounded-full border-2 border-brand-teal/30 p-1">
+                            <div className="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-brand-teal">
+                                Rx
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar">
-                    <div className="p-8 md:p-10 space-y-12">
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="overflow-y-auto bg-[#f8fafc] custom-scrollbar" style={{ flex: '1 1 0', minHeight: 0 }}>
+                <div className="max-w-6xl mx-auto px-6 lg:px-12 py-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                        
+                        {/* Left Column */}
+                        <div className="lg:col-span-7 space-y-12">
                         
                         <section className="space-y-6">
                             <div className="flex items-center gap-3">
@@ -393,7 +421,10 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                             </div>
                         </section>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        </div>
+
+                        {/* Right Column */}
+                        <div className="lg:col-span-5 space-y-12">
                             <section className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -434,20 +465,82 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                                         placeholder="Diet & lifestyle recommendations..."
                                     />
                                 </div>
+
+                                {/* Follow-up Date */}
+                                <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="h-4 w-4 text-brand-teal" />
+                                            <span className="text-[10px] font-black text-brand-dark uppercase tracking-widest">Follow-up Due</span>
+                                        </div>
+                                        <input
+                                            type="date"
+                                            value={formData.followUpDate}
+                                            onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
+                                            className="bg-white border border-slate-100 rounded-xl px-4 py-2 text-xs font-black text-brand-dark outline-none focus:ring-2 focus:ring-brand-teal/20"
+                                            min={new Date().toISOString().split('T')[0]}
+                                        />
+                                    </div>
+                                    <div className="flex items-start gap-3 p-4 bg-brand-teal/5 rounded-2xl">
+                                        <div className="h-4 w-4 rounded-full bg-brand-teal flex items-center justify-center shrink-0 mt-0.5">
+                                            <Plus className="h-2.5 w-2.5 text-white" />
+                                        </div>
+                                        <p className="text-[9px] font-bold text-slate-500 leading-normal uppercase tracking-widest">
+                                            Issuing this prescription will formally close this triage interaction.
+                                        </p>
+                                    </div>
+                                </div>
                             </section>
                         </div>
                     </div>
-                </form>
+                </div>
+            </form>
 
-                {/* Footer */}
-                <div className="shrink-0 p-8 bg-slate-50/80 backdrop-blur-md border-t border-slate-100 flex gap-4">
-                    <button type="button" onClick={onClose} className="flex-1 py-4 px-6 bg-white border-2 border-slate-200 rounded-2xl font-black text-[10px] text-slate-400 uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm">Discard</button>
-                    <button type="button" onClick={handleSubmit} disabled={loading} className="flex-[2.5] py-4 px-8 bg-brand-dark text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:bg-[#0c4038] hover:-translate-y-1 transition-all active:scale-95">
-                        {loading ? <div className="loading-spinner h-5 w-5 border-white/30 border-t-white" /> : <><Save className="h-4 w-4" /> Finalize & Issue Prescription</>}
+            {/* Footer */}
+            <div className="shrink-0 p-8 lg:px-12 bg-white border-t border-slate-100 flex items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-50">
+                <div className="hidden md:flex items-center gap-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+                            <Activity size={18} />
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Encounter Integrity</p>
+                            <p className="text-[10px] font-bold text-slate-600">Verified Clinical Data</p>
+                        </div>
+                    </div>
+                    <div className="h-8 w-px bg-slate-100" />
+                    <p className="text-[10px] font-bold text-slate-400 max-w-[200px]">
+                        Finalizing this prescription will formally close this triage interaction.
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-10 py-4 bg-slate-50 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-100 hover:text-slate-600 transition-all active:scale-95"
+                    >
+                        Discard changes
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="px-12 py-4 bg-brand-dark text-white rounded-[1.25rem] font-black text-[10px] uppercase tracking-[0.25em] flex items-center justify-center gap-3 shadow-[0_20px_40px_-12px_rgba(10,54,48,0.3)] hover:bg-[#0c4038] hover:-translate-y-1 active:scale-95 transition-all disabled:opacity-50 group"
+                    >
+                        {loading ? (
+                            <div className="loading-spinner h-5 w-5 border-white/30 border-t-white"></div>
+                        ) : (
+                            <>
+                                <Save className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                                <span>AUTHORIZE & ISSUE</span>
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

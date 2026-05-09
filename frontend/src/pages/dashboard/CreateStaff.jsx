@@ -6,7 +6,7 @@ import {
     UserPlus, Eye, EyeOff, ShieldCheck, Mail, Phone,
     Stethoscope, Briefcase, Award, CreditCard, Landmark,
     ChevronRight, ArrowLeft, Save, Sparkles, UserCircle,
-    ChevronDown, Activity, Zap, Fingerprint, Lock
+    ChevronDown, Activity, Zap, Fingerprint, Lock, X, Plus
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -18,6 +18,7 @@ const CreateStaff = () => {
     const [newDeptName, setNewDeptName] = useState('');
     const [newDeptValue, setNewDeptValue] = useState('');
     const [newQualName, setNewQualName] = useState('');
+    const [selectedQuals, setSelectedQuals] = useState([]);
 
     const [deptGroups, setDeptGroups] = useState({
         "Clinical Units": [
@@ -83,6 +84,9 @@ const CreateStaff = () => {
             const response = await api.get(`/admin/staff/${editId}`);
             if (response.data.success) {
                 const staff = response.data.data;
+                const quals = staff.qualifications ? staff.qualifications.split(',').map(q => q.trim()) : [];
+                setSelectedQuals(quals);
+                
                 reset({
                     role: staff.role,
                     email: staff.email,
@@ -140,20 +144,45 @@ const CreateStaff = () => {
     const handleAddNewQual = () => {
         if (!newQualName.trim()) return toast.error('Enter credential name');
         
-        setQualOptions(prev => [...prev, newQualName]);
-        setValue('qualifications', newQualName);
+        if (!selectedQuals.includes(newQualName)) {
+            const updated = [...selectedQuals, newQualName];
+            setSelectedQuals(updated);
+            setValue('qualifications', updated.join(', '));
+            if (!qualOptions.includes(newQualName)) {
+                setQualOptions(prev => [...prev, newQualName]);
+            }
+        }
         setNewQualName('');
         setIsOtherQual(false);
-        toast.success('Credential added to registry');
+        toast.success('Credential added to selection');
+    };
+
+    const toggleQual = (qual) => {
+        const updated = selectedQuals.includes(qual)
+            ? selectedQuals.filter(q => q !== qual)
+            : [...selectedQuals, qual];
+        setSelectedQuals(updated);
+        setValue('qualifications', updated.join(', '));
     };
 
     const onSubmit = async (data) => {
+        if (role === 'doctor' && selectedQuals.length === 0) {
+            toast.error('Please select at least one academic credential');
+            return;
+        }
+
         setLoading(true);
         try {
-            const endpoint = isEditMode ? `/admin/staff/${editId}` : '/admin/staff';
-            const method = isEditMode ? 'put' : 'post';
+            const endpoint = `/admin/staff${isEditMode ? `/${editId}` : ''}`;
+            const method = isEditMode ? 'patch' : 'post';
             
-            const response = await api[method](endpoint, data);
+            // Ensure qualifications is a string for the backend
+            const payload = {
+                ...data,
+                qualifications: selectedQuals.join(', ')
+            };
+
+            const response = await api[method](endpoint, payload);
             if (response.data.success) {
                 toast.success(isEditMode ? 'Staff profile updated' : 'Staff onboarded successfully');
                 navigate('/dashboard/staff');
@@ -424,17 +453,50 @@ const CreateStaff = () => {
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Academic Credentials</label>
                                             <div className="relative group/input">
                                                 <Award className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within/input:text-brand-teal transition-colors" />
-                                                <select
-                                                    {...register('qualifications', { required: role === 'doctor' })}
-                                                    className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl pl-12 pr-12 py-4 text-sm font-bold text-brand-dark focus:ring-4 focus:ring-brand-teal/5 focus:border-brand-teal transition-all appearance-none cursor-pointer outline-none"
+                                                <div 
+                                                    tabIndex="0"
+                                                    className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl pl-12 pr-5 py-4 min-h-[58px] flex flex-wrap gap-2 items-center focus:ring-4 focus:ring-brand-teal/5 focus:border-brand-teal outline-none cursor-pointer"
                                                 >
-                                                    <option value="">Select Credentials</option>
-                                                    {qualOptions.map(q => (
-                                                        <option key={q} value={q}>{q}</option>
+                                                    {selectedQuals.length === 0 && <span className="text-sm text-slate-300 font-bold">Select Credentials</span>}
+                                                    {selectedQuals.map(q => (
+                                                        <span key={q} className="bg-brand-teal text-white text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl flex items-center gap-2">
+                                                            {q}
+                                                            <button type="button" onClick={() => toggleQual(q)} className="hover:text-brand-dark transition-colors">
+                                                                <X className="h-3 w-3" />
+                                                            </button>
+                                                        </span>
                                                     ))}
-                                                    <option value="others" className="text-brand-teal font-bold">+ Add New Credential</option>
-                                                </select>
-                                                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 pointer-events-none group-focus-within/input:text-brand-teal transition-colors" />
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => setIsOtherQual(true)}
+                                                        className="h-8 w-8 rounded-xl bg-brand-light flex items-center justify-center text-brand-teal hover:bg-brand-teal hover:text-white transition-all ml-auto"
+                                                    >
+                                                        <Plus className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                                <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-2xl border border-slate-100 shadow-2xl z-50 p-4 grid grid-cols-2 gap-2 opacity-0 pointer-events-none group-focus-within/input:opacity-100 group-focus-within/input:pointer-events-auto transition-all">
+                                                    {qualOptions.map(q => (
+                                                        <button
+                                                            key={q}
+                                                            type="button"
+                                                            onClick={() => toggleQual(q)}
+                                                            className={`text-left px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                                                                selectedQuals.includes(q) 
+                                                                ? 'bg-brand-teal text-white' 
+                                                                : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                                                            }`}
+                                                        >
+                                                            {q}
+                                                        </button>
+                                                    ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsOtherQual(true)}
+                                                        className="text-left px-4 py-2 rounded-xl text-xs font-black text-brand-teal bg-brand-light hover:bg-brand-teal hover:text-white transition-all col-span-2 text-center"
+                                                    >
+                                                        + Add New Credential
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
 

@@ -187,8 +187,11 @@ const TriageQueue = () => {
                     </div>
                     <div>
                       <h3 className="text-xl font-black text-brand-dark font-display leading-none">{item.patientName}</h3>
-                      <div className="flex items-center gap-2 mt-1.5 ">
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.age}y • {item.gender}</p>
+                        <span className="inline-flex items-center gap-1 text-[8px] font-black text-teal-600 uppercase tracking-widest bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
+                          # {item.triageId}
+                        </span>
                         {item.status === 'referred' && (
                           <span className="flex items-center gap-1 text-[8px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                              <CheckCircle size={10} /> Handed Over

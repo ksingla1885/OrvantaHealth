@@ -247,9 +247,17 @@ const PatientProfile = ({ user }) => {
           <ProfileAvatar user={user} defaultIcon={User} />
           <div className="text-white">
             <h1 className="text-2xl font-black tracking-tight drop-shadow">{fullName}</h1>
-            <p className="opacity-90 flex items-center text-sm font-medium mt-1">
-              <Shield className="h-3.5 w-3.5 mr-1.5" /> OrvantaHealth Member
-            </p>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <p className="opacity-90 flex items-center text-sm font-medium">
+                <Shield className="h-3.5 w-3.5 mr-1.5" /> OrvantaHealth Member
+              </p>
+              {profileData?.medicalRecordNumber && (
+                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-xs font-black tracking-widest">
+                  <Hash className="h-3 w-3" />
+                  {profileData.medicalRecordNumber}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -258,6 +266,9 @@ const PatientProfile = ({ user }) => {
         <div className="space-y-5 lg:col-span-1">
           <div className="card p-6 space-y-4">
             <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Basic Information</h2>
+            {profileData?.medicalRecordNumber && (
+              <InfoRow icon={<Hash className="h-4 w-4" />} label="Medical Record No." value={profileData.medicalRecordNumber} />
+            )}
             <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={user?.email} />
             <InfoRow icon={<Phone className="h-4 w-4" />} label="Phone" value={user?.profile?.phone || 'Not provided'} />
             <InfoRow icon={<MapPin className="h-4 w-4" />} label="Address" value={user?.profile?.address || 'No address set'} />

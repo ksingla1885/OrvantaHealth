@@ -251,6 +251,11 @@ const Appointments = () => {
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#64748b' }}>
                       <Activity size={12} /> {type}
                     </span>
+                    {!isPatient && appt.patientId?.medicalRecordNumber && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 800, color: '#0f766e', background: '#f0fdf9', border: '1px solid #ccfbf1', borderRadius: 999, padding: '2px 8px', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        # {appt.patientId.medicalRecordNumber}
+                      </span>
+                    )}
                     {!isPatient && appt.patientId?.userId?.profile?.email && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#94a3b8' }}>
                         <User size={12} /> {appt.patientId.userId.profile.email}

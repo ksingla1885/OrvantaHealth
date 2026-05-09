@@ -183,7 +183,12 @@ const DoctorDashboard = () => {
                        <div className="h-12 w-12 rounded-2xl bg-white/5 flex items-center justify-center text-lg font-black">{referral.patientName[0]}</div>
                        <div>
                           <p className="font-bold text-white text-lg font-display">{referral.patientName}</p>
-                          <p className="text-[10px] text-teal-100/30 uppercase font-black tracking-widest">{referral.age}y • {referral.gender}</p>
+                          <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                            <p className="text-[10px] text-teal-100/30 uppercase font-black tracking-widest">{referral.age}y • {referral.gender}</p>
+                            <span className="text-[8px] font-black text-teal-300 bg-teal-900/30 border border-teal-500/20 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                              # {referral.triageId}
+                            </span>
+                          </div>
                        </div>
                     </div>
                     <div className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg ${

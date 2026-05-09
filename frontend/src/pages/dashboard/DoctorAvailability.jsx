@@ -20,6 +20,8 @@ const DoctorAvailability = () => {
   const [newLeaveDate, setNewLeaveDate]  = useState('');
   const [loadingLeaves, setLoadingLeaves] = useState(false);
   const [search, setSearch]              = useState('');
+  const [showGenerator, setShowGenerator] = useState(false);
+  const [genConfig, setGenConfig]         = useState({ start: '10:00', end: '13:00', interval: 10 });
 
   useEffect(() => { fetchDoctors(); }, []);
 
@@ -82,6 +84,45 @@ const DoctorAvailability = () => {
       ...prev,
       timeSlots: prev.timeSlots.map((s, idx) => idx === i ? { ...s, [field]: value } : s)
     }));
+
+  const generateSlots = (replace = false) => {
+    const { start, end, interval } = genConfig;
+    if (!start || !end || !interval || parseInt(interval) <= 0) {
+      toast.error('Please provide valid start, end and interval');
+      return;
+    }
+
+    const startTime = new Date(`2000-01-01T${start}`);
+    const endTime = new Date(`2000-01-01T${end}`);
+
+    if (endTime <= startTime) {
+      toast.error('End time must be after start time');
+      return;
+    }
+
+    const slots = [];
+    let current = new Date(startTime);
+    const intervalMs = parseInt(interval) * 60 * 1000;
+
+    while (current.getTime() + intervalMs <= endTime.getTime()) {
+      const slotStart = current.toTimeString().slice(0, 5);
+      current.setTime(current.getTime() + intervalMs);
+      const slotEnd = current.toTimeString().slice(0, 5);
+      slots.push({ start: slotStart, end: slotEnd });
+    }
+
+    if (slots.length === 0) {
+      toast.error('No slots could be generated with the given interval');
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      timeSlots: replace ? slots : [...prev.timeSlots, ...slots]
+    }));
+    setShowGenerator(false);
+    toast.success(`Generated ${slots.length} slots`);
+  };
 
   const handleSave = async () => {
     if (!selectedDoctor)            { toast.error('Select a doctor first'); return; }
@@ -264,11 +305,65 @@ const DoctorAvailability = () => {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Time Slots</p>
-                    <button onClick={handleAddTimeSlot}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-teal/10 text-brand-teal hover:bg-brand-teal hover:text-white transition-all text-[10px] font-black uppercase tracking-widest">
-                      <Plus className="h-3 w-3" /> Add Slot
-                    </button>
+                    <div className="flex gap-2">
+                      <button onClick={() => setShowGenerator(!showGenerator)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest ${
+                          showGenerator ? 'bg-brand-dark text-white shadow-lg' : 'bg-brand-teal/10 text-brand-teal hover:bg-brand-teal hover:text-white'
+                        }`}>
+                        <Activity className="h-3 w-3" /> {showGenerator ? 'Close Generator' : 'Bulk Generate'}
+                      </button>
+                      <button onClick={handleAddTimeSlot}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-teal/10 text-brand-teal hover:bg-brand-teal hover:text-white transition-all text-[10px] font-black uppercase tracking-widest">
+                        <Plus className="h-3 w-3" /> Add Slot
+                      </button>
+                    </div>
                   </div>
+
+                  {/* ── SLOT GENERATOR UI ── */}
+                  {showGenerator && (
+                    <div className="mb-6 p-6 bg-slate-50 rounded-2xl border-2 border-brand-teal/20 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Activity className="h-4 w-4 text-brand-teal" />
+                          <h4 className="text-xs font-black text-brand-dark uppercase tracking-wider">Slot Generator</h4>
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-100">
+                          Auto-Calculate
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-tight">Start Time</label>
+                          <input type="time" value={genConfig.start}
+                            onChange={e => setGenConfig({ ...genConfig, start: e.target.value })}
+                            className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 focus:border-brand-teal outline-none text-xs font-bold text-brand-dark bg-white transition-all" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-tight">End Time</label>
+                          <input type="time" value={genConfig.end}
+                            onChange={e => setGenConfig({ ...genConfig, end: e.target.value })}
+                            className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 focus:border-brand-teal outline-none text-xs font-bold text-brand-dark bg-white transition-all" />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-tight">Interval (min)</label>
+                          <input type="number" value={genConfig.interval}
+                            onChange={e => setGenConfig({ ...genConfig, interval: e.target.value })}
+                            placeholder="e.g. 15"
+                            className="w-full px-3 py-2.5 rounded-xl border-2 border-slate-100 focus:border-brand-teal outline-none text-xs font-bold text-brand-dark bg-white transition-all" />
+                        </div>
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <button onClick={() => generateSlots(false)}
+                          className="flex-1 py-3 bg-brand-teal text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-teal-600 transition-all shadow-lg shadow-brand-teal/20 flex items-center justify-center gap-2">
+                          <Plus className="h-3 w-3" /> Append Slots
+                        </button>
+                        <button onClick={() => generateSlots(true)}
+                          className="flex-1 py-3 bg-white border-2 border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                          <Save className="h-3 w-3" /> Replace Existing
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {formData.timeSlots.length === 0 ? (
                     <button onClick={handleAddTimeSlot}
