@@ -12,27 +12,32 @@ import { Link, useNavigate } from 'react-router-dom';
 
 /* ── STATUS CONFIG ─────────────────────────────────────────────────── */
 const STATUS_CONFIG = {
-  paid:            { label: 'Paid',            dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border border-emerald-100', bar: 'from-emerald-400 to-emerald-600' },
-  unpaid:          { label: 'Unpaid',          dot: 'bg-rose-500',    badge: 'bg-rose-50 text-rose-700 border border-rose-100',       bar: 'from-rose-400 to-rose-600' },
-  overdue:         { label: 'Overdue',         dot: 'bg-red-600',     badge: 'bg-red-50 text-red-700 border border-red-100',           bar: 'from-red-400 to-red-600' },
-  partially_paid:  { label: 'Partial',         dot: 'bg-amber-500',   badge: 'bg-amber-50 text-amber-700 border border-amber-100',     bar: 'from-amber-400 to-amber-600' },
-  draft:           { label: 'Draft',           dot: 'bg-slate-400',   badge: 'bg-slate-50 text-slate-600 border border-slate-200',     bar: 'from-slate-300 to-slate-500' },
-  sent:            { label: 'Sent',            dot: 'bg-blue-500',    badge: 'bg-blue-50 text-blue-700 border border-blue-100',        bar: 'from-blue-400 to-blue-600' },
-  pending_payment: { label: 'Pending',         dot: 'bg-yellow-500',  badge: 'bg-yellow-50 text-yellow-700 border border-yellow-100',  bar: 'from-yellow-400 to-yellow-500' },
-  refunded:        { label: 'Refunded',        dot: 'bg-violet-500',  badge: 'bg-violet-50 text-violet-700 border border-violet-100',  bar: 'from-violet-400 to-violet-600' },
+  paid:            { label: 'Paid',            icon: <CheckCircle className="h-3 w-3" />, dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-100', bar: 'from-emerald-400 to-emerald-600', glow: 'shadow-emerald-500/20' },
+  unpaid:          { label: 'Unpaid',          icon: <Clock className="h-3 w-3" />,       dot: 'bg-rose-500',    badge: 'bg-rose-50 text-rose-700 border-rose-100',       bar: 'from-rose-400 to-rose-600',       glow: 'shadow-rose-500/20' },
+  overdue:         { label: 'Overdue',         icon: <AlertCircle className="h-3 w-3" />, dot: 'bg-red-600',     badge: 'bg-red-50 text-red-700 border-red-100',           bar: 'from-red-400 to-red-600',        glow: 'shadow-red-600/20' },
+  partially_paid:  { label: 'Partial',         icon: <TrendingUp className="h-3 w-3" />,  dot: 'bg-amber-500',   badge: 'bg-amber-50 text-amber-700 border-amber-100',     bar: 'from-amber-400 to-amber-600',     glow: 'shadow-amber-500/20' },
+  draft:           { label: 'Draft',           icon: <FileText className="h-3 w-3" />,    dot: 'bg-slate-400',   badge: 'bg-slate-50 text-slate-600 border-slate-200',     bar: 'from-slate-300 to-slate-500',     glow: 'shadow-slate-400/20' },
+  sent:            { label: 'Sent',            icon: <ShieldCheck className="h-3 w-3" />, dot: 'bg-blue-500',    badge: 'bg-blue-50 text-blue-700 border-blue-100',        bar: 'from-blue-400 to-blue-600',       glow: 'shadow-blue-500/20' },
+  pending_payment: { label: 'Pending',         icon: <Clock className="h-3 w-3" />,       dot: 'bg-yellow-500',  badge: 'bg-yellow-50 text-yellow-700 border-yellow-100',  bar: 'from-yellow-400 to-yellow-500',   glow: 'shadow-yellow-500/20' },
+  refunded:        { label: 'Refunded',        icon: <TrendingUp className="h-3 w-3" />,  dot: 'bg-violet-500',  badge: 'bg-violet-50 text-violet-700 border-violet-100',  bar: 'from-violet-400 to-violet-600',    glow: 'shadow-violet-500/20' },
 };
 const getStatusCfg = (status) => STATUS_CONFIG[status] || { label: status, dot: 'bg-gray-400', badge: 'bg-gray-100 text-gray-700', bar: 'from-gray-300 to-gray-500' };
 
 /* ── STAT CARD ─────────────────────────────────────────────────────── */
 const StatCard = ({ icon: Icon, label, value, color, hint }) => (
-  <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all relative overflow-hidden">
-    <div className={`absolute top-0 right-0 w-20 h-20 ${color} opacity-10 rounded-bl-[3rem]`} />
-    <div className={`h-10 w-10 rounded-xl ${color} flex items-center justify-center mb-4`}>
-      <Icon className="h-5 w-5 text-white" />
+  <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm relative overflow-hidden">
+    <div className={`absolute -top-6 -right-6 w-24 h-24 ${color} opacity-5 rounded-full transition-transform duration-700`} />
+    <div className={`h-12 w-12 rounded-2xl ${color} flex items-center justify-center mb-5 shadow-lg shadow-current/10`}>
+      <Icon className="h-6 w-6 text-white" />
     </div>
-    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-    <p className="text-2xl font-black text-brand-dark font-display">{value}</p>
-    {hint && <p className="text-[10px] text-slate-400 font-medium mt-1">{hint}</p>}
+    <div className="space-y-1">
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{label}</p>
+      <p className="text-3xl font-black text-brand-dark font-display tracking-tight">{value}</p>
+      {hint && <p className="text-[11px] text-slate-500 font-bold flex items-center gap-1.5 pt-1">
+        <Sparkles className="h-3 w-3 text-brand-teal/40" />
+        {hint}
+      </p>}
+    </div>
   </div>
 );
 
@@ -186,21 +191,25 @@ const Bills = () => {
     <div className="space-y-8 animate-fade-in pb-12">
 
       {/* ── PAGE HEADER ── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-light border border-brand-teal/10 mb-3">
-            <ReceiptText className="h-3.5 w-3.5 text-brand-teal" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-dark">
-              {isReceptionist ? 'Billing Management' : 'My Invoices'}
-            </span>
+      <div className="relative">
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-brand-teal/5 rounded-full blur-3xl -z-10" />
+        <div className="absolute top-0 -left-24 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl -z-10" />
+        
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
+          <div>
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-white border border-slate-100 shadow-sm mb-5">
+              <div className="h-2 w-2 rounded-full bg-brand-teal animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                {isReceptionist ? 'Financial Management' : 'Billing History'}
+              </span>
+            </div>
+            <h1 className="text-5xl font-black text-brand-dark font-display tracking-tight leading-[0.9] mb-3">
+              Invoices <span className="text-brand-teal">&amp;</span> Receipts
+            </h1>
+            <p className="text-slate-500 font-medium text-lg">
+              {isReceptionist ? 'Monitor and manage clinic revenue streams' : 'Secure access to your medical financial records'}
+            </p>
           </div>
-          <h1 className="text-4xl font-black text-brand-dark font-display tracking-tight leading-none mb-2">
-            Bills &amp; Payments
-          </h1>
-          <p className="text-slate-500 font-medium">
-            {isReceptionist ? 'Manage all patient invoices and payment records' : 'View and manage your medical invoices'}
-          </p>
-        </div>
 
         {isReceptionist && (
           <Link
@@ -212,6 +221,7 @@ const Bills = () => {
           </Link>
         )}
       </div>
+    </div>
 
       {/* ── SUMMARY STAT CARDS ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -254,92 +264,133 @@ const Bills = () => {
             ? `${bill.patientId.userId.profile.firstName} ${bill.patientId.userId.profile.lastName}`
             : null;
 
+          const doctor = bill.appointmentId?.doctorId;
+          const drName = doctor?.userId?.profile ? `Dr. ${doctor.userId.profile.firstName} ${doctor.userId.profile.lastName}` : null;
+          const drDept = doctor?.department;
+
           return (
             <div key={bill._id}
-              className="group bg-white rounded-[1.75rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
+              className="bg-white rounded-[2rem] border border-slate-100 shadow-sm transition-all duration-500 overflow-hidden relative"
             >
-              {/* Color accent bar */}
-              <div className={`h-1 w-full bg-gradient-to-r ${cfg.bar}`} />
+              {/* Premium Glow & Accent */}
+              <div className={`absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b ${cfg.bar}`} />
+              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${cfg.bar} opacity-20`} />
 
-              <div className="p-6 flex flex-col md:flex-row md:items-center gap-5">
-                {/* Icon */}
-                <div className={`h-14 w-14 rounded-2xl bg-gradient-to-br ${cfg.bar} flex items-center justify-center text-white shadow-lg shrink-0`}>
-                  <IndianRupee className="h-6 w-6" />
+              <div className="p-7 flex flex-col lg:flex-row lg:items-center gap-6">
+                {/* Icon Wrapper */}
+                <div className="relative shrink-0">
+                  <div className={`h-16 w-16 rounded-[1.25rem] bg-gradient-to-br ${cfg.bar} flex items-center justify-center text-white shadow-xl ${cfg.glow} transition-transform duration-500`}>
+                    <IndianRupee className="h-7 w-7" />
+                  </div>
+                  {bill.status === 'paid' && (
+                    <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
+                      <CheckCircle className="h-3 w-3 text-white" />
+                    </div>
+                  )}
                 </div>
 
-                {/* Main info */}
+                {/* Main Info Section */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h3 className="text-lg font-black text-brand-dark font-display">
+                  <div className="flex flex-wrap items-center gap-3 mb-2.5">
+                    <h3 className="text-xl font-black text-brand-dark font-display tracking-tight transition-colors">
                       Invoice #{bill.billNumber || bill._id.slice(-6).toUpperCase()}
                     </h3>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${cfg.badge}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-                      {cfg.label}
-                    </span>
-                    {bill.status === 'paid' && bill.paymentMethod && (
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        via {bill.paymentMethod.toUpperCase()}
-                      </span>
-                    )}
+                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${cfg.badge} shadow-sm`}>
+                      {cfg.icon}
+                      <span className="text-[10px] font-black uppercase tracking-widest">{cfg.label}</span>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs font-semibold text-slate-500 mt-1">
-                    {isReceptionist && patientName && (
-                      <span className="flex items-center gap-1">
-                        <span className="h-3.5 w-3.5 rounded-full bg-brand-teal/20 flex items-center justify-center text-brand-teal font-black text-[8px]">P</span>
-                        {patientName}
-                      </span>
+                  <div className="flex flex-wrap items-center gap-y-2 gap-x-5">
+                    {/* Role Specific Info */}
+                    {isReceptionist && patientName ? (
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-full bg-brand-light flex items-center justify-center border border-brand-teal/10">
+                          <span className="text-brand-teal font-black text-xs uppercase">
+                            {patientName.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider leading-none mb-1">Patient</p>
+                          <p className="text-sm font-black text-brand-dark tracking-tight">{patientName}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      drName && (
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-full bg-teal-50 flex items-center justify-center border border-teal-100">
+                            <span className="text-brand-teal font-black text-xs">Dr</span>
+                          </div>
+                          <div>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider leading-none mb-1">{drDept || 'Practitioner'}</p>
+                            <p className="text-sm font-black text-brand-dark tracking-tight">{drName}</p>
+                          </div>
+                        </div>
+                      )
                     )}
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5 text-slate-400" />
-                      {format(new Date(bill.createdAt), 'dd MMM yyyy')}
-                    </span>
-                    {bill.dueDate && (
-                      <span className="flex items-center gap-1">
-                        <AlertCircle className="h-3.5 w-3.5 text-rose-400" />
-                        Due {format(new Date(bill.dueDate), 'dd MMM yyyy')}
-                      </span>
-                    )}
+
+                    {/* Meta Info */}
+                    <div className="flex items-center gap-4 border-l border-slate-100 pl-5">
+                      <div>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider leading-none mb-1">Issued On</p>
+                        <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 text-slate-400" />
+                          {format(new Date(bill.createdAt), 'dd MMM, yyyy')}
+                        </p>
+                      </div>
+                      {bill.status === 'paid' && bill.paymentMethod && (
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider leading-none mb-1">Payment</p>
+                          <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5 capitalize">
+                            {bill.paymentMethod === 'cash' ? <Banknote className="h-3 w-3 text-emerald-500" /> : <Sparkles className="h-3 w-3 text-brand-teal" />}
+                            {bill.paymentMethod}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Amount */}
-                <div className="text-right shrink-0">
-                  <p className="text-3xl font-black text-brand-dark font-display leading-none">
-                    ₹{Number(bill.total).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Due</p>
-                </div>
+                {/* Amount & CTA Section */}
+                <div className="flex flex-row lg:flex-col lg:items-end lg:justify-center justify-between items-center gap-4 lg:pl-6 lg:border-l lg:border-slate-100 min-w-[140px]">
+                  <div className="text-right">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-[0.1em] mb-1">Total Due</p>
+                    <div className="flex items-baseline gap-1 justify-end">
+                      <span className="text-sm font-black text-brand-teal font-display">₹</span>
+                      <p className="text-4xl font-black text-brand-dark font-display tracking-tighter leading-none">
+                        {Number(bill.total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0">
-                  {!['paid', 'refunded'].includes(bill.status) && currentUser?.role === 'patient' && (
+                  <div className="flex items-center gap-2">
+                    {!['paid', 'refunded'].includes(bill.status) && currentUser?.role === 'patient' && (
+                      <button
+                        onClick={() => handlePayNow(bill)}
+                        className="px-6 py-2.5 bg-brand-teal text-white text-[10px] font-black uppercase tracking-[0.15em] rounded-xl hover:bg-teal-600 transition-all shadow-lg shadow-brand-teal/25 hover:-translate-y-1 active:scale-95"
+                      >
+                        Pay Now
+                      </button>
+                    )}
+
+                    {!['paid', 'refunded'].includes(bill.status) && isReceptionist && (
+                      <button
+                        onClick={() => handleMarkAsPaid(bill._id)}
+                        className="flex items-center gap-2.5 px-6 py-2.5 bg-brand-dark text-white text-[10px] font-black uppercase tracking-[0.15em] rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 hover:-translate-y-1 active:scale-95"
+                      >
+                        <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                        Mark Paid
+                      </button>
+                    )}
+
                     <button
-                      onClick={() => handlePayNow(bill)}
-                      className="px-5 py-2.5 bg-brand-teal text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-teal-600 transition-all shadow-lg shadow-brand-teal/20 hover:-translate-y-0.5"
+                      onClick={() => handleDownload(bill._id)}
+                      className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:text-brand-teal hover:border-brand-teal/30 hover:bg-white hover:shadow-lg transition-all active:scale-90"
+                      title="Download PDF Receipt"
                     >
-                      Pay Now
+                      <Download className="h-5 w-5" />
                     </button>
-                  )}
-
-                  {!['paid', 'refunded'].includes(bill.status) && isReceptionist && (
-                    <button
-                      onClick={() => handleMarkAsPaid(bill._id)}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-brand-dark text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all shadow-lg hover:-translate-y-0.5"
-                    >
-                      <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
-                      Mark Paid
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => handleDownload(bill._id)}
-                    className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 hover:text-brand-teal hover:border-brand-teal/30 hover:bg-brand-teal/5 transition-all"
-                    title="Download PDF"
-                  >
-                    <Download className="h-4 w-4" />
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>

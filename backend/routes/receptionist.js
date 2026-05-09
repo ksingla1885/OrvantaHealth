@@ -606,6 +606,13 @@ router.get('/bills', async (req, res) => {
     const bills = await Bill.find(query)
       .populate('patientId')
       .populate('patientId.userId', 'profile')
+      .populate({
+        path: 'appointmentId',
+        populate: {
+          path: 'doctorId',
+          populate: { path: 'userId', select: 'profile' }
+        }
+      })
       .populate('createdBy', 'profile')
       .sort({ createdAt: -1 });
 

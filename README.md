@@ -50,17 +50,19 @@ graph TD
 ### 🧠 AI-Driven Healthcare (Triage & Assistant)
 - **AI Triage System**: Uses **Groq LLaMA 3.3-70B** to analyze symptoms and vitals, providing a risk score (0-100) for emergency prioritization.
 - **24/7 AI Medical Assistant**: A specialized chatbot for medical FAQs and hospital guidance, strictly sanitized for safety.
-- **Automated Risk Assessment**: Real-time triage flags high-priority patients for immediate clinical attention.
+- **Clinical Workspace**: Advanced, full-page diagnostic environment for doctors with React Portal-powered prescription modals and longitudinal history lookup.
 - 🔗 [Read the AI Architecture Guide](./ai_symptom_checker_architecture.md)
 
-### 💳 Financials & Documentation
+### 💳 Financial Intelligence & Billing
+- **Premium Billing Dashboard**: High-fidelity, glassmorphic UI for invoice management with real-time "Status Glow" indicators.
 - **One-Click Payments**: Deep integration with **Razorpay** for seamless appointment and billing transactions.
-- **Automated Billing Engine**: Dynamic receipt generation (PDF) with persistent payment history tracking.
-- **Secure Cloud Storage**: Medical documents and lab reports are encrypted and stored via **Cloudinary**.
+- **Receipt Management**: Automated generation of clinical receipts (PDF) with unified financial tracking across reception and patient portals.
 
-### 📊 Professional Analytics
-- **SuperAdmin Dashboard**: High-fidelity charts (Recharts) visualizing revenue, department load, and patient trends.
-- **Audit Ready**: Comprehensive data logging for compliance and operational auditing.
+### 📊 Administrative Command & Analytics
+- **Daily Basis Tracking**: Admin capability to audit hospital performance (revenue, inflow, staff load) for any specific historical or current date.
+- **SuperAdmin Intelligence**: High-fidelity charts (Recharts) visualizing multi-day trends (7d, 30d, 90d, 1y) with dynamic range variance.
+- **Automated Scheduling**: Algorithmic time-slot generator for doctors, allowing for efficient consultation planning and bulk shift management.
+- **MRN Governance**: Centralized Medical Record Number (MRN) integration across all touchpoints for precise patient identity resolution.
 - 🔗 [Read the SuperAdmin Module Guide](./SUPERADMIN_FEATURES.md)
 
 ---

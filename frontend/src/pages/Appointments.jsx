@@ -4,7 +4,7 @@ import api from '../services/api';
 import {
   Calendar, Clock, User, XCircle, CheckCircle,
   FileText, Stethoscope, Activity, RefreshCw,
-  LogIn, LogOut, ClipboardList, Ban, ChevronDown
+  LogIn, LogOut, ClipboardList, Ban, ChevronDown, CreditCard, Banknote
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -47,6 +47,38 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+/* ─── Payment Badge ─────────────────────────────────────────────────────── */
+const PAYMENT_BADGE = {
+  online_paid:       { label: 'Online Paid',        color: '#059669', bg: '#d1fae5', dot: '#10b981' },
+  online_pending:    { label: 'Online (Unpaid)',     color: '#d97706', bg: '#fef3c7', dot: '#fbbf24' },
+  reception_paid:    { label: 'Paid at Reception',  color: '#2563eb', bg: '#dbeafe', dot: '#3b82f6' },
+  reception_pending: { label: 'Pay at Reception',   color: '#7c3aed', bg: '#ede9fe', dot: '#8b5cf6' },
+  refunded:          { label: 'Refunded',            color: '#dc2626', bg: '#fee2e2', dot: '#f87171' },
+};
+
+const PaymentBadge = ({ appointment }) => {
+  const { paymentMode, paymentStatus } = appointment;
+  let key = 'reception_pending';
+  if (paymentStatus === 'refunded') key = 'refunded';
+  else if (paymentStatus === 'paid' && paymentMode === 'online') key = 'online_paid';
+  else if (paymentStatus === 'paid' && paymentMode === 'at_reception') key = 'reception_paid';
+  else if (paymentStatus === 'pending' && paymentMode === 'online') key = 'online_pending';
+  else key = 'reception_pending';
+
+  const cfg = PAYMENT_BADGE[key];
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '2px 8px', borderRadius: 999,
+      fontSize: 10, fontWeight: 700,
+      color: cfg.color, background: cfg.bg, marginLeft: 4,
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: cfg.dot, display: 'inline-block' }} />
+      {cfg.label}
+    </span>
+  );
+};
+
 /* ─── Main Component ────────────────────────────────────────────────────── */
 const Appointments = () => {
   const { user } = useAuth();
@@ -58,6 +90,7 @@ const Appointments = () => {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, appointmentId: null });
+  const [markPaidDialog, setMarkPaidDialog] = useState({ open: false, appt: null, amount: '' });
 
   useEffect(() => { fetchAppointments(); }, [filter]);
 
@@ -102,6 +135,28 @@ const Appointments = () => {
       toast.error(err.response?.data?.message || 'Failed to update status');
     }
   };
+
+  // Open the Mark Paid dialog — pre-fill doctor's consultation fee
+  const openMarkPaidDialog = (appt) => {
+    const fee = appt.doctorId?.consultationFee ?? '';
+    setMarkPaidDialog({ open: true, appt, amount: String(fee) });
+  };
+
+  const confirmMarkPaid = async () => {
+    const { appt } = markPaidDialog;
+    const amount = appt.doctorId?.consultationFee || 0;
+    setMarkPaidDialog({ open: false, appt: null, amount: '' });
+    try {
+      const res = await api.patch(`/payments/mark-paid/${appt._id}`, { amount });
+      if (res.data.success) {
+        toast.success(`₹${Number(amount).toLocaleString('en-IN')} collected — payment recorded ✓`);
+        fetchAppointments();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to mark payment');
+    }
+  };
+
 
   // Inline direct update (doctor check-in/out)
   const handleUpdateStatusDirect = async (appointment, status) => {
@@ -240,6 +295,9 @@ const Appointments = () => {
                       {primaryName}
                     </span>
                     <StatusBadge status={appt.status} />
+                    {(!isPatient || appt.paymentMode) && (
+                      <PaymentBadge appointment={appt} />
+                    )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#64748b' }}>
@@ -296,32 +354,56 @@ const Appointments = () => {
                     </SmallBtn>
                   )}
 
-                  {/* Receptionist: Confirm + Cancel as separate inline buttons */}
-                  {isReceptionist && appt.status === 'pending' && (
-                    <>
-                      <SmallBtn
-                        onClick={() => { setSelectedAppointment(appt); handleUpdateStatus_inline(appt, 'confirmed'); }}
-                        color="#059669" bg="#d1fae5" hoverBg="#a7f3d0"
-                        icon={<CheckCircle size={13} />}
-                      >
-                        Confirm
-                      </SmallBtn>
-                      <SmallBtn
-                        onClick={() => { setSelectedAppointment(appt); handleUpdateStatus_inline(appt, 'cancelled'); }}
-                        color="#dc2626" bg="#fee2e2" hoverBg="#fecaca"
-                        icon={<Ban size={13} />}
-                      >
-                        Cancel
-                      </SmallBtn>
-                    </>
-                  )}
-                  {isReceptionist && appt.status === 'confirmed' && (
+                  {/* Receptionist: Confirm + Cancel + Mark Paid as inline buttons */}
+                  {isReceptionist && appt.status === 'pending' && (() => {
+                    const needsPayment = appt.paymentMode === 'at_reception' && appt.paymentStatus !== 'paid';
+                    return (
+                      <>
+                        {needsPayment ? (
+                          // Locked Confirm — payment not yet collected
+                          <span
+                            title="Collect payment first before confirming"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 5,
+                              padding: '6px 12px', borderRadius: 7,
+                              fontSize: 12, fontWeight: 700,
+                              background: '#f1f5f9', color: '#94a3b8',
+                              cursor: 'not-allowed', whiteSpace: 'nowrap',
+                              border: '1px dashed #cbd5e1',
+                            }}
+                          >
+                            🔒 Confirm
+                          </span>
+                        ) : (
+                          <SmallBtn
+                            onClick={() => { setSelectedAppointment(appt); handleUpdateStatus_inline(appt, 'confirmed'); }}
+                            color="#059669" bg="#d1fae5" hoverBg="#a7f3d0"
+                            icon={<CheckCircle size={13} />}
+                          >
+                            Confirm
+                          </SmallBtn>
+                        )}
+                        <SmallBtn
+                          onClick={() => { setSelectedAppointment(appt); handleUpdateStatus_inline(appt, 'cancelled'); }}
+                          color="#dc2626" bg="#fee2e2" hoverBg="#fecaca"
+                          icon={<Ban size={13} />}
+                        >
+                          Cancel
+                        </SmallBtn>
+                      </>
+                    );
+                  })()}
+                  {/* Mark Paid button: show for at_reception + unpaid appointments for receptionist */}
+                  {isReceptionist
+                    && appt.paymentStatus !== 'paid'
+                    && appt.paymentMode === 'at_reception'
+                    && ['pending', 'confirmed', 'checked_in'].includes(appt.status) && (
                     <SmallBtn
-                      onClick={() => { setSelectedAppointment(appt); handleUpdateStatus_inline(appt, 'cancelled'); }}
-                      color="#dc2626" bg="#fee2e2" hoverBg="#fecaca"
-                      icon={<Ban size={13} />}
+                      onClick={() => openMarkPaidDialog(appt)}
+                      color="#0369a1" bg="#e0f2fe" hoverBg="#bae6fd"
+                      icon={<Banknote size={13} />}
                     >
-                      Cancel
+                      Mark Paid
                     </SmallBtn>
                   )}
                 </div>
@@ -442,6 +524,138 @@ const Appointments = () => {
         onConfirm={confirmCancel}
         onCancel={() => setConfirmDialog({ open: false, appointmentId: null })}
       />
+
+
+      {/* ── Mark Paid Dialog ── */}
+      {markPaidDialog.open && markPaidDialog.appt && (() => {
+        const a = markPaidDialog.appt;
+        const drFirst = a.doctorId?.userId?.profile?.firstName || '';
+        const drLast  = a.doctorId?.userId?.profile?.lastName  || '';
+        const ptFirst = a.patientId?.userId?.profile?.firstName || a.patientId?.name || 'Patient';
+        const ptLast  = a.patientId?.userId?.profile?.lastName  || '';
+        const fee     = a.doctorId?.consultationFee || 0;
+        const dept    = a.doctorId?.department || '';
+        const date    = a.date ? new Date(a.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(10,20,40,0.6)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}>
+            <div style={{
+              background: '#fff', borderRadius: 20,
+              width: '100%', maxWidth: 480,
+              boxShadow: '0 32px 80px rgba(0,0,0,0.25)',
+              overflow: 'hidden',
+              display: 'flex', flexDirection: 'column',
+            }}>
+
+              {/* ── Compact Top Banner ── */}
+              <div style={{
+                background: 'linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)',
+                padding: '18px 24px',
+                position: 'relative',
+              }}>
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  <div style={{
+                    width:42, height:42, borderRadius:12,
+                    background:'rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22,
+                  }}>💵</div>
+                  <div>
+                    <p style={{ margin:0, fontWeight:800, fontSize:18, color:'#fff' }}>Collect Payment</p>
+                    <p style={{ margin:0, fontSize:12, color:'rgba(255,255,255,0.8)' }}>Recorded for analytics</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Body ── */}
+              <div style={{ padding: '20px 24px', display:'flex', flexDirection:'column', gap:16 }}>
+
+                {/* Patient & Doctor info grid (Tight) */}
+                <div style={{
+                  display:'grid', gridTemplateColumns:'1fr 1fr', gap:10,
+                }}>
+                  {[{
+                    icon:'👤', label:'Patient', value:`${ptFirst} ${ptLast}`,
+                  },{
+                    icon:'🩺', label:'Doctor', value:`Dr. ${drFirst}`,
+                    sub: dept,
+                  },{
+                    icon:'📅', label:'Date', value: date,
+                  },{
+                    icon:'⏰', label:'Slot', value:`${a.timeSlot?.start} – ${a.timeSlot?.end}`,
+                  }].map(({ icon, label, value, sub }) => (
+                    <div key={label} style={{
+                      background:'#f8fafc', borderRadius:10,
+                      padding:'10px 12px', border:'1px solid #e2e8f0',
+                    }}>
+                      <p style={{ margin:0, fontSize:10, fontWeight:600, color:'#94a3b8', textTransform:'uppercase' }}>
+                        {icon} {label}
+                      </p>
+                      <p style={{ margin:'2px 0 0', fontSize:13, fontWeight:700, color:'#0f172a', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Fee display (Compact) */}
+                <div style={{
+                  background:'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
+                  border:'1px solid #bae6fd', borderRadius:12,
+                  padding:'14px 20px',
+                  display:'flex', alignItems:'center', justifyContent:'space-between',
+                }}>
+                  <div>
+                    <p style={{ margin:0, fontSize:10, fontWeight:700, color:'#0369a1', textTransform:'uppercase' }}>Consultation Fee</p>
+                    <p style={{ margin:0, fontSize:28, fontWeight:900, color:'#0369a1' }}>
+                      ₹{Number(fee).toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <span style={{ background:'#0369a1', color:'#fff', padding:'3px 8px', borderRadius:6, fontSize:10, fontWeight:800 }}>CASH ONLY</span>
+                  </div>
+                </div>
+
+                {/* Notice (1-line if possible) */}
+                <div style={{
+                  display:'flex', alignItems:'center', gap:8,
+                  background:'#fffbeb', border:'1px solid #fde68a',
+                  borderRadius:8, padding:'10px 12px', fontSize:11, color:'#92400e',
+                }}>
+                  <span>⚠️</span>
+                  <span>Verify cash collection. This action is permanent.</span>
+                </div>
+
+                {/* Buttons */}
+                <div style={{ display:'flex', gap:10 }}>
+                  <button
+                    onClick={() => setMarkPaidDialog({ open: false, appt: null, amount: '' })}
+                    style={{
+                      padding:'11px 20px', borderRadius:10,
+                      border:'1.5px solid #e2e8f0', background:'#fff',
+                      color:'#64748b', fontWeight:700, fontSize:13, cursor:'pointer',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmMarkPaid}
+                    style={{
+                      flex:1, padding:'11px 0', borderRadius:10, border:'none',
+                      background:'linear-gradient(135deg, #0369a1, #0284c7)',
+                      color:'#fff', fontWeight:800, fontSize:14, cursor:'pointer',
+                      boxShadow:'0 4px 12px rgba(3,105,161,0.25)',
+                    }}
+                  >
+                    ✓ Confirm Receipt
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

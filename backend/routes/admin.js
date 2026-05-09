@@ -319,26 +319,39 @@ router.get('/staff', async (req, res) => {
 // Get system analytics
 router.get('/analytics', async (req, res) => {
   try {
+    const { date } = req.query;
+    const targetDate = date ? new Date(date) : new Date();
+    const startOfDay = new Date(new Date(targetDate).setHours(0, 0, 0, 0));
+    const endOfDay = new Date(new Date(targetDate).setHours(23, 59, 59, 999));
+
     const [
       totalPatients,
       totalDoctors,
       totalStaff,
       totalReceptionists,
-      todayAppointments,
-      totalRevenue,
+      dateAppointments, // Appointments for specific date
+      dateRevenue,      // Revenue for specific date
+      allTimeRevenue,   // Total revenue ever
       appointmentStats,
-      topDoctor
+      topDoctor,
+      newPatientsDate   // Patients registered on this date
     ] = await Promise.all([
       Patient.countDocuments(),
       Doctor.countDocuments(),
       User.countDocuments({ role: { $in: ['doctor', 'receptionist'] } }),
       User.countDocuments({ role: 'receptionist' }),
       Appointment.countDocuments({
-        date: {
-          $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          $lt: new Date(new Date().setHours(23, 59, 59, 999))
-        }
+        date: { $gte: startOfDay, $lt: endOfDay }
       }),
+      Bill.aggregate([
+        { 
+          $match: { 
+            status: 'paid',
+            updatedAt: { $gte: startOfDay, $lt: endOfDay } 
+          } 
+        },
+        { $group: { _id: null, total: { $sum: '$total' } } }
+      ]),
       Bill.aggregate([
         { $match: { status: 'paid' } },
         { $group: { _id: null, total: { $sum: '$total' } } }
@@ -369,9 +382,7 @@ router.get('/analytics', async (req, res) => {
             as: 'doctor'
           }
         },
-        {
-          $unwind: '$doctor'
-        },
+        { $unwind: '$doctor' },
         {
           $lookup: {
             from: 'users',
@@ -386,11 +397,12 @@ router.get('/analytics', async (req, res) => {
             preserveNullAndEmptyArrays: true
           }
         }
-      ])
+      ]),
+      User.countDocuments({
+        role: 'patient',
+        createdAt: { $gte: startOfDay, $lt: endOfDay }
+      })
     ]);
-
-    const revenue = totalRevenue[0]?.total || 0;
-    const mostConsultedDoctor = topDoctor[0]?.doctor[0] || null;
 
     res.json({
       success: true,
@@ -399,10 +411,12 @@ router.get('/analytics', async (req, res) => {
         totalDoctors,
         totalStaff,
         totalReceptionists,
-        todayAppointments,
-        totalRevenue: revenue,
+        todayAppointments: dateAppointments,
+        dateRevenue: dateRevenue[0]?.total || 0,
+        totalRevenue: allTimeRevenue[0]?.total || 0,
+        newPatientsDate,
         appointmentStats,
-        mostConsultedDoctor
+        mostConsultedDoctor: topDoctor[0]?.doctor || null
       }
     });
   } catch (error) {

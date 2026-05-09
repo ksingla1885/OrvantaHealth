@@ -17,7 +17,9 @@ const BookAppointment = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [symptoms, setSymptoms] = useState('');
   const [consultationType, setConsultationType] = useState('in-person');
-  const [bookedSlots, setBookedSlots] = useState([]);
+  const [paymentMode, setPaymentMode] = useState('at_reception'); // 'online' | 'at_reception'
+  const [bookedSlots, setBookedSlots] = useState([]);      // starts for selected date
+  const [allBookedSlots, setAllBookedSlots] = useState([]); // all dates from server
   const [leaveDates, setLeaveDates] = useState([]);
   const [availableDays, setAvailableDays] = useState([]); // e.g. ['monday', 'wednesday']
   const [patientDocuments, setPatientDocuments] = useState([]);
@@ -27,11 +29,22 @@ const BookAppointment = () => {
     fetchDoctors();
   }, []);
 
+  // Re-fetch full availability only when doctor changes
   useEffect(() => {
-    if (selectedDoctor && selectedDate) {
+    if (selectedDoctor) {
       fetchAvailability();
     }
-  }, [selectedDoctor, selectedDate]);
+  }, [selectedDoctor]);
+
+  // Filter booked slots client-side whenever selected date changes
+  useEffect(() => {
+    if (selectedDate && allBookedSlots.length >= 0) {
+      const filtered = allBookedSlots
+        .filter(slot => format(new Date(slot.date), 'yyyy-MM-dd') === selectedDate)
+        .map(slot => slot.timeSlot.start);
+      setBookedSlots(filtered);
+    }
+  }, [selectedDate, allBookedSlots]);
 
   const fetchDoctors = async () => {
     try {
@@ -52,15 +65,11 @@ const BookAppointment = () => {
       const response = await api.get(`/patient/doctor/${selectedDoctor._id}/availability`);
       if (response.data.success) {
         const data = response.data.data;
-        // Store doctor's available weekdays
         setAvailableDays(data.availability?.days || []);
         setLeaveDates(data.leaves || []);
 
-        // Filter already-booked slots for the currently selected date
-        const booked = data.bookedSlots
-          .filter(slot => format(new Date(slot.date), 'yyyy-MM-dd') === selectedDate)
-          .map(slot => slot.timeSlot.start);
-        setBookedSlots(booked);
+        // Store ALL booked slots — filtering by date happens in the useEffect above
+        setAllBookedSlots(data.bookedSlots || []);
       }
     } catch (error) {
       console.error('Failed to fetch availability:', error);
@@ -92,22 +101,28 @@ const BookAppointment = () => {
         timeSlot: selectedSlot,
         symptoms,
         consultationType,
-        patientDocuments
+        patientDocuments,
+        paymentMode
       });
 
       if (response.data.success) {
         const appointmentId = response.data.data.appointment._id;
 
-        // 2. Create Payment Order
-        const orderResponse = await api.post('/payments/create-order', {
-          appointmentId
-        });
+        // ── At-reception: no payment gateway needed ──
+        if (paymentMode === 'at_reception') {
+          toast.success('Appointment booked! You can pay at the reception counter.');
+          navigate('/patient/appointments');
+          return;
+        }
+
+        // ── Online payment via Razorpay ──
+        const orderResponse = await api.post('/payments/create-order', { appointmentId });
 
         if (orderResponse.data.success) {
           const { orderId, amount, currency, keyId } = orderResponse.data.data;
 
           if (orderResponse.data.isMock) {
-            // 4. Verify Payment (Mock)
+            // Mock / demo mode
             try {
               const verifyResponse = await api.post('/payments/verify', {
                 razorpay_order_id: orderId,
@@ -115,7 +130,6 @@ const BookAppointment = () => {
                 razorpay_signature: 'mock_signature',
                 appointmentId
               });
-
               if (verifyResponse.data.success) {
                 toast.success('Payment successful (Mock)!');
                 navigate('/patient/payment-success', {
@@ -133,7 +147,7 @@ const BookAppointment = () => {
             return;
           }
 
-          // 3. Load Razorpay and Open
+          // Real Razorpay checkout
           const isLoaded = await loadRazorpayScript();
           if (!isLoaded) {
             toast.error('Razorpay SDK failed to load. Are you online?');
@@ -142,21 +156,19 @@ const BookAppointment = () => {
 
           const options = {
             key: keyId,
-            amount: amount,
-            currency: currency,
+            amount,
+            currency,
             name: 'OrvantaHealth',
             description: `Consultation with Dr. ${selectedDoctor.userId.profile.firstName} ${selectedDoctor.userId.profile.lastName}`,
             order_id: orderId,
             handler: async (response) => {
               try {
-                // 4. Verify Payment
                 const verifyResponse = await api.post('/payments/verify', {
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
                   appointmentId
                 });
-
                 if (verifyResponse.data.success) {
                   toast.success('Payment successful!');
                   navigate('/patient/payment-success', {
@@ -172,14 +184,8 @@ const BookAppointment = () => {
                 navigate('/patient/appointments');
               }
             },
-            prefill: {
-              name: '', // Optionally get from auth context
-              email: '',
-              contact: ''
-            },
-            theme: {
-              color: '#0d9488'
-            }
+            prefill: { name: '', email: '', contact: '' },
+            theme: { color: '#0d9488' }
           };
 
           const paymentObject = new window.Razorpay(options);
@@ -450,30 +456,46 @@ const BookAppointment = () => {
                     <span className="font-medium">{selectedSlot?.start} - {selectedSlot?.end}</span>
                   </p>
                   <div className="pt-2 mt-2 border-t border-gray-200 flex justify-between items-center text-brand-dark">
-                    <span className="font-bold text-[10px] uppercase tracking-widest">Payable Amount</span>
+                    <span className="font-bold text-[10px] uppercase tracking-widest">Consultation Fee</span>
                     <span className="text-xl font-black">₹{selectedDoctor?.consultationFee || '500'}</span>
                   </div>
                 </div>
               </div>
 
-              <div>
-                {/* <label className="block text-sm font-medium text-gray-700 mb-2">Consultation Type</label> */}
-                <div className="grid grid-cols-2 gap-4">
+              {/* Payment Mode Selector */}
+              <div className="mt-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">How would you like to pay?</label>
+                <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => setConsultationType('in-person')}
-                    className={`p-3 text-sm rounded-lg border text-center transition-all ${consultationType === 'in-person' ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white'
-                      }`}
+                    onClick={() => setPaymentMode('online')}
+                    className={`flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      paymentMode === 'online'
+                        ? 'bg-primary-600 border-primary-600 text-white shadow-lg shadow-primary-200'
+                        : 'bg-white border-gray-200 text-gray-700 hover:border-primary-400'
+                    }`}
                   >
-                    In-Person
+                    <span className="text-xl">💳</span>
+                    <span>Pay Online</span>
+                    <span className={`text-[10px] font-normal ${paymentMode === 'online' ? 'text-primary-100' : 'text-gray-400'}`}>Razorpay / UPI</span>
                   </button>
-                  {/* <button
-                    onClick={() => setConsultationType('video')}
-                    className={`p-3 text-sm rounded-lg border text-center transition-all ${consultationType === 'video' ? 'bg-primary-600 border-primary-600 text-white' : 'bg-white'
-                      }`}
+                  <button
+                    onClick={() => setPaymentMode('at_reception')}
+                    className={`flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      paymentMode === 'at_reception'
+                        ? 'bg-primary-600 border-primary-600 text-white shadow-lg shadow-primary-200'
+                        : 'bg-white border-gray-200 text-gray-700 hover:border-primary-400'
+                    }`}
                   >
-                    Video Call
-                  </button> */}
+                    <span className="text-xl">🏥</span>
+                    <span>Pay at Reception</span>
+                    <span className={`text-[10px] font-normal ${paymentMode === 'at_reception' ? 'text-primary-100' : 'text-gray-400'}`}>Cash / Card at counter</span>
+                  </button>
                 </div>
+                {paymentMode === 'at_reception' && (
+                  <p className="mt-2 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                    ⚠️ Your slot will be reserved. Please pay at the reception before your appointment.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -543,7 +565,7 @@ const BookAppointment = () => {
                   onClick={handleBook}
                   className="w-full py-3 bg-primary-600 text-white font-bold rounded-lg hover:bg-primary-700 shadow-lg shadow-primary-200 transition-all active:scale-[0.98]"
                 >
-                  Confirm Booking
+                  {paymentMode === 'online' ? '💳 Confirm & Pay Online' : '🏥 Confirm & Pay at Reception'}
                 </button>
               </div>
             </div>

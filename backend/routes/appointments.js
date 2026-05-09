@@ -26,7 +26,7 @@ router.post('/book', [
       });
     }
 
-    const { doctorId, date, timeSlot, symptoms, consultationType, patientDocuments } = req.body;
+    const { doctorId, date, timeSlot, symptoms, consultationType, patientDocuments, paymentMode } = req.body;
 
     // Check if doctor exists and is available
     const doctor = await Doctor.findById(doctorId);
@@ -91,7 +91,7 @@ router.post('/book', [
       date: appointmentDate,
       'timeSlot.start': timeSlot.start,
       'timeSlot.end': timeSlot.end,
-      status: { $in: ['pending', 'confirmed'] }
+      status: { $in: ['pending', 'confirmed', 'checked_in'] }
     });
 
     if (existingAppointment) {
@@ -118,7 +118,8 @@ router.post('/book', [
       timeSlot,
       symptoms,
       patientDocuments: patientDocuments || [],
-      consultationType: consultationType || 'in-person'
+      consultationType: consultationType || 'in-person',
+      paymentMode: paymentMode || 'at_reception'
     });
 
     await appointment.save();
@@ -300,22 +301,28 @@ router.patch('/:appointmentId/status', [
 
     // Receptionist / superadmin state-machine:
     //   pending    → confirmed  (confirm the booking)
-    //   pending    → cancelled  (reject it)
-    //   confirmed  → cancelled  (cancel after confirmation)
-    //   checked_in → cancelled  (emergency cancel)
-    // Anything else is invalid — receptionists must NOT jump over statuses.
+    //   pending    → cancelled  (reject before confirmation)
+    // Once confirmed, the appointment cannot be cancelled by reception.
     if (req.user.role === 'receptionist' || req.user.role === 'superadmin') {
       const allowedReceptionistTransitions = {
-        pending:    ['confirmed', 'cancelled'],
-        confirmed:  ['cancelled'],
-        checked_in: ['cancelled'],
-        // checked_out & completed: visit is done — cancellation not permitted
+        pending: ['confirmed', 'cancelled'],
+        // confirmed, checked_in, checked_out, completed: no further transitions allowed
       };
       const allowed = allowedReceptionistTransitions[appointment.status] || [];
       if (!allowed.includes(status)) {
         return res.status(403).json({
           success: false,
           message: `Cannot transition appointment from '${appointment.status}' to '${status}'.`
+        });
+      }
+
+      // Payment gate: at_reception appointments must be paid before confirmation
+      if (status === 'confirmed'
+        && appointment.paymentMode === 'at_reception'
+        && appointment.paymentStatus !== 'paid') {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot confirm appointment: payment has not been collected yet. Please use "Mark Paid" first.'
         });
       }
     }

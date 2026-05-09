@@ -21,17 +21,18 @@ const DetailedAnalytics = () => {
   const [exportType, setExportType] = useState('users');
   const [exportFormat, setExportFormat] = useState('csv');
   const [exporting, setExporting] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     fetchAnalytics();
-  }, [timeRange]);
+  }, [timeRange, selectedDate]);
 
   const fetchAnalytics = async () => {
-    setLoading(true);
+    const days = parseInt(timeRange.replace('d', '').replace('y', '365'));
     try {
       const [overviewRes, statsRes, deptRes] = await Promise.all([
-        api.get('/admin/analytics'),
-        api.get('/admin/system-overview'),
+        api.get(`/admin/analytics?date=${selectedDate}`),
+        api.get(`/admin/system-overview?days=${days}`),
         api.get('/admin/department-stats')
       ]);
 
@@ -136,7 +137,18 @@ const DetailedAnalytics = () => {
           </p>
         </div>
         
-        <div className="flex items-center gap-4 bg-white/50 backdrop-blur-md p-2 rounded-[2.5rem] shadow-sm">
+        <div className="flex flex-wrap items-center gap-4 bg-white/50 backdrop-blur-md p-2 rounded-[2.5rem] shadow-sm">
+          {/* Date Picker for Daily Basis Analytics */}
+          <div className="flex items-center gap-3 px-4 py-2 bg-[#f2f4f4] rounded-[2rem] border border-transparent focus-within:border-[#00CCB4]/30 transition-all">
+            <Calendar className="h-4 w-4 text-[#0F3A3A]" />
+            <input 
+              type="date" 
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-transparent text-xs font-black text-[#0F3A3A] outline-none cursor-pointer uppercase"
+            />
+          </div>
+
           <div className="flex bg-[#f2f4f4] rounded-[2rem] p-1">
             {['7d', '30d', '90d', '1y'].map((range) => (
               <button
@@ -176,11 +188,13 @@ const DetailedAnalytics = () => {
             </div>
             <p className="text-4xl font-black text-[#0F3A3A] font-display leading-none mb-3">
               <span className="text-sm font-bold text-[#a5cece] mr-1 italic">₹</span>
-              {(analytics?.totalRevenue || 0).toLocaleString()}
+              {(analytics?.dateRevenue || 0).toLocaleString()}
             </p>
             <div className="flex items-center gap-1.5 pt-2">
               <div className="w-1.5 h-1.5 rounded-full bg-[#00CCB4]"></div>
-              <span className="text-[9px] font-black text-[#00CCB4] uppercase tracking-widest leading-none">Net Verified Revenue</span>
+              <span className="text-[9px] font-black text-[#00CCB4] uppercase tracking-widest leading-none">
+                {selectedDate === new Date().toISOString().split('T')[0] ? "Today's Verified Revenue" : `Revenue on ${selectedDate}`}
+              </span>
             </div>
           </div>
         </div>
@@ -218,7 +232,9 @@ const DetailedAnalytics = () => {
             </p>
             <div className="flex items-center gap-1.5 pt-2">
               <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>
-              <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest leading-none">In-Process Appointments</span>
+              <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest leading-none">
+                {selectedDate === new Date().toISOString().split('T')[0] ? "Today's Appointments" : `Consultations on ${selectedDate}`}
+              </span>
             </div>
           </div>
         </div>

@@ -8,6 +8,10 @@ const PDFDocument = require('pdfkit');
 // Get system overview
 const getSystemOverview = async (req, res) => {
   try {
+    const { days } = req.query;
+    const rangeInDays = days ? parseInt(days) : 7;
+    const timeLimit = new Date(Date.now() - rangeInDays * 24 * 60 * 60 * 1000);
+
     const [
       totalUsers,
       activeUsers,
@@ -20,11 +24,16 @@ const getSystemOverview = async (req, res) => {
       User.countDocuments({ isActive: true }),
       User.countDocuments({
         createdAt: {
-          $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          $gte: timeLimit
         }
       }),
       Promise.resolve({ status: 'healthy', uptime: process.uptime() }),
       Appointment.aggregate([
+        {
+          $match: {
+            createdAt: { $gte: timeLimit }
+          }
+        },
         {
           $group: {
             _id: {
@@ -37,15 +46,13 @@ const getSystemOverview = async (req, res) => {
           }
         },
         { $sort: { _id: -1 } },
-        { $limit: 7 }
+        { $limit: rangeInDays }
       ]),
       Bill.aggregate([
         {
           $match: {
             status: 'paid',
-            createdAt: {
-              $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-            }
+            createdAt: { $gte: timeLimit }
           }
         },
         {
@@ -60,7 +67,7 @@ const getSystemOverview = async (req, res) => {
           }
         },
         { $sort: { _id: -1 } },
-        { $limit: 7 }
+        { $limit: rangeInDays }
       ])
     ]);
 

@@ -126,14 +126,14 @@ router.get('/doctor/:doctorId/availability', async (req, res) => {
       });
     }
 
-    // Get booked slots for the next 7 days
+    // Get booked slots for the next 60 days (covers all selectable dates in the booking UI)
     const today = new Date();
-    const weekLater = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const sixtyDaysLater = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
 
     const bookedAppointments = await Appointment.find({
       doctorId,
-      date: { $gte: today, $lte: weekLater },
-      status: { $in: ['confirmed', 'pending'] }
+      date: { $gte: today, $lte: sixtyDaysLater },
+      status: { $in: ['pending', 'confirmed', 'checked_in'] }
     }).select('date timeSlot');
 
     res.json({
@@ -179,6 +179,13 @@ router.get('/appointments', async (req, res) => {
 router.get('/bills', async (req, res) => {
   try {
     const bills = await Bill.find({ patientId: req.patient._id })
+      .populate({
+        path: 'appointmentId',
+        populate: {
+          path: 'doctorId',
+          populate: { path: 'userId', select: 'profile' }
+        }
+      })
       .populate('createdBy', 'profile')
       .sort({ createdAt: -1 });
 

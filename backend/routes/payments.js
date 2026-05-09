@@ -435,6 +435,65 @@ router.post('/verify-bill', [
   }
 });
 
+// Mark appointment as paid at reception (receptionist/superadmin only)
+router.patch('/mark-paid/:appointmentId',
+  authenticateToken, authorizeRoles('receptionist', 'superadmin'), async (req, res) => {
+    try {
+      const { appointmentId } = req.params;
+
+      const appointment = await Appointment.findById(appointmentId)
+        .populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } });
+
+      if (!appointment) {
+        return res.status(404).json({ success: false, message: 'Appointment not found' });
+      }
+
+      if (appointment.paymentStatus === 'paid') {
+        return res.status(400).json({ success: false, message: 'Payment already marked as paid' });
+      }
+
+      // Use provided amount or fallback to doctor's consultation fee
+      const collectedAmount = req.body.amount
+        ? parseFloat(req.body.amount)
+        : (appointment.doctorId?.consultationFee || 0);
+
+      // Update payment info
+      appointment.paymentStatus = 'paid';
+      appointment.paymentMode = 'at_reception';
+      appointment.paymentDetails.amount = collectedAmount;
+      appointment.paymentDetails.currency = 'INR';
+      await appointment.save();
+
+      // Generate a bill
+      const bill = new Bill({
+        patientId: appointment.patientId,
+        appointmentId: appointment._id,
+        items: [{
+          description: `Consultation fee for Dr. ${appointment.doctorId?.userId?.profile?.firstName} ${appointment.doctorId?.userId?.profile?.lastName}`,
+          quantity: 1,
+          unitPrice: appointment.paymentDetails.amount,
+          total: appointment.paymentDetails.amount
+        }],
+        subtotal: appointment.paymentDetails.amount,
+        total: appointment.paymentDetails.amount,
+        status: 'paid',
+        paymentMethod: 'cash',
+        createdBy: req.user._id
+      });
+      await bill.save();
+
+      res.json({
+        success: true,
+        message: 'Payment marked as collected at reception',
+        data: { appointment, bill }
+      });
+    } catch (error) {
+      console.error('Mark paid error:', error);
+      res.status(500).json({ success: false, message: 'Server error marking payment' });
+    }
+  }
+);
+
 // Get payment status
 router.get('/status/:appointmentId', authenticateToken, async (req, res) => {
   try {

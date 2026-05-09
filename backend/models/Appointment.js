@@ -24,6 +24,11 @@ const appointmentSchema = new mongoose.Schema({
     enum: ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled', 'completed'],
     default: 'pending'
   },
+  paymentMode: {
+    type: String,
+    enum: ['online', 'at_reception'],
+    default: 'at_reception'
+  },
   paymentStatus: {
     type: String,
     enum: ['pending', 'paid', 'refunded'],
