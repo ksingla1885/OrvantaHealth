@@ -322,36 +322,7 @@ const Login = () => {
             </Link>
           </div>
 
-          {/* Demo credentials */}
-          <div style={{
-            marginTop: '1.5rem',
-            background: 'linear-gradient(135deg, rgba(10,61,53,0.04), rgba(10,123,104,0.06))',
-            border: '1px solid rgba(10,61,53,0.1)',
-            borderRadius: '16px',
-            padding: '1.25rem 1.5rem',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem' }}>
-              <span style={{
-                width: '8px', height: '8px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, #0a7b68, #6ee7b7)',
-                display: 'inline-block',
-              }} />
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#0a3d35', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Demo Access
-              </span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              {[
-                { label: 'Admin Email', val: 'admin@orvantahealth.com' },
-                { label: 'Password', val: 'Welcomeadmin' },
-              ].map(item => (
-                <div key={item.label}>
-                  <p style={{ color: '#94a3b8', fontSize: '0.7rem', marginBottom: '2px' }}>{item.label}</p>
-                  <p style={{ color: '#0a3d35', fontSize: '0.8rem', fontWeight: 700 }}>{item.val}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+
         </div>
       </div>
 
