@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { 
@@ -28,11 +28,7 @@ const Prescriptions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
 
-  useEffect(() => {
-    fetchPrescriptions();
-  }, []);
-
-  const fetchPrescriptions = async () => {
+  const fetchPrescriptions = useCallback(async () => {
     try {
       const endpoint = currentUser.role === 'patient' ? '/patient/prescriptions' : '/doctor/prescriptions';
       const response = await api.get(endpoint);
@@ -53,7 +49,11 @@ const Prescriptions = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser.role]);
+
+  useEffect(() => {
+    fetchPrescriptions();
+  }, [fetchPrescriptions]);
 
   const handleDownload = async (id) => {
     try {

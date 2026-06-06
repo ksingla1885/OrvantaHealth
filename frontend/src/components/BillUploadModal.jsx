@@ -1,32 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { X, Upload, DollarSign, Plus, Trash2, FileText, CheckCircle, Pill, ClipboardList, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useReducer, useCallback } from 'react';
+import { X, Upload, DollarSign, Plus, FileText, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../services/api';
+import BillingItemRow from './BillingItemRow';
+import RecentPrescriptionsSidebar from './RecentPrescriptionsSidebar';
+
+const INITIAL_DUE_DATE = new Date().toISOString().split('T')[0];
+
+const formInitialState = {
+    loading: false,
+    file: null,
+    items: [
+        { description: '', quantity: 1, unitPrice: 0 }
+    ],
+    paymentMethod: 'online',
+};
+
+function billFormReducer(state, action) {
+    switch (action.type) {
+        case 'SET_LOADING':
+            return { ...state, loading: action.payload };
+        case 'SET_FILE':
+            return { ...state, file: action.payload };
+        case 'SET_ITEMS':
+            return { ...state, items: action.payload };
+        case 'SET_PAYMENT_METHOD':
+            return { ...state, paymentMethod: action.payload };
+        default:
+            return state;
+    }
+}
 
 const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) => {
-    const [loading, setLoading] = useState(false);
-    const [file, setFile] = useState(null);
-    const [items, setItems] = useState([
-        { description: '', quantity: 1, unitPrice: 0 }
-    ]);
-    const [dueDate] = useState(
-        new Date().toISOString().split('T')[0]
-    );
-    const [paymentMethod, setPaymentMethod] = useState('online');
+    const [formState, dispatch] = useReducer(billFormReducer, formInitialState);
+    const { loading, file, items, paymentMethod } = formState;
+
     const [prescriptions, setPrescriptions] = useState([]);
     const [prescriptionsLoading, setPrescriptionsLoading] = useState(false);
 
-    useEffect(() => {
-        if (isOpen) {
-            if (patient?._id) {
-                fetchPrescriptions();
-            } else if (triageRecord?.triageId) {
-                fetchTriagePrescriptions();
-            }
-        }
-    }, [isOpen, patient?._id, triageRecord?.triageId]);
-
-    const fetchPrescriptions = async () => {
+    const fetchPrescriptions = useCallback(async () => {
+        if (!patient?._id) return;
         try {
             setPrescriptionsLoading(true);
             const res = await api.get(`/receptionist/patient/${patient._id}/prescriptions`);
@@ -38,9 +51,10 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
         } finally {
             setPrescriptionsLoading(false);
         }
-    };
+    }, [patient?._id]);
 
-    const fetchTriagePrescriptions = async () => {
+    const fetchTriagePrescriptions = useCallback(async () => {
+        if (!triageRecord?.triageId) return;
         try {
             setPrescriptionsLoading(true);
             const res = await api.get(`/triage/walk-in/${triageRecord.triageId}/prescriptions`);
@@ -58,15 +72,25 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
         } finally {
             setPrescriptionsLoading(false);
         }
-    };
+    }, [triageRecord]);
+
+    useEffect(() => {
+        if (isOpen) {
+            if (patient?._id) {
+                fetchPrescriptions();
+            } else if (triageRecord?.triageId) {
+                fetchTriagePrescriptions();
+            }
+        }
+    }, [isOpen, patient?._id, triageRecord?.triageId, fetchPrescriptions, fetchTriagePrescriptions]);
 
     const addMedicineToBill = (medicine) => {
         const newItem = { description: `Medicine: ${medicine.name}`, quantity: 1, unitPrice: 0 };
         // If the first item is empty, replace it
         if (items.length === 1 && !items[0].description) {
-            setItems([newItem]);
+            dispatch({ type: 'SET_ITEMS', payload: [newItem] });
         } else {
-            setItems([...items, newItem]);
+            dispatch({ type: 'SET_ITEMS', payload: [...items, newItem] });
         }
         toast.success(`${medicine.name} added to bill. Set the price.`);
     };
@@ -78,19 +102,22 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
     };
 
     const addItem = () => {
-        setItems([...items, { description: '', quantity: 1, unitPrice: 0 }]);
+        dispatch({ type: 'SET_ITEMS', payload: [...items, { description: '', quantity: 1, unitPrice: 0 }] });
     };
 
     const removeItem = (index) => {
         if (items.length > 1) {
-            setItems(items.filter((_, i) => i !== index));
+            dispatch({ type: 'SET_ITEMS', payload: items.filter((_, i) => i !== index) });
         }
     };
 
     const handleItemChange = (index, field, value) => {
         const newItems = [...items];
-        newItems[index][field] = field === 'description' ? value : parseFloat(value) || 0;
-        setItems(newItems);
+        newItems[index] = {
+            ...newItems[index],
+            [field]: field === 'description' ? value : parseFloat(value) || 0
+        };
+        dispatch({ type: 'SET_ITEMS', payload: newItems });
     };
 
     const handleFileChange = (e) => {
@@ -100,7 +127,7 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
                 toast.error('File size exceeds 10MB limit');
                 return;
             }
-            setFile(selectedFile);
+            dispatch({ type: 'SET_FILE', payload: selectedFile });
         }
     };
 
@@ -114,14 +141,14 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
         }
 
         try {
-            setLoading(true);
+            dispatch({ type: 'SET_LOADING', payload: true });
 
             // 1. Create the bill entry
             const billData = {
                 patientId: patient?._id || undefined,
                 triageId: triageRecord?.triageId || undefined,
                 items: validItems,
-                dueDate: dueDate,
+                dueDate: INITIAL_DUE_DATE,
                 status: paymentMethod === 'cash' ? 'paid' : 'pending_payment'
             };
             if (paymentMethod === 'cash') billData.paymentMethod = 'cash';
@@ -148,7 +175,7 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
             console.error('Bill generation error:', error);
             toast.error(error.response?.data?.message || 'Failed to process bill');
         } finally {
-            setLoading(false);
+            dispatch({ type: 'SET_LOADING', payload: false });
         }
     };
 
@@ -193,51 +220,14 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
 
                             <div className="space-y-4">
                                 {items.map((item, index) => (
-                                    <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 relative group animate-fade-in">
-                                        <div className="md:col-span-6 space-y-1">
-                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Description*</label>
-                                            <input
-                                                type="text"
-                                                value={item.description}
-                                                onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                                                placeholder="e.g. Consultation Fee, Lab Test"
-                                                className="input bg-white"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2 space-y-1">
-                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Qty*</label>
-                                            <input
-                                                type="number"
-                                                value={item.quantity}
-                                                onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                                                min="1"
-                                                className="input bg-white"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="md:col-span-3 space-y-1">
-                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Unit Price (₹)*</label>
-                                            <input
-                                                type="number"
-                                                value={item.unitPrice}
-                                                onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-                                                min="0"
-                                                className="input bg-white"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="md:col-span-1 flex items-end justify-end pb-1">
-                                            <button
-                                                type="button"
-                                                onClick={() => removeItem(index)}
-                                                className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
-                                                disabled={items.length === 1}
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <BillingItemRow
+                                        key={index}
+                                        item={item}
+                                        index={index}
+                                        onChange={handleItemChange}
+                                        onRemove={removeItem}
+                                        isRemoveDisabled={items.length === 1}
+                                    />
                                 ))}
                             </div>
                         </div>
@@ -292,14 +282,14 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
                                         <div className="flex gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => setPaymentMethod('online')}
+                                                onClick={() => dispatch({ type: 'SET_PAYMENT_METHOD', payload: 'online' })}
                                                 className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-colors ${paymentMethod === 'online' ? 'bg-brand-teal border-brand-teal text-white' : 'bg-white/10 border-white/20 text-white/60 hover:bg-white/20'}`}
                                             >
                                                 Online (Later)
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => setPaymentMethod('cash')}
+                                                onClick={() => dispatch({ type: 'SET_PAYMENT_METHOD', payload: 'cash' })}
                                                 className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-colors ${paymentMethod === 'cash' ? 'bg-brand-teal border-brand-teal text-white' : 'bg-white/10 border-white/20 text-white/60 hover:bg-white/20'}`}
                                             >
                                                 Cash (Paid Now)
@@ -326,76 +316,11 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
                     </form>
 
                     {/* Right Column: Prescriptions Sidebar */}
-                    <div className="lg:col-span-4 bg-slate-50 overflow-y-auto p-8 custom-scrollbar border-l border-slate-100">
-                        <div className="flex items-center gap-2 text-brand-dark mb-6">
-                            <ClipboardList className="h-5 w-5" />
-                            <h3 className="font-black font-display text-lg tracking-tight">Recent Prescriptions</h3>
-                        </div>
-
-                        {prescriptionsLoading ? (
-                            <div className="flex flex-col items-center justify-center h-48 gap-3 text-slate-400">
-                                <div className="loading-spinner h-8 w-8 border-brand-teal" />
-                                <p className="text-[8px] font-black uppercase tracking-widest">Loading Records...</p>
-                            </div>
-                        ) : prescriptions.length > 0 ? (
-                            <div className="space-y-6">
-                                {prescriptions.map((p) => (
-                                    <div key={p._id} className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 animate-fade-in group hover:border-brand-teal/30 transition-all">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-8 w-8 rounded-xl bg-brand-teal/10 flex items-center justify-center text-brand-teal font-black text-xs">
-                                                    Dr.
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-black text-brand-dark">Dr. {p.doctorId.userId.profile.lastName}</p>
-                                                    <p className="text-[8px] font-bold text-slate-400">{new Date(p.createdAt).toLocaleDateString()}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Medicines Prescribed:</p>
-                                            {p.medicines.map((m, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    type="button"
-                                                    onClick={() => addMedicineToBill(m)}
-                                                    className="w-full flex items-center justify-between text-left p-3 rounded-xl bg-slate-50 hover:bg-brand-teal/5 hover:border-brand-teal/20 border border-transparent transition-all group/item"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <Pill className="h-4 w-4 text-brand-teal" />
-                                                        <div>
-                                                            <p className="text-[10px] font-black text-brand-dark">{m.name}</p>
-                                                            <p className="text-[8px] font-bold text-slate-400">{m.dosage} | {m.duration}</p>
-                                                        </div>
-                                                    </div>
-                                                    <Plus className="h-3 w-3 text-slate-300 group-hover/item:text-brand-teal group-hover/item:scale-125 transition-all" />
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {p.tests?.length > 0 && (
-                                            <div className="mt-4 pt-4 border-t border-slate-50">
-                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-2">Tests Requested:</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {p.tests.map((t, tidx) => (
-                                                        <span key={tidx} className="px-2 py-1 rounded-lg bg-rose-50 text-rose-500 text-[8px] font-black uppercase tracking-widest border border-rose-100">
-                                                            {t.name}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-20 bg-white rounded-[2rem] border border-dashed border-slate-200">
-                                <ClipboardList className="h-10 w-10 text-slate-200 mx-auto mb-3" />
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">No Recent Prescriptions</p>
-                            </div>
-                        )}
-                    </div>
+                    <RecentPrescriptionsSidebar
+                        prescriptions={prescriptions}
+                        prescriptionsLoading={prescriptionsLoading}
+                        onAddMedicine={addMedicineToBill}
+                    />
                 </div>
             </div>
         </div>
