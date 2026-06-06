@@ -278,7 +278,7 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
                                     </div>
 
                                     <div className="pt-2">
-                                        <label className="text-[8px] font-black text-white/40 uppercase tracking-widest block mb-1">Payment Option</label>
+                                        <span className="text-[8px] font-black text-white/40 uppercase tracking-widest block mb-1">Payment Option</span>
                                         <div className="flex gap-2">
                                             <button
                                                 type="button"

@@ -352,12 +352,13 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                                         )}
                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                                             <div className="md:col-span-12 lg:col-span-7 space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pharmaceutical Name*</label>
+                                                <label htmlFor={`med-name-${index}`} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pharmaceutical Name*</label>
                                                 <div className="relative">
                                                     {otherModes[index] ? (
                                                         <div className="flex gap-2">
                                                             <div className="relative flex-1">
                                                                 <input
+                                                                    id={`med-name-${index}`}
                                                                     type="text"
                                                                     value={med.name}
                                                                     onChange={(e) => handleMedicineChange(index, 'name', e.target.value)}
@@ -372,6 +373,7 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                                                     ) : (
                                                         <div className="relative">
                                                             <select
+                                                                id={`med-name-${index}`}
                                                                 value={med.name}
                                                                 onChange={(e) => handleMedicineChange(index, 'name', e.target.value)}
                                                                 className="input bg-slate-50 border-slate-100 !h-[58px] pl-11 font-bold appearance-none cursor-pointer"
@@ -387,9 +389,9 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                                             </div>
 
                                             <div className="md:col-span-12 lg:col-span-5 space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dosage*</label>
+                                                <label htmlFor={`med-dosage-${index}`} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dosage*</label>
                                                 <div className="flex items-center bg-slate-50 border border-slate-100 rounded-[1.25rem] h-[58px] overflow-hidden focus-within:bg-white focus-within:border-brand-teal transition-all">
-                                                    <input type="number" value={med.dosageValue} onChange={(e) => handleMedicineChange(index, 'dosageValue', e.target.value)} placeholder="Qty" className="flex-[1.5] min-w-0 bg-transparent px-5 text-xl font-black text-brand-dark outline-none" required />
+                                                    <input id={`med-dosage-${index}`} type="number" value={med.dosageValue} onChange={(e) => handleMedicineChange(index, 'dosageValue', e.target.value)} placeholder="Qty" className="flex-[1.5] min-w-0 bg-transparent px-5 text-xl font-black text-brand-dark outline-none" required />
                                                     <div className="w-px h-8 bg-slate-200/50" />
                                                     <select value={med.dosageUnit} onChange={(e) => handleMedicineChange(index, 'dosageUnit', e.target.value)} className="flex-1 min-w-0 bg-transparent text-[10px] font-black uppercase tracking-[0.1em] outline-none text-center cursor-pointer text-brand-dark" required>
                                                         {COMMON_DOSAGE_UNITS.map(u => <option key={u} value={u} className="bg-white text-brand-dark">{u}</option>)}
@@ -398,17 +400,17 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                                             </div>
 
                                             <div className="md:col-span-6 space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Frequency*</label>
+                                                <label htmlFor={`med-freq-${index}`} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Frequency*</label>
                                                 <div className="relative">
-                                                    <input type="text" value={med.frequency} onChange={(e) => handleMedicineChange(index, 'frequency', e.target.value)} placeholder="e.g. 1-0-1" className="input bg-slate-50 border-slate-100 !h-[58px] pl-11 font-bold text-brand-dark" required />
+                                                    <input id={`med-freq-${index}`} type="text" value={med.frequency} onChange={(e) => handleMedicineChange(index, 'frequency', e.target.value)} placeholder="e.g. 1-0-1" className="input bg-slate-50 border-slate-100 !h-[58px] pl-11 font-bold text-brand-dark" required />
                                                     <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-violet-400" />
                                                 </div>
                                             </div>
 
                                             <div className="md:col-span-6 space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration*</label>
+                                                <label htmlFor={`med-duration-${index}`} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration*</label>
                                                 <div className="flex items-center bg-slate-50 border border-slate-100 rounded-[1.25rem] h-[58px] overflow-hidden focus-within:bg-white focus-within:border-brand-teal transition-all">
-                                                    <input type="number" value={med.durationValue} onChange={(e) => handleMedicineChange(index, 'durationValue', e.target.value)} placeholder="Val" className="flex-[1.5] min-w-0 bg-transparent px-5 text-xl font-black text-brand-dark outline-none" required />
+                                                    <input id={`med-duration-${index}`} type="number" value={med.durationValue} onChange={(e) => handleMedicineChange(index, 'durationValue', e.target.value)} placeholder="Val" className="flex-[1.5] min-w-0 bg-transparent px-5 text-xl font-black text-brand-dark outline-none" required />
                                                     <div className="w-px h-8 bg-slate-200/50" />
                                                     <select value={med.durationUnit} onChange={(e) => handleMedicineChange(index, 'durationUnit', e.target.value)} className="flex-1 min-w-0 bg-transparent text-[10px] font-black uppercase tracking-[0.1em] outline-none text-center cursor-pointer text-brand-dark" required>
                                                         {COMMON_DURATION_UNITS.map(u => <option key={u} value={u} className="bg-white text-brand-dark">{u}</option>)}

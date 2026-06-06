@@ -85,6 +85,7 @@ const Doctors = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+              aria-label="Search by name, specialization, or hospital"
             />
           </div>
           <div className="flex gap-4">

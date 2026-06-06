@@ -4,6 +4,9 @@ import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 import ConfirmModal from '../../components/ConfirmModal';
 
+const ALL_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const DAY_LABELS = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' };
+
 const DoctorsManagement = () => {
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +26,7 @@ const DoctorsManagement = () => {
   const [showGenerator, setShowGenerator] = useState(false);
   const [genConfig, setGenConfig] = useState({ start: '10:00', end: '13:00', interval: 10 });
 
-  const ALL_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  const DAY_LABELS = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' };
+
 
   const [activeTab, setActiveTab] = useState('active'); // 'active' or 'archive'
 

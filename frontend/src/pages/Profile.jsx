@@ -64,6 +64,9 @@ const ProfileAvatar = ({ user, defaultIcon: DefaultIcon }) => {
 /* ─────────────────────────────────────────────
    DOCTOR PROFILE VIEW
    ───────────────────────────────────────────── */
+const ALL_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const DAY_LABELS = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' };
+
 const DoctorProfile = ({ user }) => {
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -85,8 +88,6 @@ const DoctorProfile = ({ user }) => {
   if (loading) return <div className="flex items-center justify-center h-64"><div className="loading-spinner" /></div>;
 
   const fullName = `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`.trim() || 'Doctor';
-  const ALL_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  const DAY_LABELS = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' };
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">

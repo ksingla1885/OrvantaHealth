@@ -85,6 +85,7 @@ const TriageReferralModal = ({ isOpen, onClose, record, onSuccess }) => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full bg-white border border-slate-100 rounded-2xl pl-12 pr-6 py-4 text-sm font-bold shadow-sm focus:ring-2 focus:ring-brand-teal/10 outline-none transition-all placeholder:text-slate-300"
+                            aria-label="Find clinician by name or specialization"
                         />
                     </div>
                 </div>

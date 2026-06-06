@@ -5,8 +5,9 @@ const BillingItemRow = ({ item, index, onChange, onRemove, isRemoveDisabled }) =
     return (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 relative group animate-fade-in">
             <div className="md:col-span-6 space-y-1">
-                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Description*</label>
+                <label htmlFor={`item-description-${index}`} className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Description*</label>
                 <input
+                    id={`item-description-${index}`}
                     type="text"
                     value={item.description}
                     onChange={(e) => onChange(index, 'description', e.target.value)}
@@ -16,8 +17,9 @@ const BillingItemRow = ({ item, index, onChange, onRemove, isRemoveDisabled }) =
                 />
             </div>
             <div className="md:col-span-2 space-y-1">
-                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Qty*</label>
+                <label htmlFor={`item-quantity-${index}`} className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Qty*</label>
                 <input
+                    id={`item-quantity-${index}`}
                     type="number"
                     value={item.quantity}
                     onChange={(e) => onChange(index, 'quantity', e.target.value)}
@@ -27,8 +29,9 @@ const BillingItemRow = ({ item, index, onChange, onRemove, isRemoveDisabled }) =
                 />
             </div>
             <div className="md:col-span-3 space-y-1">
-                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Unit Price (₹)*</label>
+                <label htmlFor={`item-price-${index}`} className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Unit Price (₹)*</label>
                 <input
+                    id={`item-price-${index}`}
                     type="number"
                     value={item.unitPrice}
                     onChange={(e) => onChange(index, 'unitPrice', e.target.value)}
@@ -43,6 +46,7 @@ const BillingItemRow = ({ item, index, onChange, onRemove, isRemoveDisabled }) =
                     onClick={() => onRemove(index)}
                     className="p-2 text-slate-300 hover:text-rose-500 transition-colors"
                     disabled={isRemoveDisabled}
+                    aria-label="Remove item"
                 >
                     <X className="h-4 w-4" />
                 </button>
