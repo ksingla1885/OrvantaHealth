@@ -28,7 +28,8 @@ const DetailedAnalytics = () => {
   }, [timeRange, selectedDate]);
 
   const fetchAnalytics = async () => {
-    const days = parseInt(timeRange.replace('d', '').replace('y', '365'));
+    const rangeStr = timeRange;
+    const days = rangeStr === '1y' ? 365 : parseInt(rangeStr);
     try {
       const [overviewRes, statsRes, deptRes] = await Promise.all([
         api.get(`/admin/analytics?date=${selectedDate}`),
@@ -44,17 +45,37 @@ const DetailedAnalytics = () => {
         const trends = statsRes.data.data.appointmentTrends || [];
         const revenue = statsRes.data.data.revenueTrends || [];
 
-        const formattedData = trends.map(t => {
-          const rev = revenue.find(r => r._id === t._id);
-          const date = new Date(t._id);
-          return {
-            day: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            appointments: t.count,
-            revenue: rev ? rev.total : 0,
-            patients: t.count
-          };
-        });
-        setChartData(formattedData);
+        // Build a full date scaffold so chart always has data points
+        const step = days === 365 ? 7 : 1; 
+        const scaffold = [];
+        for (let i = 0; i < days; i += step) {
+          const d = new Date();
+          d.setDate(d.getDate() - (days - 1 - i));
+          
+          let appointmentsCount = 0;
+          let revenueTotal = 0;
+          
+          for (let s = 0; s < step; s++) {
+            const tempDate = new Date(d);
+            tempDate.setDate(tempDate.getDate() - s);
+            const tempKey = tempDate.toISOString().split('T')[0];
+            const tEntry = trends.find(t => t._id === tempKey);
+            const rEntry = revenue.find(r => r._id === tempKey);
+            appointmentsCount += tEntry?.count || 0;
+            revenueTotal += rEntry?.total || 0;
+          }
+          
+          scaffold.push({
+            day: d.toLocaleDateString('en-US', days === 365 
+              ? { month: 'short', year: '2-digit' } 
+              : { month: 'short', day: 'numeric' }
+            ),
+            appointments: appointmentsCount,
+            revenue: revenueTotal,
+            patients: appointmentsCount,
+          });
+        }
+        setChartData(scaffold);
       }
 
       if (deptRes.data.success) {
@@ -273,20 +294,20 @@ const DetailedAnalytics = () => {
             </div>
           </div>
           
-          <div className="h-[400px] w-full relative z-10">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
+          <div style={{ width: '100%', height: 400 }}>
+            <ResponsiveContainer width="100%" height={400}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorApp" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="analyticsColorApp" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#0F3A3A" stopOpacity={0.1}/>
                     <stop offset="95%" stopColor="#0F3A3A" stopOpacity={0}/>
                   </linearGradient>
-                  <linearGradient id="colorPat" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="analyticsColorPat" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#00CCB4" stopOpacity={0.1}/>
                     <stop offset="95%" stopColor="#00CCB4" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="5 5" stroke="#c0c8c7/20" vertical={false} />
+                <CartesianGrid strokeDasharray="5 5" stroke="#e2e8f0" vertical={false} />
                 <XAxis 
                   dataKey="day" 
                   axisLine={false} 
@@ -309,7 +330,7 @@ const DetailedAnalytics = () => {
                   stroke="#0F3A3A" 
                   strokeWidth={4} 
                   fillOpacity={1} 
-                  fill="url(#colorApp)" 
+                  fill="url(#analyticsColorApp)" 
                   name="Appointments"
                 />
                 <Area 
@@ -318,7 +339,7 @@ const DetailedAnalytics = () => {
                   stroke="#00CCB4" 
                   strokeWidth={4} 
                   fillOpacity={1} 
-                  fill="url(#colorPat)" 
+                  fill="url(#analyticsColorPat)" 
                   name="New Patients"
                 />
               </AreaChart>
@@ -339,9 +360,9 @@ const DetailedAnalytics = () => {
             </div>
           </div>
           
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
+          <div style={{ width: '100%', height: 400 }}>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="8 8" stroke="#f2f4f4" vertical={false} />
                 <XAxis 
                   dataKey="day" 
@@ -376,8 +397,8 @@ const DetailedAnalytics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pt-8">
         <div className="card-soft lg:col-span-1 p-10 rounded-[3rem] bg-white">
           <h3 className="text-lg font-black text-[#0F3A3A] font-display mb-8">Outcomes Status</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={appointmentStatusData}
@@ -408,8 +429,8 @@ const DetailedAnalytics = () => {
 
         <div className="card-soft lg:col-span-1 p-10 rounded-[3rem] bg-white">
           <h3 className="text-lg font-black text-[#0F3A3A] font-display mb-8">Internal Distribution</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={departmentData}

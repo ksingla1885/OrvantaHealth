@@ -57,12 +57,18 @@ app.set('trust proxy', 1);
 
 // Rate limiting - more lenient in development
 const limiter = rateLimit({
-  windowMs: NODE_ENV === 'production' ? 15 * 60 * 1000 : 60 * 60 * 1000, // 15 min in prod, 1 hour in dev
-  max: NODE_ENV === 'production' ? 100 : 10000, // 100 requests in prod, 1000 in dev
+  windowMs: NODE_ENV === 'production' ? 15 * 60 * 1000 : 15 * 60 * 1000, // 15 min window
+  max: NODE_ENV === 'production' ? 1000 : 10000, // 1000 in prod, 10000 in dev
   message: 'Too many requests from this IP, please try again later.',
   skip: (req, res) => {
-    // Skip rate limiting for health check and static files
-    return req.path === '/health' || req.path.startsWith('/uploads');
+    // Skip rate limiting for health check, static files, and local development connections
+    const isLocalhost = 
+      req.ip === '127.0.0.1' || 
+      req.ip === '::1' || 
+      req.ip === '::ffff:127.0.0.1' || 
+      req.headers.host?.includes('localhost') || 
+      req.headers.host?.includes('127.0.0.1');
+    return req.path === '/health' || req.path.startsWith('/uploads') || isLocalhost;
   }
 });
 app.use(limiter);
