@@ -247,12 +247,16 @@ const Landing = () => {
 
                 // Animate bars on scroll
                 showcaseRef.current.querySelectorAll('.showcase-bar-fill').forEach((bar) => {
-                    const w = bar.style.width;
-                    bar.style.width = '0%';
-                    gsap.to(bar, {
-                        width: w, duration: 1.4, ease: 'power3.out',
-                        scrollTrigger: { trigger: bar, start: 'top 90%' }
-                    });
+                    const targetVal = bar.getAttribute('data-val') || '100';
+                    gsap.fromTo(bar, 
+                        { width: '0%' },
+                        {
+                            width: `${targetVal}%`, 
+                            duration: 1.2, 
+                            ease: 'power3.out',
+                            scrollTrigger: { trigger: bar, start: 'top 95%', once: true }
+                        }
+                    );
                 });
             }
 
@@ -597,19 +601,29 @@ const Landing = () => {
                                 <span className="text-xs text-emerald-400">Live</span>
                             </div>
                             {[
-                                { label: 'Diagnostic Accuracy', val: 98, color: 'bg-cyan-500' },
-                                { label: 'Appointment Fulfillment', val: 94, color: 'bg-emerald-500' },
-                                { label: 'Billing Automation', val: 100, color: 'bg-brand-teal' },
-                                { label: 'Patient Satisfaction', val: 96, color: 'bg-amber-500' },
-                                { label: 'Staff Efficiency', val: 89, color: 'bg-purple-500' },
+                                { label: 'Diagnostic Accuracy', val: 98, gradient: 'linear-gradient(90deg, #06b6d4, #22d3ee)', shadow: '0 0 12px rgba(34, 211, 238, 0.8), 0 0 4px rgba(6, 182, 212, 0.9)', textColor: '#22d3ee' },
+                                { label: 'Appointment Fulfillment', val: 94, gradient: 'linear-gradient(90deg, #059669, #10b981, #34d399)', shadow: '0 0 12px rgba(52, 211, 153, 0.8), 0 0 4px rgba(16, 185, 129, 0.9)', textColor: '#34d399' },
+                                { label: 'Billing Automation', val: 100, gradient: 'linear-gradient(90deg, #0d9488, #14b8a6, #2dd4bf)', shadow: '0 0 12px rgba(45, 212, 191, 0.8), 0 0 4px rgba(20, 184, 166, 0.9)', textColor: '#2dd4bf' },
+                                { label: 'Patient Satisfaction', val: 96, gradient: 'linear-gradient(90deg, #d97706, #f59e0b, #fbbf24)', shadow: '0 0 12px rgba(251, 191, 36, 0.8), 0 0 4px rgba(245, 158, 11, 0.9)', textColor: '#fbbf24' },
+                                { label: 'Staff Efficiency', val: 89, gradient: 'linear-gradient(90deg, #7c3aed, #8b5cf6, #c084fc)', shadow: '0 0 12px rgba(192, 132, 252, 0.8), 0 0 4px rgba(139, 92, 246, 0.9)', textColor: '#c084fc' },
                             ].map((s, i) => (
                                 <div key={i} className="showcase-bar-item">
                                     <div className="showcase-bar-label">
-                                        <span>{s.label}</span>
-                                        <span className="text-white font-bold">{s.val}%</span>
+                                        <span className="text-slate-200 font-medium">{s.label}</span>
+                                        <span className="font-bold text-sm tracking-wide" style={{ color: s.textColor }}>{s.val}%</span>
                                     </div>
                                     <div className="showcase-bar-track">
-                                        <div className={`showcase-bar-fill ${s.color}`} style={{ width: `${s.val}%` }} />
+                                        <div 
+                                            className="showcase-bar-fill" 
+                                            data-val={s.val}
+                                            style={{ 
+                                                width: `${s.val}%`, 
+                                                background: s.gradient, 
+                                                boxShadow: s.shadow 
+                                            }} 
+                                        >
+                                            <div className="showcase-bar-head" style={{ background: s.textColor, boxShadow: s.shadow }} />
+                                        </div>
                                     </div>
                                 </div>
                             ))}

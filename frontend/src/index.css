@@ -1045,19 +1045,31 @@ input[type="number"] {
   background: #34d399; border-radius: 50%;
   animation: pulse 2s infinite; margin-left: auto;
 }
-.showcase-bar-item { display: flex; flex-direction: column; gap: 0.4rem; }
+.showcase-bar-item { display: flex; flex-direction: column; gap: 0.45rem; }
 .showcase-bar-label {
   display: flex; justify-content: space-between;
-  font-size: 0.75rem; color: rgba(255,255,255,0.55); font-weight: 500;
+  font-size: 0.78rem; color: rgba(255,255,255,0.7); font-weight: 600;
 }
 .showcase-bar-track {
-  height: 6px; background: rgba(255,255,255,0.06);
-  border-radius: 100px; overflow: hidden;
+  height: 8px; background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 100px; overflow: visible;
+  position: relative;
 }
 .showcase-bar-fill {
   height: 100%; border-radius: 100px;
-  transition: width 1s ease;
-  box-shadow: 0 0 8px currentColor;
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+.showcase-bar-head {
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 10px;
+  border-radius: 100px;
+  opacity: 0.95;
 }
 .showcase-panel-stats {
   display: grid; grid-template-columns: 1fr 1fr;
