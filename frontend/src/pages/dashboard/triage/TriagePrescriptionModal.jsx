@@ -319,6 +319,30 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                                 placeholder="Precisely document clinical findings and diagnosis..."
                                 required
                             />
+
+                            {/* Quick AI Condition Chips */}
+                            {record?.aiAnalysis?.possibleConditions?.length > 0 && (
+                                <div className="space-y-1.5 pt-1">
+                                    <span className="text-[9px] font-black text-brand-teal uppercase tracking-widest flex items-center gap-1">
+                                        <Sparkles className="h-3 w-3" /> Tap to Insert AI Diagnosis:
+                                    </span>
+                                    <div className="flex flex-wrap gap-2">
+                                        {record.aiAnalysis.possibleConditions.map((cond, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => {
+                                                    const current = formData.diagnosis ? `${formData.diagnosis}, ${cond}` : cond;
+                                                    setFormData({ ...formData, diagnosis: current });
+                                                }}
+                                                className="px-3 py-1 bg-brand-teal/10 hover:bg-brand-teal hover:text-white text-brand-teal text-[10px] font-black uppercase tracking-wider rounded-lg border border-brand-teal/20 transition-all active:scale-95 cursor-pointer"
+                                            >
+                                                + {cond}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </section>
 
                         <section className="space-y-6">
@@ -404,6 +428,28 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                                                 <div className="relative">
                                                     <input id={`med-freq-${index}`} type="text" value={med.frequency} onChange={(e) => handleMedicineChange(index, 'frequency', e.target.value)} placeholder="e.g. 1-0-1" className="input bg-slate-50 border-slate-100 !h-[58px] pl-11 font-bold text-brand-dark" required />
                                                     <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-violet-400" />
+                                                </div>
+                                                {/* Quick Frequency Presets */}
+                                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                                    {[
+                                                        { label: '☀️ 1-0-0', val: '1-0-0' },
+                                                        { label: '🌤️ 1-0-1', val: '1-0-1' },
+                                                        { label: '🍽️ 1-1-1', val: '1-1-1' },
+                                                        { label: '🌙 0-0-1', val: '0-0-1' },
+                                                    ].map((f) => (
+                                                        <button
+                                                            key={f.val}
+                                                            type="button"
+                                                            onClick={() => handleMedicineChange(index, 'frequency', f.val)}
+                                                            className={`px-2 py-0.5 rounded-lg text-[9px] font-bold transition-all cursor-pointer ${
+                                                                med.frequency === f.val 
+                                                                ? 'bg-violet-600 text-white shadow-sm' 
+                                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                                                            }`}
+                                                        >
+                                                            {f.label}
+                                                        </button>
+                                                    ))}
                                                 </div>
                                             </div>
 

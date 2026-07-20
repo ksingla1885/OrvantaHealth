@@ -10,9 +10,8 @@ const BackButton = ({ customClass = '', variant = 'floating' }) => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // Only show floating back button on /login and /register pages (rest of pages already have back buttons)
-    const allowedAuthPaths = ['/login', '/register'];
-    if (variant === 'floating' && !allowedAuthPaths.includes(location.pathname)) {
+    // Disable floating back button sitewide per design requirement
+    if (variant === 'floating') {
         return null;
     }
 

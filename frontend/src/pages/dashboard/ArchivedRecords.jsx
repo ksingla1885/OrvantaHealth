@@ -424,6 +424,46 @@ const ArchivedRecords = () => {
     }
   };
 
+  const handleExportAllLogs = () => {
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      system: "Orvanta Health Administrative Secure Audit Vault",
+      archivedStaffCount: archivedStaff.length,
+      clinicalHistoryCount: clinicalHistory.length,
+      archivedStaff: archivedStaff.map(s => {
+        const profile = s.userId?.profile || {};
+        return {
+          id: s._id,
+          name: `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'N/A',
+          role: s.role,
+          department: s.department || 'Front Desk',
+          email: s.userId?.email || 'N/A',
+          isActive: s.isActive,
+          isOffboarded: Boolean(s.userId?.isOffboarded),
+          lastLogin: s.userId?.lastLogin || null
+        };
+      }),
+      clinicalRecords: clinicalHistory.map(c => ({
+        id: c._id,
+        patientName: c.patientName,
+        age: c.age,
+        gender: c.gender,
+        symptoms: c.symptoms,
+        possibleConditions: c.aiAnalysis?.possibleConditions || [],
+        resolvedAt: c.updatedAt
+      }))
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `orvanta_archive_audit_export_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    toast.success('Archived audit records exported successfully!');
+  };
+
   const filteredStaff = archivedStaff.filter(staff => {
     const profile = staff.userId?.profile || {};
     const name = `${profile.firstName || ''} ${profile.lastName || ''}`.toLowerCase();
@@ -624,7 +664,11 @@ const ArchivedRecords = () => {
               These records are maintained strictly for legal verification and medical continuity purposes.
             </p>
           </div>
-          <button className="md:ml-auto px-8 py-3 bg-white text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-teal hover:text-white transition-all">
+          <button 
+            onClick={handleExportAllLogs}
+            className="md:ml-auto flex items-center gap-2 px-8 py-3 bg-white text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-teal hover:text-white transition-all shadow-md active:scale-95 cursor-pointer"
+          >
+            <Download className="h-4 w-4 text-brand-teal group-hover:text-white transition-colors" />
             Export All Logs
           </button>
         </div>

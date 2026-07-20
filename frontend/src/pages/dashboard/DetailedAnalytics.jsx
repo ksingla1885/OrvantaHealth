@@ -478,7 +478,7 @@ const DetailedAnalytics = () => {
                       {analytics.mostConsultedDoctor.userId.profile.firstName?.charAt(0)}
                     </div>
                     <div>
-                      <h4 className="text-2xl font-black font-display">Dr. {analytics.mostConsultedDoctor.userId.profile.firstName}</h4>
+                      <h4 className="text-2xl font-black font-display">Dr. {analytics.mostConsultedDoctor.userId.profile.firstName} {analytics.mostConsultedDoctor.userId.profile.lastName}</h4>
                       <p className="text-[11px] font-bold text-[#a5cece] uppercase tracking-widest">{analytics.mostConsultedDoctor.specialization}</p>
                     </div>
                   </div>

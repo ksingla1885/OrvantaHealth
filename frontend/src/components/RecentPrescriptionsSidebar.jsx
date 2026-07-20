@@ -24,7 +24,7 @@ const RecentPrescriptionsSidebar = ({ prescriptions, prescriptionsLoading, onAdd
                                         Dr.
                                     </div>
                                     <div>
-                                        <p className="text-xs font-black text-brand-dark">Dr. {p.doctorId.userId.profile.lastName}</p>
+                                        <p className="text-xs font-black text-brand-dark">Dr. {p.doctorId?.userId?.profile?.firstName || ''} {p.doctorId?.userId?.profile?.lastName || ''}</p>
                                         <p className="text-[8px] font-bold text-slate-400">{new Date(p.createdAt).toLocaleDateString()}</p>
                                     </div>
                                 </div>

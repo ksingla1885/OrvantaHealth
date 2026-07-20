@@ -209,7 +209,7 @@ const LabReports = () => {
                         <span className="text-[8px] font-black uppercase tracking-widest">Referring Clinician</span>
                       </div>
                       <p className="text-xs font-black text-brand-dark truncate">
-                        {report.doctorId?.userId?.profile ? `Dr. ${report.doctorId.userId.profile.lastName}` : 'General Referral'}
+                        {report.doctorId?.userId?.profile ? `Dr. ${report.doctorId.userId.profile.firstName || ''} ${report.doctorId.userId.profile.lastName || ''}`.trim() : 'General Referral'}
                       </p>
                     </div>
                   </div>
