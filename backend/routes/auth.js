@@ -190,6 +190,15 @@ router.post('/login', [
       });
     }
 
+    // Check if system is in Emergency Lockdown mode
+    const { getIsSystemLockdown } = require('./admin');
+    if (getIsSystemLockdown && getIsSystemLockdown() && user.role !== 'superadmin') {
+      return res.status(403).json({
+        success: false,
+        message: 'System is currently in Emergency Lockdown. Logins for non-superadmin accounts are restricted by Administration.'
+      });
+    }
+
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {

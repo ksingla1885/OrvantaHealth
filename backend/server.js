@@ -114,9 +114,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/orvantahe
     process.exit(1);
   });
 
-// Routes
+const adminModule = require('./routes/admin');
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/admin', require('./routes/admin'));
+app.use('/api/admin', adminModule.router);
 app.use('/api/doctor', require('./routes/doctor'));
 app.use('/api/receptionist', require('./routes/receptionist'));
 app.use('/api/patient', require('./routes/patient'));

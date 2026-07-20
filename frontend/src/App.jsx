@@ -36,6 +36,9 @@ const DoctorsManagement = lazy(() => import('./pages/dashboard/DoctorsManagement
 const DetailedAnalytics = lazy(() => import('./pages/dashboard/DetailedAnalytics'));
 const ContactMessages = lazy(() => import('./pages/dashboard/ContactMessages'));
 const ArchivedRecords = lazy(() => import('./pages/dashboard/ArchivedRecords'));
+const AuditLogs = lazy(() => import('./pages/dashboard/AuditLogs'));
+const SecurityControl = lazy(() => import('./pages/dashboard/SecurityControl'));
+const BedTelemetryPage = lazy(() => import('./components/dashboard/BedTelemetry'));
 
 // Other Pages
 const Doctors = lazy(() => import('./pages/Doctors'));
@@ -89,6 +92,9 @@ function App() {
                   <Route path="/dashboard/analytics" element={<ProtectedRoute roles={['superadmin']}><DetailedAnalytics /></ProtectedRoute>} />
                   <Route path="/dashboard/contact-messages" element={<ProtectedRoute roles={['superadmin']}><ContactMessages /></ProtectedRoute>} />
                   <Route path="/dashboard/archive" element={<ProtectedRoute roles={['superadmin']}><ArchivedRecords /></ProtectedRoute>} />
+                  <Route path="/dashboard/audit-logs" element={<ProtectedRoute roles={['superadmin']}><AuditLogs /></ProtectedRoute>} />
+                  <Route path="/dashboard/security" element={<ProtectedRoute roles={['superadmin']}><SecurityControl /></ProtectedRoute>} />
+                  <Route path="/dashboard/beds" element={<ProtectedRoute roles={['superadmin']}><BedTelemetryPage standalone={true} /></ProtectedRoute>} />
 
                   {/* Doctor Routes */}
                   <Route path="doctor/dashboard" element={<ProtectedRoute roles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
