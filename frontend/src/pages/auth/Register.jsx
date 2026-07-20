@@ -6,6 +6,7 @@ import {
   Eye, EyeOff, Mail, Lock, Phone, User, Calendar, MapPin,
   ArrowRight, Heart, ShieldCheck, Activity, CheckCircle2
 } from 'lucide-react';
+import BackButton from '../../components/BackButton';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -197,6 +198,8 @@ const Register = () => {
         overflowY: 'auto',
       }}>
         <div style={{ width: '100%', maxWidth: '460px' }}>
+
+          <BackButton variant="inline" customClass="mb-4" />
 
           {/* Heading */}
           <div style={{ marginBottom: '2rem' }}>

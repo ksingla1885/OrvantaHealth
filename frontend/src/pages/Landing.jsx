@@ -1,301 +1,771 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
 import {
-    Activity,
-    ArrowRight,
-    Star,
-    Zap,
-    Globe,
-    CheckCircle2,
-    Sparkles,
-    Shield,
-    TrendingUp,
-    Layout,
-    FileText,
-    ShieldCheck
+    Activity, ArrowRight, Star, Shield, TrendingUp, FileText,
+    ShieldCheck, Calendar, Users, BarChart3, Heart, CheckCircle2,
+    ChevronRight, Zap, Lock, Clock, Award, Menu, X, Phone, Mail,
+    MapPin, CreditCard, Stethoscope, ClipboardList, FlaskConical, BedDouble
 } from 'lucide-react';
 
-const NavItem = ({ item }) => (
-    <a href={`#${item.toLowerCase()}`} className="text-slate-500 hover:text-brand-dark font-semibold transition-all text-xs uppercase tracking-widest relative group">
-        {item}
-        <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-brand-teal transition-all group-hover:w-full"></span>
-    </a>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ─────────────────────────────────────────────
+   ECG / Heartbeat SVG Line Component
+───────────────────────────────────────────── */
+const EcgLine = () => (
+    <svg className="ecg-line" viewBox="0 0 600 80" preserveAspectRatio="none">
+        <polyline
+            points="0,40 60,40 80,40 90,10 100,70 110,40 130,40 150,40 160,15 170,65 180,40 200,40 260,40 270,5 280,75 290,40 320,40 380,40 390,10 400,70 410,40 440,40 500,40 510,15 520,65 530,40 600,40"
+            fill="none"
+            stroke="url(#ecgGrad)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <defs>
+            <linearGradient id="ecgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#0d9488" stopOpacity="0" />
+                <stop offset="30%" stopColor="#0d9488" stopOpacity="1" />
+                <stop offset="70%" stopColor="#14b8a6" stopOpacity="1" />
+                <stop offset="100%" stopColor="#14b8a6" stopOpacity="0" />
+            </linearGradient>
+        </defs>
+    </svg>
 );
 
-const FeatureCard = ({ title, desc, icon: Icon, color }) => (
-    <div className="group p-8 rounded-3xl bg-white border border-slate-100 hover:border-brand-teal/20 transition-all duration-300 hover:shadow-premium-hover">
-        <div className={`w-14 h-14 ${color} rounded-2xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform duration-500 shadow-lg`}>
-            <Icon className="h-7 w-7" />
+/* ─────────────────────────────────────────────
+   Feature Card
+───────────────────────────────────────────── */
+const FeatureCard = ({ title, desc, icon: Icon, gradient }) => (
+    <div className="feature-card">
+        <div className={`feature-icon ${gradient}`}>
+            <Icon className="h-6 w-6 text-white" />
         </div>
-        <h3 className="text-xl font-bold mb-3 text-brand-dark tracking-tight">{title}</h3>
-        <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+        <h3 className="feature-title">{title}</h3>
+        <p className="feature-desc">{desc}</p>
+        <div className="feature-arrow">
+            <ChevronRight className="h-4 w-4" />
+        </div>
     </div>
 );
 
+/* ─────────────────────────────────────────────
+   Testimonial Card
+───────────────────────────────────────────── */
+const TestimonialCard = ({ name, role, hospital, quote, avatar, rating }) => (
+    <div className="testimonial-card">
+        <div className="testimonial-stars">
+            {Array.from({ length: rating }).map((_, i) => (
+                <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+            ))}
+        </div>
+        <p className="testimonial-quote">"{quote}"</p>
+        <div className="testimonial-author">
+            <img src={avatar} alt={name} className="testimonial-avatar" />
+            <div>
+                <div className="testimonial-name">{name}</div>
+                <div className="testimonial-role">{role} · {hospital}</div>
+            </div>
+        </div>
+    </div>
+);
+
+/* ─────────────────────────────────────────────
+   Main Landing Component
+───────────────────────────────────────────── */
 const Landing = () => {
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
+
+    // Refs for GSAP targets
+    const rootRef = useRef(null);
+    const heroHeadlineRef = useRef(null);
+    const heroBadgeRef = useRef(null);
+    const heroSubRef = useRef(null);
+    const heroActionsRef = useRef(null);
+    const heroProofRef = useRef(null);
+    const heroMockupRef = useRef(null);
+    const floatCard1Ref = useRef(null);
+    const floatCard2Ref = useRef(null);
+    const statsRef = useRef(null);
+    const statNumbersRef = useRef([]);
+    const featuresRef = useRef(null);
+    const featureCardsRef = useRef([]);
+    const showcaseRef = useRef(null);
+    const securityRef = useRef(null);
+    const testimonialsRef = useRef(null);
+    const ctaRef = useRef(null);
+    const orb1Ref = useRef(null);
+    const orb2Ref = useRef(null);
+
+    const features = [
+        { title: 'Patient Management', desc: 'Complete patient profiles, medical history, vitals tracking and seamless record access across departments.', icon: Users, gradient: 'grad-blue' },
+        { title: 'Appointment Scheduling', desc: 'Smart calendar with automated conflict detection, reminders, and doctor availability tracking.', icon: Calendar, gradient: 'grad-teal' },
+        { title: 'Electronic Health Records', desc: 'Structured, searchable EHR system with secure sharing, version history, and instant retrieval.', icon: ClipboardList, gradient: 'grad-purple' },
+        { title: 'Staff & Doctor Management', desc: 'Manage shifts, roles, leave schedules, and performance metrics for your entire medical team.', icon: Stethoscope, gradient: 'grad-orange' },
+        { title: 'Billing & Finance', desc: 'Automated invoicing, insurance claim processing, payment tracking and GST-compliant reports.', icon: CreditCard, gradient: 'grad-green' },
+        { title: 'Lab Reports & Diagnostics', desc: 'Integrate lab results directly into patient records with automated normal range alerts.', icon: FlaskConical, gradient: 'grad-red' },
+        { title: 'Bed & Ward Management', desc: 'Real-time bed availability, ward assignments, and discharge planning from a single view.', icon: BedDouble, gradient: 'grad-indigo' },
+        { title: 'Analytics & Reports', desc: 'Powerful dashboards with revenue trends, patient flow, doctor performance, and export options.', icon: BarChart3, gradient: 'grad-pink' },
+    ];
+
+    const testimonials = [
+        { name: 'Dr. Priya Mehta', role: 'Chief Medical Officer', hospital: 'Apollo Hospitals', quote: 'OrvantaHealth transformed our workflow completely. Patient wait times dropped by 40% and our staff loves the intuitive interface.', avatar: 'https://i.pravatar.cc/100?u=priya', rating: 5 },
+        { name: 'Rajesh Kumar', role: 'Hospital Administrator', hospital: 'Fortis Healthcare', quote: 'The billing automation alone saved us 15+ hours per week. The analytics dashboard gives us insights we never had before.', avatar: 'https://i.pravatar.cc/100?u=rajesh', rating: 5 },
+        { name: 'Dr. Ananya Singh', role: 'Head of Operations', hospital: 'Manipal Hospitals', quote: 'Finally, an HMS that doctors actually want to use. Clean, fast, and everything is exactly where you expect it to be.', avatar: 'https://i.pravatar.cc/100?u=ananya', rating: 5 },
+    ];
+
+    const stats = [
+        { value: 50000, suffix: '+', label: 'Patients Managed', icon: Users, color: 'stat-blue' },
+        { value: 200, suffix: '+', label: 'Verified Doctors', icon: Stethoscope, color: 'stat-teal' },
+        { value: 98, suffix: '%', label: 'Satisfaction Rate', icon: Heart, color: 'stat-rose' },
+        { value: 500, suffix: '+', label: 'Hospitals Trust Us', icon: Award, color: 'stat-amber' },
+        { value: 99, suffix: '.9%', label: 'Uptime SLA', icon: Zap, color: 'stat-emerald' },
+    ];
+
+    /* ── Lenis smooth scroll + GSAP integration ── */
+    useEffect(() => {
+        // Init Lenis
+        const lenis = new Lenis({
+            duration: 1.4,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+            wheelMultiplier: 0.9,
+        });
+
+        // Connect Lenis to GSAP ticker
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time) => lenis.raf(time * 1000));
+        gsap.ticker.lagSmoothing(0);
+
+        // Scrolled navbar state
+        lenis.on('scroll', ({ scroll }) => setScrolled(scroll > 30));
+
+        return () => {
+            lenis.destroy();
+            gsap.ticker.remove((time) => lenis.raf(time * 1000));
+        };
+    }, []);
+
+    /* ── GSAP Animations ── */
+    useEffect(() => {
+        const ctx = gsap.context(() => {
+
+            /* ── 1. HERO entrance ── */
+            const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+            heroTl
+                .from(heroBadgeRef.current, { y: 24, opacity: 0, duration: 0.7 })
+                .from(heroHeadlineRef.current, { y: 50, opacity: 0, duration: 0.9, ease: 'expo.out' }, '-=0.3')
+                .from(heroSubRef.current, { y: 30, opacity: 0, duration: 0.8 }, '-=0.5')
+                .from(heroActionsRef.current, { y: 24, opacity: 0, duration: 0.7 }, '-=0.5')
+                .from(heroProofRef.current, { y: 20, opacity: 0, duration: 0.6 }, '-=0.4')
+                .from(heroMockupRef.current, { x: 60, opacity: 0, duration: 1, ease: 'expo.out' }, '-=0.9')
+                .from([floatCard1Ref.current, floatCard2Ref.current], {
+                    scale: 0.7, opacity: 0, duration: 0.6, stagger: 0.15, ease: 'back.out(1.7)'
+                }, '-=0.5');
+
+            /* ── 2. Background orbs slow parallax ── */
+            if (orb1Ref.current) {
+                gsap.to(orb1Ref.current, {
+                    y: -120,
+                    ease: 'none',
+                    scrollTrigger: { trigger: rootRef.current, start: 'top top', end: 'bottom top', scrub: 1.5 }
+                });
+            }
+            if (orb2Ref.current) {
+                gsap.to(orb2Ref.current, {
+                    y: -80,
+                    ease: 'none',
+                    scrollTrigger: { trigger: rootRef.current, start: 'top top', end: 'bottom top', scrub: 2 }
+                });
+            }
+
+            /* ── 3. Stats counter animation ── */
+            if (statsRef.current) {
+                const statNums = statsRef.current.querySelectorAll('.stat-number');
+                const statCards = statsRef.current.querySelectorAll('.stat-card');
+
+                gsap.from(statCards, {
+                    y: 40, opacity: 0, duration: 0.7, stagger: 0.12, ease: 'power3.out',
+                    scrollTrigger: { trigger: statsRef.current, start: 'top 85%' }
+                });
+
+                statNums.forEach((el) => {
+                    const raw = el.getAttribute('data-target');
+                    const suffix = el.getAttribute('data-suffix') || '';
+                    const target = parseFloat(raw);
+                    const obj = { val: 0 };
+
+                    ScrollTrigger.create({
+                        trigger: el,
+                        start: 'top 90%',
+                        onEnter: () => {
+                            gsap.to(obj, {
+                                val: target,
+                                duration: 2,
+                                ease: 'power2.out',
+                                onUpdate() {
+                                    const v = obj.val;
+                                    el.textContent = (Number.isInteger(target)
+                                        ? Math.floor(v).toLocaleString()
+                                        : v.toFixed(1)) + suffix;
+                                }
+                            });
+                        },
+                        once: true
+                    });
+                });
+            }
+
+            /* ── 4. Section headers fade-up ── */
+            gsap.utils.toArray('.section-header').forEach((el) => {
+                gsap.from(el, {
+                    y: 50, opacity: 0, duration: 0.9, ease: 'power3.out',
+                    scrollTrigger: { trigger: el, start: 'top 88%' }
+                });
+            });
+
+            /* ── 5. Feature cards stagger ── */
+            if (featuresRef.current) {
+                const cards = featuresRef.current.querySelectorAll('.feature-card');
+                gsap.from(cards, {
+                    y: 60, opacity: 0, scale: 0.95,
+                    duration: 0.7, stagger: 0.08, ease: 'power3.out',
+                    scrollTrigger: { trigger: featuresRef.current, start: 'top 85%' }
+                });
+            }
+
+            /* ── 6. Showcase section slide-in ── */
+            if (showcaseRef.current) {
+                const [left, right] = showcaseRef.current.querySelectorAll('.showcase-content, .showcase-stats-panel');
+                if (left) gsap.from(left, { x: -60, opacity: 0, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: showcaseRef.current, start: 'top 80%' } });
+                if (right) gsap.from(right, { x: 60, opacity: 0, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: showcaseRef.current, start: 'top 80%' } });
+
+                // Animate bars on scroll
+                showcaseRef.current.querySelectorAll('.showcase-bar-fill').forEach((bar) => {
+                    const w = bar.style.width;
+                    bar.style.width = '0%';
+                    gsap.to(bar, {
+                        width: w, duration: 1.4, ease: 'power3.out',
+                        scrollTrigger: { trigger: bar, start: 'top 90%' }
+                    });
+                });
+            }
+
+            /* ── 7. Security section ── */
+            if (securityRef.current) {
+                gsap.from(securityRef.current.querySelector('.security-icon-wrap'), {
+                    scale: 0.5, opacity: 0, duration: 1, ease: 'elastic.out(1, 0.5)',
+                    scrollTrigger: { trigger: securityRef.current, start: 'top 80%' }
+                });
+                gsap.from(securityRef.current.querySelector('.security-content'), {
+                    x: 50, opacity: 0, duration: 1, ease: 'power3.out',
+                    scrollTrigger: { trigger: securityRef.current, start: 'top 80%' }
+                });
+                gsap.from(securityRef.current.querySelectorAll('.security-badge-card'), {
+                    y: 30, opacity: 0, stagger: 0.1, duration: 0.7, ease: 'power3.out',
+                    scrollTrigger: { trigger: securityRef.current.querySelector('.security-badges'), start: 'top 88%' }
+                });
+            }
+
+            /* ── 8. Testimonial cards ── */
+            if (testimonialsRef.current) {
+                gsap.from(testimonialsRef.current.querySelectorAll('.testimonial-card'), {
+                    y: 50, opacity: 0, stagger: 0.18, duration: 0.8, ease: 'power3.out',
+                    scrollTrigger: { trigger: testimonialsRef.current, start: 'top 85%' }
+                });
+            }
+
+            /* ── 9. CTA section ── */
+            if (ctaRef.current) {
+                gsap.from(ctaRef.current.querySelectorAll('.cta-icon-wrap, .cta-title, .cta-desc, .cta-actions, .cta-reassurances'), {
+                    y: 40, opacity: 0, stagger: 0.12, duration: 0.8, ease: 'power3.out',
+                    scrollTrigger: { trigger: ctaRef.current, start: 'top 85%' }
+                });
+            }
+
+            /* ── 10. Trust badges ── */
+            gsap.from('.trust-badge', {
+                y: 20, opacity: 0, stagger: 0.07, duration: 0.6, ease: 'power2.out',
+                scrollTrigger: { trigger: '.trust-section', start: 'top 90%' }
+            });
+
+        }, rootRef);
+
+        return () => ctx.revert();
+    }, []);
+
     return (
-        <div className="min-h-screen bg-brand-light font-sans selection:bg-brand-teal selection:text-white overflow-x-hidden relative">
-            {/* Minimal Background */}
-            <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10">
-                <div className="absolute top-[-10%] left-[-5%] w-[30%] h-[30%] bg-brand-teal/5 blur-[100px] rounded-full animate-float"></div>
-                <div className="absolute bottom-[20%] right-[-5%] w-[25%] h-[25%] bg-brand-dark/5 blur-[100px] rounded-full"></div>
+        <div className="landing-root" ref={rootRef}>
+
+            {/* ── Animated Background ── */}
+            <div className="landing-bg" aria-hidden="true">
+                <div className="landing-bg-orb orb-1" ref={orb1Ref} />
+                <div className="landing-bg-orb orb-2" ref={orb2Ref} />
+                <div className="landing-bg-orb orb-3" />
+                <div className="landing-bg-grid" />
             </div>
 
-            {/* Navigation */}
-            <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
-                <div className="max-w-6xl mx-auto">
-                    <div className="glass-card rounded-2xl px-8 py-4 flex justify-between items-center shadow-premium backdrop-blur-xl">
-                        <div className="flex items-center gap-3 transition-opacity hover:opacity-80 cursor-pointer">
-                            <div className="h-10 w-10 bg-brand-dark rounded-xl flex items-center justify-center shadow-lg">
-                                <Activity className="h-6 w-6 text-white" />
-                            </div>
-                            <span className="text-xl font-bold text-brand-dark tracking-tight font-display">
-                                Orvanta<span className="text-brand-teal">Health</span>
-                            </span>
+            {/* ─────────── NAVBAR ─────────── */}
+            <nav className={`landing-nav ${scrolled ? 'landing-nav-scrolled' : ''}`}>
+                <div className="landing-nav-inner">
+                    <Link to="/" className="landing-logo">
+                        <div className="landing-logo-icon">
+                            <Activity className="h-5 w-5 text-white" />
                         </div>
+                        <span className="landing-logo-text">
+                            Orvanta<span className="landing-logo-accent">Health</span>
+                        </span>
+                    </Link>
 
-                        <div className="hidden md:flex items-center gap-8">
-                            {['Innovations', 'Intelligence', 'Security'].map((item) => (
-                                <NavItem key={item} item={item} />
-                            ))}
-                        </div>
+                    <div className="landing-nav-links">
+                        {[
+                            { label: 'Features', href: '#features' },
+                            { label: 'How It Works', href: '#showcase' },
+                            { label: 'Testimonials', href: '#testimonials' },
+                        ].map(({ label, href }) => (
+                            <a key={label} href={href} className="landing-nav-link">{label}</a>
+                        ))}
+                    </div>
 
-                        <div className="flex items-center gap-4">
-                            <Link to="/login" className="hidden sm:block text-slate-500 hover:text-brand-dark font-bold text-xs uppercase tracking-widest px-4 transition-colors">
-                                Sign In
-                            </Link>
-                            <Link
-                                to="/register"
-                                className="bg-brand-dark text-white px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg hover:bg-brand-teal hover:scale-105 transition-all duration-300"
-                            >
-                                Get Started
-                            </Link>
+                    <div className="landing-nav-cta">
+                        <Link to="/login" className="landing-nav-signin">Sign In</Link>
+                        <Link to="/register" className="landing-nav-btn">
+                            Get Started <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                    </div>
+
+                    <button className="landing-menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
+                        {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </button>
+                </div>
+
+                {menuOpen && (
+                    <div className="landing-mobile-menu">
+                        {['Features', 'How It Works', 'Testimonials'].map(item => (
+                            <a key={item} href={`#${item.toLowerCase().replace(' ', '-')}`}
+                                className="landing-mobile-link"
+                                onClick={() => setMenuOpen(false)}
+                            >{item}</a>
+                        ))}
+                        <div className="landing-mobile-cta">
+                            <Link to="/login" className="landing-mobile-signin" onClick={() => setMenuOpen(false)}>Sign In</Link>
+                            <Link to="/register" className="landing-mobile-btn" onClick={() => setMenuOpen(false)}>Get Started</Link>
                         </div>
                     </div>
-                </div>
+                )}
             </nav>
 
-            {/* Hero Section */}
-            <section className="relative pt-48 pb-32">
-                <div className="max-w-6xl mx-auto px-8">
-                    <div className="grid lg:grid-cols-2 gap-16 items-center">
-                        <div className="text-left">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-teal/10 text-brand-teal mb-8 border border-brand-teal/20 animate-fade-in">
-                                <Sparkles className="h-3 w-3" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest">Next-Gen Clinical OS</span>
+            {/* ─────────── HERO ─────────── */}
+            <section className="hero-section">
+                <div className="hero-container">
+                    {/* Left Content */}
+                    <div className="hero-content">
+                        <div className="hero-badge" ref={heroBadgeRef}>
+                            <span className="hero-badge-dot" />
+                            <Zap className="h-3 w-3" />
+                            Next-Gen Hospital Management System
+                        </div>
+
+                        <h1 className="hero-headline" ref={heroHeadlineRef}>
+                            Revolutionizing
+                            <span className="hero-headline-accent"> Healthcare</span>
+                            <br />Management
+                        </h1>
+
+                        <p className="hero-subtext" ref={heroSubRef}>
+                            Streamline patient care, automate operations, and unlock data-driven
+                            insights — all from one powerful, beautifully designed platform.
+                        </p>
+
+                        <div className="hero-actions" ref={heroActionsRef}>
+                            <Link to="/register" className="hero-btn-primary">
+                                Start Free Trial
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                            <Link to="/login" className="hero-btn-secondary">
+                                View Live Demo
+                            </Link>
+                        </div>
+
+                        <div className="hero-social-proof" ref={heroProofRef}>
+                            <div className="hero-avatars">
+                                {[1, 2, 3, 4, 5].map(i => (
+                                    <img key={i} src={`https://i.pravatar.cc/60?u=user${i}xyz`} alt="user" className="hero-avatar-img" />
+                                ))}
+                            </div>
+                            <div>
+                                <div className="hero-stars">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                    ))}
+                                    <span className="hero-rating">4.9/5</span>
+                                </div>
+                                <p className="hero-trust">Trusted by 500+ hospitals across India</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right: Dashboard Mockup */}
+                    <div className="hero-mockup-wrap" ref={heroMockupRef}>
+                        <div className="hero-mockup-glow" />
+                        <div className="hero-mockup-card">
+                            <div className="mockup-header">
+                                <div className="mockup-dots">
+                                    <span className="dot-red" /><span className="dot-yellow" /><span className="dot-green" />
+                                </div>
+                                <span className="mockup-title">OrvantaHealth Dashboard</span>
+                                <div className="mockup-time">
+                                    <Clock className="h-3 w-3" /> Live
+                                </div>
                             </div>
 
-                            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-brand-dark mb-8 leading-[1.1]">
-                                Future of <span className="text-brand-teal">Healthcare</span> <br />
-                                Simplified.
-                            </h1>
-
-                            <p className="text-lg text-slate-500 font-medium leading-relaxed max-w-lg mb-12 opacity-80">
-                                Experience the fusion of clinical precision and generative intelligence. Elevate your practice with the world's most advanced operating system.
-                            </p>
-
-                            <div className="flex flex-col sm:flex-row gap-6">
-                                <Link
-                                    to="/register"
-                                    className="px-10 py-5 bg-brand-dark text-white rounded-2xl text-sm font-bold uppercase tracking-widest shadow-xl hover:bg-brand-teal transition-all flex items-center justify-center gap-3"
-                                >
-                                    Deploy System <ArrowRight className="h-5 w-5" />
-                                </Link>
-                                <Link
-                                    to="/login"
-                                    className="px-10 py-5 bg-white border border-slate-200 text-brand-dark rounded-2xl text-sm font-bold uppercase tracking-widest hover:border-brand-teal transition-all flex items-center justify-center gap-3"
-                                >
-                                    View Demo
-                                </Link>
-                            </div>
-
-                            <div className="mt-16 flex items-center gap-8 border-t border-slate-100 pt-12">
-                                <div className="flex -space-x-3">
-                                    {[1, 2, 3, 4].map(i => (
-                                        <div key={i} className="w-10 h-10 rounded-full border-2 border-white overflow-hidden bg-slate-200">
-                                            <img src={`https://i.pravatar.cc/100?u=doc${i}`} alt="doc" className="w-full h-full object-cover grayscale" />
+                            <div className="mockup-body">
+                                <div className="mockup-stats-row">
+                                    {[
+                                        { label: 'Patients Today', value: '142', color: 'text-cyan-400', icon: '👥' },
+                                        { label: 'Appointments', value: '38', color: 'text-emerald-400', icon: '📅' },
+                                        { label: 'Revenue', value: '₹2.4L', color: 'text-amber-400', icon: '💰' },
+                                        { label: 'Bed Occupancy', value: '87%', color: 'text-rose-400', icon: '🛏️' },
+                                    ].map((s, i) => (
+                                        <div key={i} className="mockup-stat">
+                                            <span className="mockup-stat-icon">{s.icon}</span>
+                                            <span className={`mockup-stat-value ${s.color}`}>{s.value}</span>
+                                            <span className="mockup-stat-label">{s.label}</span>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="text-sm font-medium">
-                                    <div className="flex items-center gap-1 text-amber-500">
-                                        {[1, 2, 3, 4, 5].map(i => <Star key={i} className="h-3 w-3 fill-current" />)}
-                                        <span className="ml-2 text-brand-dark font-bold">4.9/5 Rating</span>
+
+                                <div className="mockup-ecg">
+                                    <div className="mockup-ecg-label">
+                                        <Heart className="h-3 w-3 text-rose-400 animate-pulse" />
+                                        <span>Live Patient Monitor</span>
                                     </div>
-                                    <p className="text-slate-400 text-xs">Trusted by 500+ Providers</p>
+                                    <EcgLine />
+                                </div>
+
+                                <div className="mockup-appts">
+                                    <div className="mockup-section-title">Upcoming Appointments</div>
+                                    {[
+                                        { name: 'Amit Sharma', time: '10:30 AM', dept: 'Cardiology', status: 'Confirmed' },
+                                        { name: 'Sunita Patel', time: '11:00 AM', dept: 'Neurology', status: 'Waiting' },
+                                        { name: 'Rohit Verma', time: '11:45 AM', dept: 'Orthopedics', status: 'In Progress' },
+                                    ].map((a, i) => (
+                                        <div key={i} className="mockup-appt-row">
+                                            <div className="mockup-appt-avatar">{a.name.charAt(0)}</div>
+                                            <div className="mockup-appt-info">
+                                                <span className="mockup-appt-name">{a.name}</span>
+                                                <span className="mockup-appt-dept">{a.dept}</span>
+                                            </div>
+                                            <div className="mockup-appt-time">{a.time}</div>
+                                            <div className={`mockup-appt-status status-${a.status.toLowerCase().replace(' ', '-')}`}>
+                                                {a.status}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-brand-teal/20 to-brand-dark/20 blur-2xl rounded-[3rem] opacity-30"></div>
-                            <div className="relative bg-white p-4 rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden transform group-hover:scale-[1.01] transition-all duration-500">
-                                <div className="aspect-[4/5] md:aspect-[4/3] rounded-[2rem] overflow-hidden relative">
-                                    <img
-                                        src="/hospital_hero.png"
-                                        alt="Dashboard"
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/40 to-transparent"></div>
-                                </div>
-
-                                {/* Floating Overlay Card */}
-                                <div className="absolute bottom-10 left-10 glass-card-dark p-6 rounded-2xl max-w-[240px] animate-float">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="h-8 w-8 bg-brand-teal rounded-lg flex items-center justify-center">
-                                            <TrendingUp className="h-4 w-4 text-white" />
-                                        </div>
-                                        <span className="text-white font-bold text-sm tracking-tight">+42% Growth</span>
-                                    </div>
-                                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                                        <div className="h-full bg-brand-teal w-2/3"></div>
-                                    </div>
-                                </div>
+                        {/* Floating cards */}
+                        <div className="hero-float-card float-card-1" ref={floatCard1Ref}>
+                            <TrendingUp className="h-4 w-4 text-emerald-400" />
+                            <div>
+                                <div className="float-card-value text-emerald-400">+24%</div>
+                                <div className="float-card-label">Patient Growth</div>
+                            </div>
+                        </div>
+                        <div className="hero-float-card float-card-2" ref={floatCard2Ref}>
+                            <ShieldCheck className="h-4 w-4 text-cyan-400" />
+                            <div>
+                                <div className="float-card-value text-cyan-400">HIPAA</div>
+                                <div className="float-card-label">Compliant</div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <div className="hero-ecg-strip">
+                    <EcgLine />
+                </div>
             </section>
 
-            {/* Innovations Section */}
-            <section id="innovations" className="py-32 bg-white">
-                <div className="max-w-6xl mx-auto px-8">
-                    <div className="text-center mb-20">
-                        <span className="text-xs font-bold text-brand-teal uppercase tracking-[0.3em] mb-4 block">Core Architecture</span>
-                        <h2 className="text-4xl md:text-5xl font-bold text-brand-dark tracking-tight">Built for Clinical Excellence</h2>
-                    </div>
+            {/* ─────────── STATS BAR ─────────── */}
+            <section className="stats-section" ref={statsRef}>
+                <div className="stats-container">
+                    {stats.map(({ value, suffix, label, icon: Icon, color }) => (
+                        <div key={label} className="stat-card">
+                            <div className={`stat-icon-wrap ${color}`}>
+                                <Icon className="h-5 w-5 text-white" />
+                            </div>
+                            <div
+                                className="stat-number"
+                                data-target={value}
+                                data-suffix={suffix}
+                            >
+                                0{suffix}
+                            </div>
+                            <div className="stat-label">{label}</div>
+                        </div>
+                    ))}
+                </div>
+            </section>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+            {/* ─────────── TRUST BADGES ─────────── */}
+            <section className="trust-section">
+                <div className="trust-container">
+                    <p className="trust-label">Certified &amp; Compliant</p>
+                    <div className="trust-badges">
                         {[
-                            { title: 'Neural Diagnostics', desc: 'AI models trained on clinical patterns for diagnostic assistance.', icon: Zap, color: 'bg-indigo-600' },
-                            { title: 'Unified Data Fabric', desc: 'Secure data propagation across networks with sub-10ms latency.', icon: Globe, color: 'bg-cyan-600' },
-                            { title: 'Vault Security', desc: 'Military-grade encryption for absolute patient dossier integrity.', icon: Shield, color: 'bg-brand-dark' },
-                            { title: 'Intuitive UX', desc: 'Low-cognitive interfaces designed for high-stress environments.', icon: Layout, color: 'bg-pink-600' },
-                            { title: '4-Tier Security', desc: 'Advanced multi-layer defensive architecture for un-compromised health data isolation.', icon: ShieldCheck, color: 'bg-emerald-600' },
-                            { title: 'Smart Billing', desc: 'Automated, transparent financial reconciliation for clarity.', icon: FileText, color: 'bg-amber-600' }
-                        ].map((feature, idx) => (
-                            <FeatureCard key={idx} {...feature} />
+                            { icon: ShieldCheck, label: 'HIPAA Compliant' },
+                            { icon: Lock, label: '256-bit SSL' },
+                            { icon: Award, label: 'ISO 27001' },
+                            { icon: Shield, label: 'GDPR Ready' },
+                            { icon: Zap, label: '99.9% Uptime' },
+                        ].map(({ icon: Icon, label }) => (
+                            <div key={label} className="trust-badge">
+                                <Icon className="h-4 w-4 text-brand-teal" />
+                                <span>{label}</span>
+                            </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Intelligence Section */}
-            <section id="intelligence" className="py-32 bg-brand-dark text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-1/2 h-full bg-brand-teal/5 blur-[120px] -z-0"></div>
-                <div className="max-w-6xl mx-auto px-8 relative z-10">
-                    <div className="grid lg:grid-cols-2 gap-24 items-center">
-                        <div className="bg-white/5 backdrop-blur-md p-10 md:p-14 rounded-[3rem] border border-white/10">
-                            <div className="flex items-center gap-3 mb-10">
-                                <Sparkles className="h-5 w-5 text-brand-teal" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-teal-100/40">AI Intelligence Core</span>
-                            </div>
-
-                            <div className="space-y-8">
-                                {[
-                                    { label: 'Synthetic Reasoning', val: 99 },
-                                    { label: 'Diagnostic Precision', val: 98 },
-                                    { label: 'Processing Speed', val: 100 }
-                                ].map((stat, i) => (
-                                    <div key={i} className="space-y-3">
-                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-teal-100/30">
-                                            <span>{stat.label}</span>
-                                            <span>{stat.val}%</span>
-                                        </div>
-                                        <div className="h-2 w-full bg-white/5 rounded-full">
-                                            <div className="h-full bg-brand-teal rounded-full" style={{ width: `${stat.val}%` }}></div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-6 mt-12">
-                                <div className="p-8 rounded-2xl bg-white/5 border border-white/5">
-                                    <p className="text-3xl font-bold mb-1">10M+</p>
-                                    <p className="text-[10px] uppercase tracking-widest text-teal-100/20">Data Points</p>
-                                </div>
-                                <div className="p-8 rounded-2xl bg-white/5 border border-white/5">
-                                    <p className="text-3xl font-bold mb-1">99.9%</p>
-                                    <p className="text-[10px] uppercase tracking-widest text-teal-100/20">Accuracy</p>
-                                </div>
-                            </div>
+            {/* ─────────── FEATURES ─────────── */}
+            <section id="features" className="features-section">
+                <div className="section-container">
+                    <div className="section-header">
+                        <div className="section-tag">
+                            <Zap className="h-3 w-3" /> Core Features
                         </div>
-
-                        <div>
-                            <span className="text-xs font-bold text-brand-teal uppercase tracking-[0.3em] mb-6 block">Intelligence</span>
-                            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-8 leading-tight">
-                                Smarter Decisions. <br />
-                                Better Outcomes.
-                            </h2>
-                            <p className="text-lg text-teal-100/40 font-medium leading-relaxed mb-10">
-                                Our platform integrates clinical intelligence to cross-reference data in real-time, providing doctors with unmatched decision support.
-                            </p>
-                            <div className="space-y-4">
-                                {[
-                                    'Real-time diagnostic assistance',
-                                    'Predictive trajectory modeling',
-                                    'Personalized treatment paths'
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-center gap-4 group cursor-pointer transition-all hover:translate-x-2">
-                                        <div className="h-8 w-8 rounded-lg bg-brand-teal/20 flex items-center justify-center text-brand-teal">
-                                            <CheckCircle2 className="h-5 w-5" />
-                                        </div>
-                                        <span className="font-bold text-lg text-teal-100/80 group-hover:text-brand-teal transition-colors tracking-tight">{item}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA Section */}
-            <section className="py-32 bg-brand-light relative">
-                <div className="max-w-4xl mx-auto text-center px-8">
-                    <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-10 shadow-premium">
-                        <Activity className="h-10 w-10 text-brand-teal" />
-                    </div>
-                    <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-8 text-brand-dark">
-                        Ready to Transform <br /> Your Practice?
-                    </h2>
-                    <p className="text-lg text-slate-500 font-medium mb-12 max-w-2xl mx-auto leading-relaxed">
-                        Join hundreds of healthcare facilities already using OrvantaHealth to redefine their clinical standards.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                        <Link
-                            to="/register"
-                            className="px-12 py-5 bg-brand-dark text-white rounded-2xl font-bold uppercase tracking-widest shadow-xl hover:bg-brand-teal transition-all"
-                        >
-                            Get Started Now
-                        </Link>
-                        <Link
-                            to="/contact-sales"
-                            className="px-12 py-5 bg-white border border-slate-200 text-brand-dark rounded-2xl font-bold uppercase tracking-widest hover:border-brand-teal transition-all"
-                        >
-                            Talk to Sales
-                        </Link>
-                    </div>
-                </div>
-            </section>
-
-            {/* Simple Footer */}
-            <footer className="bg-white py-12 border-t border-slate-100">
-                <div className="max-w-6xl mx-auto px-8">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-                        <div className="flex items-center gap-2">
-                            <Activity className="h-5 w-5 text-brand-teal" />
-                            <span className="text-lg font-bold text-brand-dark tracking-tight">OrvantaHealth</span>
-                        </div>
-                        <div className="flex gap-8 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                            <a href="#" className="hover:text-brand-dark transition-colors">Privacy</a>
-                            <a href="#" className="hover:text-brand-dark transition-colors">Terms</a>
-                            <a href="#" className="hover:text-brand-dark transition-colors">Security</a>
-                            <a href="#" className="hover:text-brand-dark transition-colors">Contact</a>
-                        </div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                            &copy; 2024 OrvantaHealth. Integrated Clinical OS.
+                        <h2 className="section-title">Everything You Need to Run<br />Your Hospital Smoothly</h2>
+                        <p className="section-subtitle">
+                            A complete suite of tools designed specifically for the unique challenges of modern healthcare management.
                         </p>
                     </div>
+                    <div className="features-grid" ref={featuresRef}>
+                        {features.map((f, i) => <FeatureCard key={i} {...f} />)}
+                    </div>
+                </div>
+            </section>
+
+            {/* ─────────── DASHBOARD SHOWCASE ─────────── */}
+            <section id="showcase" className="showcase-section" ref={showcaseRef}>
+                <div className="section-container">
+                    <div className="showcase-grid">
+                        <div className="showcase-content">
+                            <div className="section-tag section-tag-light">
+                                <BarChart3 className="h-3 w-3" /> Intelligent Dashboard
+                            </div>
+                            <h2 className="showcase-title">
+                                Smarter Decisions.<br />
+                                <span className="text-brand-teal">Better Patient Outcomes.</span>
+                            </h2>
+                            <p className="showcase-desc">
+                                Our AI-powered analytics engine cross-references patient data in real-time,
+                                giving your clinical team unmatched decision support at every step.
+                            </p>
+                            <div className="showcase-checklist">
+                                {[
+                                    'Real-time patient monitoring & vitals',
+                                    'Predictive appointment no-show alerts',
+                                    'Revenue cycle management insights',
+                                    'Department-wise performance reports',
+                                    'Automated discharge & billing summaries',
+                                ].map((item, i) => (
+                                    <div key={i} className="showcase-check-item">
+                                        <CheckCircle2 className="h-5 w-5 text-brand-teal flex-shrink-0" />
+                                        <span>{item}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <Link to="/register" className="showcase-cta">
+                                Explore the Dashboard <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </div>
+
+                        <div className="showcase-stats-panel">
+                            <div className="showcase-panel-header">
+                                <Activity className="h-4 w-4 text-brand-teal" />
+                                <span>Performance Overview</span>
+                                <span className="showcase-live-dot" />
+                                <span className="text-xs text-emerald-400">Live</span>
+                            </div>
+                            {[
+                                { label: 'Diagnostic Accuracy', val: 98, color: 'bg-cyan-500' },
+                                { label: 'Appointment Fulfillment', val: 94, color: 'bg-emerald-500' },
+                                { label: 'Billing Automation', val: 100, color: 'bg-brand-teal' },
+                                { label: 'Patient Satisfaction', val: 96, color: 'bg-amber-500' },
+                                { label: 'Staff Efficiency', val: 89, color: 'bg-purple-500' },
+                            ].map((s, i) => (
+                                <div key={i} className="showcase-bar-item">
+                                    <div className="showcase-bar-label">
+                                        <span>{s.label}</span>
+                                        <span className="text-white font-bold">{s.val}%</span>
+                                    </div>
+                                    <div className="showcase-bar-track">
+                                        <div className={`showcase-bar-fill ${s.color}`} style={{ width: `${s.val}%` }} />
+                                    </div>
+                                </div>
+                            ))}
+
+                            <div className="showcase-panel-stats">
+                                <div className="showcase-mini-stat">
+                                    <span className="showcase-mini-value">10M+</span>
+                                    <span className="showcase-mini-label">Data Points Processed</span>
+                                </div>
+                                <div className="showcase-mini-stat">
+                                    <span className="showcase-mini-value">&lt;50ms</span>
+                                    <span className="showcase-mini-label">Avg Response Time</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ─────────── SECURITY ─────────── */}
+            <section className="security-section" ref={securityRef}>
+                <div className="section-container">
+                    <div className="security-grid">
+                        <div className="security-icon-wrap">
+                            <Shield className="h-16 w-16 text-brand-teal opacity-80" />
+                            <div className="security-rings">
+                                <div className="security-ring ring-1" />
+                                <div className="security-ring ring-2" />
+                                <div className="security-ring ring-3" />
+                            </div>
+                        </div>
+                        <div className="security-content">
+                            <div className="section-tag">
+                                <Lock className="h-3 w-3" /> Enterprise Security
+                            </div>
+                            <h2 className="security-title">Your Data is Sacred. We Protect It Like It Is.</h2>
+                            <p className="security-desc">
+                                Every patient record, every transaction, every login — protected by
+                                military-grade encryption, zero-trust architecture, and continuous threat monitoring.
+                            </p>
+                            <div className="security-badges">
+                                {[
+                                    { icon: ShieldCheck, title: 'HIPAA Compliant', desc: 'Full healthcare data privacy compliance' },
+                                    { icon: Lock, title: 'AES-256 Encryption', desc: 'Data encrypted at rest and in transit' },
+                                    { icon: Users, title: 'Role-Based Access', desc: '4-tier permission system for all users' },
+                                    { icon: FileText, title: 'Audit Logs', desc: 'Complete activity trail for compliance' },
+                                ].map(({ icon: Icon, title, desc }) => (
+                                    <div key={title} className="security-badge-card">
+                                        <Icon className="h-5 w-5 text-brand-teal" />
+                                        <div>
+                                            <div className="security-badge-title">{title}</div>
+                                            <div className="security-badge-desc">{desc}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ─────────── TESTIMONIALS ─────────── */}
+            <section id="testimonials" className="testimonials-section">
+                <div className="section-container">
+                    <div className="section-header">
+                        <div className="section-tag">
+                            <Star className="h-3 w-3" /> Testimonials
+                        </div>
+                        <h2 className="section-title">Loved by Healthcare Professionals</h2>
+                        <p className="section-subtitle">
+                            See what hospital administrators and doctors say about OrvantaHealth.
+                        </p>
+                    </div>
+                    <div className="testimonials-grid" ref={testimonialsRef}>
+                        {testimonials.map((t, i) => <TestimonialCard key={i} {...t} />)}
+                    </div>
+                </div>
+            </section>
+
+            {/* ─────────── CTA ─────────── */}
+            <section className="cta-section" ref={ctaRef}>
+                <div className="cta-orb cta-orb-1" />
+                <div className="cta-orb cta-orb-2" />
+                <div className="section-container cta-container">
+                    <div className="cta-icon-wrap">
+                        <Activity className="h-8 w-8 text-white" />
+                    </div>
+                    <h2 className="cta-title">
+                        Ready to Transform<br />Your Hospital?
+                    </h2>
+                    <p className="cta-desc">
+                        Join 500+ healthcare facilities already using OrvantaHealth to deliver
+                        better care, faster — with less administrative overhead.
+                    </p>
+                    <div className="cta-actions">
+                        <Link to="/register" className="cta-btn-primary">
+                            Start Free Trial — No Credit Card
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                        <Link to="/contact-sales" className="cta-btn-secondary">
+                            <Phone className="h-4 w-4" /> Talk to Sales
+                        </Link>
+                    </div>
+                    <div className="cta-reassurances">
+                        {['14-day free trial', 'No credit card required', 'Cancel anytime', 'HIPAA compliant'].map(r => (
+                            <span key={r} className="cta-reassurance">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-brand-teal" /> {r}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ─────────── FOOTER ─────────── */}
+            <footer className="landing-footer">
+                <div className="footer-top">
+                    <div className="footer-brand">
+                        <div className="footer-logo">
+                            <Activity className="h-5 w-5 text-white" />
+                            <span>Orvanta<span className="text-brand-teal">Health</span></span>
+                        </div>
+                        <p className="footer-tagline">
+                            Intelligent Hospital Management System — built for modern healthcare.
+                        </p>
+                        <div className="footer-contact">
+                            <span><Mail className="h-3.5 w-3.5" /> support@orvantahealth.com</span>
+                            <span><Phone className="h-3.5 w-3.5" /> +91 98765 43210</span>
+                            <span><MapPin className="h-3.5 w-3.5" /> Mumbai, India</span>
+                        </div>
+                    </div>
+
+                    <div className="footer-links-group">
+                        <div className="footer-links-col">
+                            <h4>Product</h4>
+                            {['Features', 'Security', 'Changelog'].map(l => (
+                                <a key={l} href="#" className="footer-link">{l}</a>
+                            ))}
+                        </div>
+                        <div className="footer-links-col">
+                            <h4>Company</h4>
+                            {['About', 'Blog', 'Careers', 'Press'].map(l => (
+                                <a key={l} href="#" className="footer-link">{l}</a>
+                            ))}
+                        </div>
+                        <div className="footer-links-col">
+                            <h4>Legal</h4>
+                            {['Privacy Policy', 'Terms of Service', 'HIPAA Policy', 'Cookie Policy'].map(l => (
+                                <a key={l} href="#" className="footer-link">{l}</a>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="footer-bottom">
+                    <p>© 2025 OrvantaHealth. All rights reserved.</p>
+                    <p>Made with ❤️ for healthcare professionals across India.</p>
                 </div>
             </footer>
         </div>

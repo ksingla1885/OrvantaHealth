@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, ShieldCheck, Heart, Activity } from 'lucide-react';
 
+import BackButton from '../../components/BackButton';
+
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -167,6 +169,8 @@ const Login = () => {
         padding: '2rem',
       }}>
         <div style={{ width: '100%', maxWidth: '420px' }}>
+
+          <BackButton variant="inline" customClass="mb-4" />
 
           {/* Heading */}
           <div style={{ marginBottom: '2.5rem' }}>

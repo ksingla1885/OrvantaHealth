@@ -49,6 +49,7 @@ const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
 
 // Components
 import Chatbot from './components/Chatbot';
+import BackButton from './components/BackButton';
 
 
 function App() {
@@ -123,6 +124,9 @@ function App() {
                 <Route path="*" element={<Navigate to="/login" replace />} />
               </Routes>
             </Suspense>
+
+            {/* BackButton - Site-wide floating navigation */}
+            <BackButton />
 
             {/* Chatbot - Available on all pages */}
             <Chatbot />
