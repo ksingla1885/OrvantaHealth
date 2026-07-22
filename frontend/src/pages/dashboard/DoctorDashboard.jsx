@@ -39,6 +39,9 @@ const DoctorDashboard = () => {
 
       if (statsRes.data.success) {
         setData(statsRes.data.data);
+        if (statsRes.data.data.stats?.dutyStatus) {
+          setDutyStatus(statsRes.data.data.stats.dutyStatus);
+        }
       }
       if (triageRes.data.success) {
         setTriageReferrals(triageRes.data.data.referred || []);
@@ -150,20 +153,14 @@ const DoctorDashboard = () => {
 
           {/* Right Column: Duty Switcher & Live Controls */}
           <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-3 shrink-0">
-            {/* Interactive Duty Selector */}
+            {/* Shift Duty Status Badge (Read-Only for Doctors) */}
             <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl backdrop-blur-md border ${getDutyBadgeStyles().bg} shadow-lg transition-all`}>
               <div className={`w-3 h-3 rounded-full ${getDutyBadgeStyles().dot} animate-pulse shadow-sm`} />
               <div className="flex flex-col">
-                <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Shift Duty Status</span>
-                <select
-                  value={dutyStatus}
-                  onChange={(e) => setDutyStatus(e.target.value)}
-                  className="bg-transparent text-xs font-black uppercase tracking-wider outline-none cursor-pointer text-white"
-                >
-                  <option value="available" className="bg-slate-900 text-white">🟢 Available for Consults</option>
-                  <option value="rounds" className="bg-slate-900 text-white">🟡 On Ward Rounds / Surgery</option>
-                  <option value="busy" className="bg-slate-900 text-white">🔴 Emergency / Do Not Disturb</option>
-                </select>
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-60 font-display">Shift Duty Status</span>
+                <span className="text-xs font-black uppercase tracking-wider text-white">
+                  {getDutyBadgeStyles().label}
+                </span>
               </div>
             </div>
 

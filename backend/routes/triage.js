@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const TriageRecord = require('../models/TriageRecord');
+const User = require('../models/User');
+const Patient = require('../models/Patient');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const Groq = require('groq-sdk');
 
@@ -62,13 +64,55 @@ JSON Format:
 // 1. Patient Intake - Create Triage Record
 router.post('/intake', authenticateToken, authorizeRoles('receptionist', 'superadmin'), async (req, res) => {
   try {
-    const { patientName, age, gender, contactNumber, symptoms, vitals } = req.body;
+    const { patientName, age, gender, contactNumber, symptoms, vitals, patientId } = req.body;
     
     // Generate unique Triage ID
     const triageId = 'TRG-' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000);
     
     // Run AI Analysis
     const aiAnalysis = await runAITriage(symptoms, age, gender);
+
+    // Resolve patientId automatically if not passed
+    let resolvedPatientId = patientId || null;
+    if (!resolvedPatientId && contactNumber) {
+      const cleanPhone = contactNumber.replace(/\D/g, '');
+      if (cleanPhone && cleanPhone.length >= 10) {
+        const regexStr = cleanPhone.slice(-10); // Match last 10 digits
+        const matchingUser = await User.findOne({
+          role: 'patient',
+          'profile.phone': { $regex: regexStr }
+        });
+        if (matchingUser) {
+          const patient = await Patient.findOne({ userId: matchingUser._id });
+          if (patient) {
+            resolvedPatientId = patient._id;
+          }
+        }
+      }
+    }
+
+    // Fallback: match by name if still not resolved
+    if (!resolvedPatientId && patientName) {
+      const nameParts = patientName.trim().split(/\s+/);
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ');
+      const query = { role: 'patient' };
+      
+      if (lastName) {
+        query['profile.firstName'] = new RegExp(`^${firstName}$`, 'i');
+        query['profile.lastName'] = new RegExp(`^${lastName}$`, 'i');
+      } else {
+        query['profile.firstName'] = new RegExp(`^${firstName}$`, 'i');
+      }
+
+      const matchingUser = await User.findOne(query);
+      if (matchingUser) {
+        const patient = await Patient.findOne({ userId: matchingUser._id });
+        if (patient) {
+          resolvedPatientId = patient._id;
+        }
+      }
+    }
 
     const newRecord = new TriageRecord({
       patientName,
@@ -79,7 +123,8 @@ router.post('/intake', authenticateToken, authorizeRoles('receptionist', 'supera
       vitals,
       aiAnalysis,
       receptionistId: req.user.id,
-      triageId
+      triageId,
+      patientId: resolvedPatientId
     });
 
     await newRecord.save();

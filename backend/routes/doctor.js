@@ -8,6 +8,9 @@ const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
 const Prescription = require('../models/Prescription');
+const TriageRecord = require('../models/TriageRecord');
+const LabReport = require('../models/LabReport');
+const Bill = require('../models/Bill');
 
 const { prescriptionStorage } = require('../config/cloudinary');
 
@@ -150,7 +153,8 @@ router.get('/dashboard-stats', async (req, res) => {
         stats: {
           todayPatients,
           totalNetwork,
-          activeScripts
+          activeScripts,
+          dutyStatus: doctor.dutyStatus || 'available'
         },
         recentInteractions: recentInteractions.map(interaction => ({
           id: interaction._id,
@@ -261,7 +265,7 @@ router.get('/patient/:patientId/history', async (req, res) => {
     }
 
     const patient = await Patient.findById(patientId)
-      .populate('userId', 'profile')
+      .populate('userId', 'profile email')
       .populate('medicalHistory.doctor', 'profile');
 
     if (!patient) {
@@ -271,9 +275,165 @@ router.get('/patient/:patientId/history', async (req, res) => {
       });
     }
 
+    // Longitudinal Cross-Model Join
+    const [prescriptions, triageRecords, labReports, bills, appointments] = await Promise.all([
+      Prescription.find({ patientId }).populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } }).sort({ createdAt: -1 }),
+      TriageRecord.find({
+        $or: [
+          { patientId },
+          { contactNumber: patient.userId?.profile?.phone },
+          { patientName: `${patient.userId?.profile?.firstName} ${patient.userId?.profile?.lastName}`.trim() }
+        ]
+      }).populate('doctorReferred', 'profile').sort({ createdAt: -1 }),
+      LabReport.find({ patientId }).populate('uploadedBy', 'profile').populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } }).sort({ reportDate: -1 }),
+      Bill.find({ patientId }).populate('createdBy', 'profile').sort({ createdAt: -1 }),
+      Appointment.find({ patientId }).populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } }).sort({ date: -1 })
+    ]);
+
+    // Returning Patient Intelligence Calculations
+    // 1. Automatic Recall: Last Prescription with current Doctor
+    const lastPrescriptionWithDoctor = await Prescription.findOne({
+      patientId,
+      doctorId: doctor._id
+    }).sort({ createdAt: -1 });
+
+    // 2. Vitals Trends
+    const vitalsHistory = triageRecords
+      .filter(tr => tr.vitals && (tr.vitals.temperature || tr.vitals.bloodPressure || tr.vitals.pulseRate || tr.vitals.spO2))
+      .map(tr => ({
+        date: tr.createdAt,
+        temperature: tr.vitals.temperature,
+        bloodPressure: tr.vitals.bloodPressure,
+        pulseRate: tr.vitals.pulseRate,
+        spO2: tr.vitals.spO2
+      }));
+
+    // 3. Missed Follow-ups (Pending or Confirmed appointments in the past)
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const missedFollowUps = appointments.filter(apt => 
+      new Date(apt.date) < today && 
+      ['pending', 'confirmed'].includes(apt.status)
+    );
+
+    // 4. Global Timeline Construction
+    const timeline = [];
+
+    // Add Prescriptions
+    prescriptions.forEach(p => {
+      timeline.push({
+        id: p._id,
+        date: p.createdAt,
+        type: 'prescription',
+        title: `Prescription issued for ${p.diagnosis}`,
+        doctor: p.doctorId?.userId?.profile ? `Dr. ${p.doctorId.userId.profile.firstName} ${p.doctorId.userId.profile.lastName}` : 'System Clinician',
+        facility: p.receipt ? 'Prescription Receipt Available' : 'Digital Prescription',
+        status: 'Dispensed',
+        details: {
+          diagnosis: p.diagnosis,
+          medicines: p.medicines,
+          advice: p.advice,
+          tests: p.tests,
+          followUpDate: p.followUpDate,
+          receipt: p.receipt
+        }
+      });
+    });
+
+    // Add Triage Records
+    triageRecords.forEach(tr => {
+      timeline.push({
+        id: tr._id,
+        date: tr.createdAt,
+        type: 'triage',
+        title: tr.status === 'resolved' ? 'Walk-In Triage Resolved' : 'Symptom Triage Intake',
+        doctor: tr.doctorReferred?.profile ? `Referred to Dr. ${tr.doctorReferred.profile.firstName} ${tr.doctorReferred.profile.lastName}` : 'Lobby Queue',
+        facility: `Risk Score: ${tr.aiAnalysis?.riskScore || 0}/10 (${tr.aiAnalysis?.urgencyLevel || 'Routine'})`,
+        status: tr.status === 'resolved' ? 'Archived' : 'Active Intake',
+        details: {
+          symptoms: tr.symptoms,
+          vitals: tr.vitals,
+          aiAnalysis: tr.aiAnalysis,
+          diagnosis: tr.diagnosis,
+          prescribedMedicines: tr.prescribedMedicines,
+          advice: tr.advice,
+          tests: tr.tests
+        }
+      });
+    });
+
+    // Add Lab Reports
+    labReports.forEach(lr => {
+      timeline.push({
+        id: lr._id,
+        date: lr.reportDate,
+        type: 'lab',
+        title: lr.testName,
+        doctor: lr.doctorId?.userId?.profile ? `Ordered by Dr. ${lr.doctorId.userId.profile.firstName} ${lr.doctorId.userId.profile.lastName}` : 'General Referral',
+        facility: `Type: ${lr.testType} • Report File Available`,
+        status: 'Completed',
+        details: {
+          testName: lr.testName,
+          testType: lr.testType,
+          results: lr.results,
+          conclusion: lr.conclusion,
+          recommendations: lr.recommendations,
+          reportFile: lr.reportFile
+        }
+      });
+    });
+
+    // Add Bills
+    bills.forEach(b => {
+      timeline.push({
+        id: b._id,
+        date: b.createdAt,
+        type: 'billing',
+        title: `Invoice Generated: ₹${b.total}`,
+        doctor: b.createdBy?.profile ? `Billed by ${b.createdBy.profile.firstName}` : 'Billing System',
+        facility: b.paymentMethod ? `Paid via ${b.paymentMethod}` : 'Dues Pending',
+        status: b.status.toUpperCase(),
+        details: {
+          items: b.items,
+          total: b.total,
+          status: b.status,
+          dueDate: b.dueDate,
+          receipt: b.receipt
+        }
+      });
+    });
+
+    // Add Appointments
+    appointments.forEach(apt => {
+      timeline.push({
+        id: apt._id,
+        date: apt.date,
+        type: 'consultation',
+        title: `Appointment Slot: ${apt.timeSlot?.start} - ${apt.timeSlot?.end}`,
+        doctor: apt.doctorId?.userId?.profile ? `Dr. ${apt.doctorId.userId.profile.firstName} ${apt.doctorId.userId.profile.lastName}` : 'Central Queue',
+        facility: `Type: ${apt.consultationType || 'In-Person'}`,
+        status: apt.status.toUpperCase(),
+        details: {
+          status: apt.status,
+          symptoms: apt.symptoms,
+          notes: apt.notes,
+          cancellationReason: apt.cancellationReason
+        }
+      });
+    });
+
+    // Sort timeline chronologically (latest first)
+    timeline.sort((a, b) => new Date(b.date) - new Date(a.date));
+
     res.json({
       success: true,
-      data: { patient }
+      data: {
+        patient,
+        timeline,
+        vitalsHistory,
+        lastPrescriptionWithDoctor,
+        missedFollowUps
+      }
     });
   } catch (error) {
     console.error('Get patient history error:', error);

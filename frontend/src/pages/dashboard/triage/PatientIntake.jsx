@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, User, Phone, Clipboard, Sparkles, Send, Heart, Thermometer, Droplets, Zap } from 'lucide-react';
+import { Activity, User, Phone, Clipboard, Sparkles, Send, Heart, Thermometer, Droplets, Zap, Search } from 'lucide-react';
 import api from '../../../services/api';
 import { toast } from 'react-hot-toast';
 
 const PatientIntake = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [patients, setPatients] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
+  
   const [formData, setFormData] = useState({
     patientName: '',
     age: '',
@@ -20,6 +25,20 @@ const PatientIntake = () => {
       spO2: ''
     }
   });
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const response = await api.get('/admin/patients');
+        if (response.data.success) {
+          setPatients(response.data.data.patients || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch patients:', err);
+      }
+    };
+    fetchPatients();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,7 +57,10 @@ const PatientIntake = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await api.post('/triage/intake', formData);
+      const response = await api.post('/triage/intake', {
+        ...formData,
+        patientId: selectedPatientId
+      });
       if (response.data.success) {
         toast.success('Patient intake successful! Analyzing symptoms...');
         setTimeout(() => {
@@ -79,6 +101,98 @@ const PatientIntake = () => {
             <h3 className="text-xl font-black text-brand-dark font-display mb-8 flex items-center gap-3">
               <User className="h-5 w-5 text-brand-teal" /> Personal Identity
             </h3>
+
+            {/* Auto-suggest dropdown to search existing patients */}
+            <div className="relative mb-8 p-6 bg-slate-50/70 border border-slate-200/60 rounded-[1.75rem] z-30">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block mb-2">Search Registered Patients</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowDropdown(true);
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  className="w-full bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] h-[58px] pl-11 pr-10 font-bold text-slate-800 focus:border-brand-teal focus:ring-4 focus:ring-brand-teal/10 outline-none transition-all shadow-sm text-sm"
+                  placeholder="Type name, email, or MRN to autocomplete..."
+                />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-teal" />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedPatientId(null);
+                      setFormData(prev => ({
+                        ...prev,
+                        patientName: '',
+                        age: '',
+                        gender: 'male',
+                        contactNumber: ''
+                      }));
+                    }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold hover:text-slate-600 p-1"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {showDropdown && searchQuery.trim() && (
+                <div className="absolute left-6 right-6 mt-1.5 bg-white border-2 border-slate-100 rounded-2xl shadow-xl z-50 max-h-48 overflow-y-auto custom-scrollbar">
+                  {patients
+                    .filter(p => {
+                      const name = `${p.userId?.profile?.firstName || ''} ${p.userId?.profile?.lastName || ''}`.toLowerCase();
+                      const email = (p.userId?.email || '').toLowerCase();
+                      const mrn = (p.medicalRecordNumber || '').toLowerCase();
+                      const query = searchQuery.toLowerCase();
+                      return name.includes(query) || email.includes(query) || mrn.includes(query);
+                    })
+                    .map(p => (
+                      <button
+                        key={p._id}
+                        type="button"
+                        onClick={() => {
+                          const fullName = `${p.userId?.profile?.firstName || ''} ${p.userId?.profile?.lastName || ''}`.trim();
+                          const dob = p.userId?.profile?.dateOfBirth;
+                          let calculatedAge = '';
+                          if (dob) {
+                            const birthDate = new Date(dob);
+                            const today = new Date();
+                            calculatedAge = today.getFullYear() - birthDate.getFullYear();
+                            const m = today.getMonth() - birthDate.getMonth();
+                            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                              calculatedAge--;
+                            }
+                          }
+                          
+                          setFormData(prev => ({
+                            ...prev,
+                            patientName: fullName,
+                            age: calculatedAge,
+                            gender: p.userId?.profile?.gender || 'male',
+                            contactNumber: p.userId?.profile?.phone || ''
+                          }));
+                          setSearchQuery(fullName);
+                          setSelectedPatientId(p._id);
+                          setShowDropdown(false);
+                          toast.success(`Selected: ${fullName}`);
+                        }}
+                        className="w-full text-left px-5 py-3 hover:bg-slate-50 font-bold text-xs text-slate-700 border-b border-slate-100 last:border-b-0 flex items-center justify-between cursor-pointer"
+                      >
+                        <div>
+                          <p className="text-brand-dark text-sm">{p.userId?.profile?.firstName || ''} {p.userId?.profile?.lastName || ''}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold">{p.userId?.email || ''}</p>
+                        </div>
+                        <span className="text-[9px] font-black font-mono text-brand-teal bg-brand-light px-2 py-0.5 rounded-full border border-brand-teal/20">
+                          {p.medicalRecordNumber ? `#${p.medicalRecordNumber}` : 'No MRN'}
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
               <div className="space-y-2">

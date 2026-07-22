@@ -6,8 +6,6 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-// Temporarily disabled for future use
-// import HealthTimeline from '../../components/dashboard/HealthTimeline';
 
 const PatientDashboard = () => {
   const { user } = useAuth();
@@ -157,9 +155,6 @@ const PatientDashboard = () => {
         ))}
       </div>
 
-      {/* Interactive Patient Health Timeline & Telemetry - Temporarily disabled
-      <HealthTimeline />
-      */}
 
       {/* Quick Launchpad */}
       <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-premium relative overflow-hidden">

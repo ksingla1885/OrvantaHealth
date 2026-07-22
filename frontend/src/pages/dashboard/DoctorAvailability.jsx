@@ -15,7 +15,7 @@ const DoctorAvailability = () => {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [loading, setLoading]           = useState(true);
   const [saving, setSaving]             = useState(false);
-  const [formData, setFormData]         = useState({ days: [], timeSlots: [] });
+  const [formData, setFormData]         = useState({ days: [], timeSlots: [], dutyStatus: 'available' });
   const [leaves, setLeaves]             = useState([]);
   const [newLeaveDate, setNewLeaveDate]  = useState('');
   const [loadingLeaves, setLoadingLeaves] = useState(false);
@@ -38,9 +38,25 @@ const DoctorAvailability = () => {
     setSelectedDoctor(doctor);
     setFormData({
       days: doctor.availability?.days || [],
-      timeSlots: doctor.availability?.timeSlots || []
+      timeSlots: doctor.availability?.timeSlots || [],
+      dutyStatus: doctor.dutyStatus || 'available'
     });
     fetchDoctorLeaves(doctor._id);
+  };
+
+  const handleDutyStatusChange = async (newStatus) => {
+    setFormData(prev => ({ ...prev, dutyStatus: newStatus }));
+    try {
+      const res = await api.patch(`/receptionist/doctors/${selectedDoctor._id}/duty-status`, { dutyStatus: newStatus });
+      if (res.data.success) {
+        toast.success(`Duty status updated: ${newStatus.toUpperCase()}`);
+        setDoctors(prev => prev.map(d => 
+          d._id === selectedDoctor._id ? { ...d, dutyStatus: newStatus, isAvailable: newStatus === 'available' } : d
+        ));
+      }
+    } catch (err) {
+      toast.error('Failed to update duty status');
+    }
   };
 
   const fetchDoctorLeaves = async (doctorId) => {
@@ -222,11 +238,18 @@ const DoctorAvailability = () => {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    {/* Avatar */}
-                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${
-                      isSelected ? 'bg-white/20 text-white' : 'bg-brand-dark text-white'
-                    }`}>
-                      {initials}
+                    {/* Avatar with Status Dot */}
+                    <div className="relative shrink-0">
+                      <div className={`h-11 w-11 rounded-xl flex items-center justify-center font-black text-sm ${
+                        isSelected ? 'bg-white/20 text-white' : 'bg-brand-dark text-white'
+                      }`}>
+                        {initials}
+                      </div>
+                      <span className={`absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-white ${
+                        doctor.dutyStatus === 'available' ? 'bg-emerald-500' :
+                        doctor.dutyStatus === 'rounds' ? 'bg-amber-500' :
+                        'bg-rose-500'
+                      }`} />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -277,6 +300,37 @@ const DoctorAvailability = () => {
               </div>
 
               <div className="px-8 py-8 space-y-8">
+
+                {/* ── SHIFT DUTY STATUS ── */}
+                <div className="p-6 bg-slate-50/75 border border-slate-200/60 rounded-[1.75rem] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-display">Shift Duty Status</p>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1.5 ${
+                      formData.dutyStatus === 'available' ? 'bg-emerald-500/10 text-emerald-600' :
+                      formData.dutyStatus === 'rounds' ? 'bg-amber-500/10 text-amber-600' :
+                      'bg-rose-500/10 text-rose-600'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        formData.dutyStatus === 'available' ? 'bg-emerald-500' :
+                        formData.dutyStatus === 'rounds' ? 'bg-amber-500' :
+                        'bg-rose-500'
+                      }`} />
+                      {formData.dutyStatus}
+                    </span>
+                  </div>
+                  
+                  <div className="relative">
+                    <select
+                      value={formData.dutyStatus}
+                      onChange={(e) => handleDutyStatusChange(e.target.value)}
+                      className="w-full bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] h-[54px] px-5 font-bold text-slate-800 focus:border-brand-teal focus:ring-4 focus:ring-brand-teal/10 outline-none transition-all shadow-sm text-sm"
+                    >
+                      <option value="available">🟢 Available for Consults</option>
+                      <option value="rounds">🟡 On Ward Rounds / Surgery</option>
+                      <option value="busy">🔴 Emergency / Do Not Disturb</option>
+                    </select>
+                  </div>
+                </div>
 
                 {/* ── WORKING DAYS ── */}
                 <div>

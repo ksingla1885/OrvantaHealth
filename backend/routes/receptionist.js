@@ -206,13 +206,19 @@ router.patch('/appointment/:appointmentId/cancel', [
 // Get doctor availability
 router.get('/doctors/availability', async (req, res) => {
   try {
-    const doctors = await Doctor.find({ isAvailable: true })
-      .populate('userId', 'profile')
-      .select('specialization availability consultationFee');
+    const doctors = await Doctor.find()
+      .populate({
+        path: 'userId',
+        match: { isActive: true, isOffboarded: false },
+        select: 'profile'
+      })
+      .select('specialization availability consultationFee isAvailable dutyStatus');
+
+    const activeDoctors = doctors.filter(doc => doc.userId !== null);
 
     res.json({
       success: true,
-      data: { doctors }
+      data: { doctors: activeDoctors }
     });
   } catch (error) {
     console.error('Get doctor availability error:', error);
@@ -264,6 +270,51 @@ router.patch('/doctors/:doctorId/availability', [
     res.status(500).json({
       success: false,
       message: 'Server error updating doctor availability'
+    });
+  }
+});
+
+// Update doctor duty status (receptionist control)
+router.patch('/doctors/:doctorId/duty-status', [
+  body('dutyStatus').isIn(['available', 'rounds', 'busy']).withMessage('Invalid duty status')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const { doctorId } = req.params;
+    const { dutyStatus } = req.body;
+    const isAvailable = dutyStatus === 'available';
+
+    const doctor = await Doctor.findByIdAndUpdate(
+      doctorId,
+      { dutyStatus, isAvailable },
+      { new: true }
+    ).populate('userId', 'profile');
+
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Doctor duty status updated successfully',
+      data: { doctor }
+    });
+  } catch (error) {
+    console.error('Update doctor duty status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating doctor duty status'
     });
   }
 });

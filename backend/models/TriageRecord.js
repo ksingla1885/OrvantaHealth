@@ -53,6 +53,11 @@ const triageRecordSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
+  patientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Patient',
+    required: false
+  },
   status: {
     type: String,
     enum: ['pending', 'referred', 'in-consultation', 'completed', 'resolved', 'cancelled'],
@@ -90,5 +95,8 @@ const triageRecordSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+triageRecordSchema.index({ patientId: 1 });
+triageRecordSchema.index({ contactNumber: 1 });
 
 module.exports = mongoose.model('TriageRecord', triageRecordSchema);

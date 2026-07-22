@@ -7,17 +7,24 @@ const Appointment = require('../models/Appointment');
 const Bill = require('../models/Bill');
 const Prescription = require('../models/Prescription');
 const LabReport = require('../models/LabReport');
+const TriageRecord = require('../models/TriageRecord');
 
 // Public endpoint - Get available doctors (no authentication required)
 router.get('/doctors', async (req, res) => {
   try {
     const doctors = await Doctor.find({ isAvailable: true })
-      .populate('userId', 'profile')
+      .populate({
+        path: 'userId',
+        match: { isActive: true, isOffboarded: false },
+        select: 'profile'
+      })
       .sort({ 'rating.average': -1 });
+
+    const activeDoctors = doctors.filter(doc => doc.userId !== null);
 
     res.json({
       success: true,
-      data: { doctors }
+      data: { doctors: activeDoctors }
     });
   } catch (error) {
     console.error('Get doctors error:', error);

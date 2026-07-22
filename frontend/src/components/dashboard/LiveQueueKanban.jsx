@@ -15,6 +15,7 @@ const LiveQueueKanban = () => {
   const [showWalkinModal, setShowWalkinModal] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(null);
   const [referralTarget, setReferralTarget] = useState(null);
+  const [editingDoctorStatus, setEditingDoctorStatus] = useState(null);
 
   const [walkinForm, setWalkinForm] = useState({
     name: '',
@@ -67,18 +68,30 @@ const LiveQueueKanban = () => {
     const activePatient = dbQueue.find(p => p.status === 'in-consultation' && p.doctorReferred?._id === doc.userId?._id);
     const doctorName = `Dr. ${doc.userId?.profile?.firstName || ''} ${doc.userId?.profile?.lastName || ''}`.trim();
     let status = 'available';
-    if (!doc.isAvailable) {
+    let patient = 'None';
+    
+    if (doc.dutyStatus === 'busy') {
+      status = 'busy';
+      patient = 'Emergency / DND';
+    } else if (doc.dutyStatus === 'rounds') {
       status = 'break';
+      patient = 'On Round Break';
     } else if (activePatient) {
       status = 'busy';
+      patient = `${activePatient.patientName} (#${activePatient.triageId})`;
+    } else if (!doc.isAvailable) {
+      status = 'break';
+      patient = 'Not Available';
     }
+
     return {
       id: doc.userId?._id,
       name: `Cabin ${idx + 1} - ${doc.specialization || doc.department || 'General'}`,
       doctor: doctorName,
       status: status,
-      patient: activePatient ? `${activePatient.patientName} (#${activePatient.triageId})` : (doc.isAvailable ? 'None' : 'On Round Break'),
-      elapsed: activePatient && activePatient.checkedInAt ? `${Math.floor((Date.now() - new Date(activePatient.checkedInAt).getTime()) / 60000)} min` : '0 min'
+      patient: patient,
+      elapsed: activePatient && activePatient.checkedInAt ? `${Math.floor((Date.now() - new Date(activePatient.checkedInAt).getTime()) / 60000)} min` : '0 min',
+      rawDoctor: doc
     };
   });
 
@@ -244,22 +257,28 @@ const LiveQueueKanban = () => {
             </div>
           ) : (
             cabins.map(cabin => (
-              <div key={cabin.name} className="p-5 rounded-[2rem] bg-slate-50 border border-slate-200/70 flex items-center justify-between">
+              <div 
+                key={cabin.name} 
+                onClick={() => setEditingDoctorStatus(cabin.rawDoctor)}
+                className="p-5 rounded-[2rem] bg-slate-50 hover:bg-slate-100/75 border-2 border-slate-200/50 hover:border-brand-teal/40 flex items-center justify-between cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group"
+                title="Click to update clinician availability status"
+              >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className={`w-2.5 h-2.5 rounded-full ${
                       cabin.status === 'available' ? 'bg-emerald-500 animate-pulse' :
                       cabin.status === 'busy' ? 'bg-rose-500' : 'bg-amber-500'
                     }`} />
-                    <h4 className="text-xs font-black text-brand-dark">{cabin.name}</h4>
+                    <h4 className="text-xs font-black text-brand-dark group-hover:text-brand-teal transition-colors">{cabin.name}</h4>
                   </div>
                   <p className="text-[11px] font-bold text-slate-500">{cabin.doctor}</p>
                   <p className="text-[10px] text-slate-400">Current: <span className="font-bold text-slate-700">{cabin.patient}</span></p>
                 </div>
 
-                <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider ${
-                  cabin.status === 'available' ? 'bg-emerald-100 text-emerald-700' :
-                  cabin.status === 'busy' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider transition-colors ${
+                  cabin.status === 'available' ? 'bg-emerald-100 text-emerald-700 group-hover:bg-emerald-500 group-hover:text-white' :
+                  cabin.status === 'busy' ? 'bg-rose-100 text-rose-700 group-hover:bg-rose-500 group-hover:text-white' : 
+                  'bg-amber-100 text-amber-700 group-hover:bg-amber-500 group-hover:text-white'
                 }`}>
                   {cabin.status.toUpperCase()}
                 </span>
@@ -450,6 +469,58 @@ const LiveQueueKanban = () => {
                 Generate Desk Token & Receipt
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── DOCTOR STATUS EDIT MODAL ── */}
+      {editingDoctorStatus && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[3rem] p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6 animate-scale-in">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-brand-light text-brand-teal rounded-xl">
+                  <Stethoscope className="h-5 w-5" />
+                </div>
+                <h3 className="text-xl font-black text-brand-dark font-display">Update Duty Status</h3>
+              </div>
+              <button onClick={() => setEditingDoctorStatus(null)} className="text-slate-400 hover:text-rose-500 text-lg font-bold">✕</button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selected Practitioner</p>
+                <p className="text-sm font-black text-brand-dark mt-1">
+                  Dr. {editingDoctorStatus.userId?.profile?.firstName} {editingDoctorStatus.userId?.profile?.lastName}
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">{editingDoctorStatus.specialization || editingDoctorStatus.department}</p>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Select Shift Status</label>
+                <select
+                  value={editingDoctorStatus.dutyStatus || 'available'}
+                  onChange={async (e) => {
+                    const newStatus = e.target.value;
+                    try {
+                      const res = await api.patch(`/receptionist/doctors/${editingDoctorStatus._id}/duty-status`, { dutyStatus: newStatus });
+                      if (res.data.success) {
+                        toast.success('Duty status updated successfully');
+                        setEditingDoctorStatus(null);
+                        fetchData(); // Reload stats and cabins grid
+                      }
+                    } catch (err) {
+                      toast.error('Failed to update duty status');
+                    }
+                  }}
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-xs text-brand-dark outline-none font-bold mt-1 focus:border-brand-teal focus:ring-4 focus:ring-brand-teal/10 transition-all shadow-sm"
+                >
+                  <option value="available">🟢 Available for Consults</option>
+                  <option value="rounds">🟡 On Ward Rounds / Surgery</option>
+                  <option value="busy">🔴 Emergency / Do Not Disturb</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       )}
