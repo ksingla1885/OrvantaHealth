@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useChatbot } from '../context/ChatbotContext';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
 
 const Chatbot = () => {
+  const location = useLocation();
   const { isOpen, messages, isLoading, error, toggleChatbot, sendMessage, clearMessages } = useChatbot();
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -43,6 +46,11 @@ const Chatbot = () => {
       handleSubmit(e);
     }
   };
+
+  // Hide chatbot on landing page
+  if (location.pathname === '/') {
+    return null;
+  }
 
   if (!isOpen) {
     return (

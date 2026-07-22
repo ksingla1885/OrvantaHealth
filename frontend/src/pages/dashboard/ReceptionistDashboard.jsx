@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import LiveQueueKanban from '../../components/dashboard/LiveQueueKanban';
 
 const ReceptionistDashboard = () => {
   const [stats, setStats] = useState({
@@ -116,6 +117,9 @@ const ReceptionistDashboard = () => {
           </div>
         ))}
       </div>
+
+      {/* Live Patient Queue Kanban Board */}
+      <LiveQueueKanban />
 
       {/* Action Center & Management */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">

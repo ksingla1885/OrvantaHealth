@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 import ConfirmModal from '../../components/ConfirmModal';
+import PermissionMatrix from '../../components/dashboard/PermissionMatrix';
 
 const SecurityControl = () => {
   const [securityData, setSecurityData] = useState(null);
@@ -201,6 +202,9 @@ const SecurityControl = () => {
           </div>
         ))}
       </div>
+
+      {/* Role-Based Access Control (RBAC) Permission Matrix */}
+      <PermissionMatrix />
 
       {/* Active Staff Sessions List */}
       <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-premium">

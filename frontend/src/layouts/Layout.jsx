@@ -15,7 +15,8 @@ import {
   UserPlus,
   BarChart3,
   ArrowLeft,
-  ShieldAlert
+  ShieldAlert,
+  CheckCircle2
 } from 'lucide-react';
 
 // Rupee icon as a component so it works like any lucide icon in the sidebar
@@ -118,6 +119,12 @@ const Layout = () => {
             href: '/receptionist/triage/queue',
             icon: BarChart3,
             current: location.pathname.includes('/triage/queue'),
+          },
+          {
+            name: 'Completed Patients',
+            href: '/doctor/completed',
+            icon: CheckCircle2,
+            current: location.pathname.includes('/completed'),
           },
           {
             name: 'Profile',

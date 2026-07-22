@@ -9,13 +9,9 @@ import {
 import api from '../../services/api';
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
-import TriagePrescriptionModal from './triage/TriagePrescriptionModal';
-
 const DoctorDashboard = () => {
   const [data, setData] = useState(null);
   const [triageReferrals, setTriageReferrals] = useState([]);
-  const [selectedRecord, setSelectedRecord] = useState(null);
-  const [showPrescribeModal, setShowPrescribeModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dutyStatus, setDutyStatus] = useState('available');
@@ -29,9 +25,13 @@ const DoctorDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
+
+
   const fetchStats = async () => {
     try {
-      setLoading(true);
+      if (!data) {
+        setLoading(true);
+      }
       const [statsRes, triageRes] = await Promise.all([
         api.get('/doctor/dashboard-stats'),
         api.get('/triage/doctor/referred')
@@ -51,10 +51,7 @@ const DoctorDashboard = () => {
     }
   };
 
-  const handleTreat = (referral) => {
-    setSelectedRecord(referral);
-    setShowPrescribeModal(true);
-  };
+
 
   const getDutyBadgeStyles = () => {
     switch (dutyStatus) {
@@ -191,6 +188,8 @@ const DoctorDashboard = () => {
         </div>
       </div>
 
+
+
       {/* ── FEATURED NEXT-UP PATIENT HIGHLIGHT CARD ── */}
       {triageReferrals.length > 0 && (
         <div className="relative group bg-gradient-to-r from-teal-950 via-slate-900 to-slate-950 rounded-[3rem] p-8 md:p-10 text-white shadow-2xl overflow-hidden border-2 border-teal-500/30 animate-slide-up">
@@ -249,7 +248,7 @@ const DoctorDashboard = () => {
             {/* Action Callout */}
             <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end gap-3 shrink-0">
               <button
-                onClick={() => handleTreat(triageReferrals[0])}
+                onClick={() => window.location.href = '/receptionist/triage/queue'}
                 className="px-10 py-5 bg-gradient-to-r from-teal-400 to-brand-teal text-slate-950 font-black text-xs uppercase tracking-widest rounded-2xl shadow-2xl shadow-teal-500/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
               >
                 <Stethoscope className="h-5 w-5 stroke-[2.5]" />
@@ -396,7 +395,7 @@ const DoctorDashboard = () => {
                 </div>
 
                 <button
-                  onClick={() => handleTreat(referral)}
+                  onClick={() => window.location.href = '/receptionist/triage/queue'}
                   className="w-full py-3.5 bg-brand-dark hover:bg-brand-teal text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 group-hover:scale-[1.02]"
                 >
                   <Stethoscope className="h-4 w-4" /> Start Consultation
@@ -420,10 +419,10 @@ const DoctorDashboard = () => {
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Verified patient interaction logs</p>
             </div>
             <button 
-              onClick={() => window.location.href = '/dashboard/archive'}
+              onClick={() => window.location.href = '/doctor/completed'}
               className="flex items-center gap-2 px-5 py-2.5 bg-slate-50 hover:bg-brand-dark hover:text-white rounded-full text-[10px] font-black transition-all group border border-slate-100"
             >
-              ARCHIVED VAULT
+              EXAMINED PATIENTS
               <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
@@ -543,15 +542,7 @@ const DoctorDashboard = () => {
 
       </div>
 
-      {/* ── TRIAGE PRESCRIPTION MODAL ── */}
-      {showPrescribeModal && selectedRecord && (
-        <TriagePrescriptionModal 
-          isOpen={showPrescribeModal} 
-          onClose={() => setShowPrescribeModal(false)}
-          record={selectedRecord}
-          onSuccess={fetchStats}
-        />
-      )}
+
     </div>
   );
 };

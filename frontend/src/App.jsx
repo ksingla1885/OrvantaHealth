@@ -22,6 +22,7 @@ const ContactSales = lazy(() => import('./pages/ContactSales'));
 // Dashboard Pages
 const SuperAdminDashboard = lazy(() => import('./pages/dashboard/SuperAdminDashboard'));
 const DoctorDashboard = lazy(() => import('./pages/dashboard/DoctorDashboard'));
+const DoctorCompletedPatients = lazy(() => import('./pages/dashboard/DoctorCompletedPatients'));
 const ReceptionistDashboard = lazy(() => import('./pages/dashboard/ReceptionistDashboard'));
 const DoctorAvailability = lazy(() => import('./pages/dashboard/DoctorAvailability'));
 const PatientDashboard = lazy(() => import('./pages/dashboard/PatientDashboard'));
@@ -100,6 +101,7 @@ function App() {
                   <Route path="doctor/dashboard" element={<ProtectedRoute roles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
                   <Route path="doctor/appointments" element={<ProtectedRoute roles={['doctor']}><Appointments /></ProtectedRoute>} />
                   <Route path="doctor/prescriptions" element={<ProtectedRoute roles={['doctor']}><Prescriptions /></ProtectedRoute>} />
+                  <Route path="doctor/completed" element={<ProtectedRoute roles={['doctor']}><DoctorCompletedPatients /></ProtectedRoute>} />
                   <Route path="doctor/profile" element={<ProtectedRoute roles={['doctor']}><Profile /></ProtectedRoute>} />
 
                   {/* Receptionist Routes */}

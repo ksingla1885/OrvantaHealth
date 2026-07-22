@@ -165,6 +165,11 @@ router.post('/prescribe/:id', authenticateToken, async (req, res) => {
     triageRecord.advice = advice;
     triageRecord.followUpDate = followUpDate;
     
+    // Automatically assign to prescribing doctor if not already assigned
+    if (req.user.role === 'doctor') {
+      triageRecord.doctorReferred = req.user.id;
+    }
+    
     triageRecord.status = 'resolved';
     triageRecord.resolvedAt = new Date();
     
@@ -206,7 +211,7 @@ router.post('/refer/:id', authenticateToken, authorizeRoles('receptionist', 'sup
 });
 
 // 6. Check-In (Doctor starts session)
-router.post('/check-in/:id', authenticateToken, authorizeRoles('doctor'), async (req, res) => {
+router.post('/check-in/:id', authenticateToken, authorizeRoles('doctor', 'receptionist', 'superadmin'), async (req, res) => {
   try {
     const record = await TriageRecord.findById(req.params.id);
     if (!record) return res.status(404).json({ success: false, message: 'Record not found' });
@@ -222,7 +227,7 @@ router.post('/check-in/:id', authenticateToken, authorizeRoles('doctor'), async 
 });
 
 // 7. Check-Out (Doctor finishes session)
-router.post('/check-out/:id', authenticateToken, authorizeRoles('doctor'), async (req, res) => {
+router.post('/check-out/:id', authenticateToken, authorizeRoles('doctor', 'receptionist', 'superadmin'), async (req, res) => {
   try {
     const record = await TriageRecord.findById(req.params.id);
     if (!record) return res.status(404).json({ success: false, message: 'Record not found' });
