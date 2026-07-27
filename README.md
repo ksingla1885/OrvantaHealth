@@ -4,91 +4,118 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](http://makeapullrequest.com)
 [![MERN Stack](https://img.shields.io/badge/Stack-MERN-informational)](https://www.mongodb.com/mern-stack)
 [![AI Powered](https://img.shields.io/badge/AI-Powered-purple.svg)](https://groq.com/)
+[![React 19](https://img.shields.io/badge/React-19.0-cyan.svg)](https://react.dev/)
+[![Tailwind 4](https://img.shields.io/badge/Tailwind-4.0-blueviolet.svg)](https://tailwindcss.com/)
 
-OrvantaHealth is a production-ready, feature-rich **Hospital Management System (HMS)** engineered with the **MERN stack** (MongoDB, Express, React, Node.js). It is designed to modernize hospital administration, empower medical professionals with AI-driven diagnostics, and deliver a frictionless patient experience through secure digital portals and automated workflows.
+OrvantaHealth is a production-ready, high-fidelity **Hospital Management System (HMS)** built with the **MERN stack** (MongoDB, Express, React, Node.js). It modernizes healthcare administration, streamlines clinical triage using advanced AI, monitors live hospital bed telemetry, and ensures rigorous compliance with real-time audit trails and emergency lockdown mechanisms.
 
 ---
 
-## 🏗 Architecture Overview
+## 🏗 System Architecture
 
-The system follows a decoupled **Client-Server architecture** with a modular backend and a component-driven frontend.
+The application is built on a decoupled **Client-Server architecture** with a modular backend API, security-focused middlewares, and an interactive, glassmorphic React frontend.
 
 ```mermaid
 graph TD
-    %% Define Nodes
-    User([User / Staff / Admin])
-    Frontend[React + Tailwind CSS 4]
-    Backend[Express + Node.js]
-    Auth[JWT + RBAC Security]
-    ORM[Mongoose ODM]
-    AI[Groq AI & Triage]
-    Files[Cloudinary & PDF Reports]
-    Database[(MongoDB)]
+    %% Define Nodes with elegant labels
+    User([Clinician / Administrator / Patient])
+    
+    subgraph Frontend [Client UI - React 19 + Vite]
+        UI[Glassmorphic Views]
+        Palette[Command Palette Ctrl+K]
+        Kanban[Live Queue Kanban]
+        Telemetry[Bed Telemetry Monitor]
+        Timeline[EMR Health Timeline]
+        Security[Security Lockdown Panel]
+    end
 
-    %% Define Connections
-    User --> Frontend
-    Frontend --> |"API Requests"| Backend
+    subgraph Backend [Server API - Node.js 20 + Express 5]
+        API[API Gateways & Routes]
+        Auth[JWT & RBAC Security]
+        Lockdown[Lockdown Middleware]
+        Auditor[Audit Event Logger]
+        TriageAI[Groq LLaMA 3.3-70B Triage]
+    end
+
+    subgraph Database [Persistence Layer - MongoDB]
+        DB[(MongoDB Database)]
+        Models[Schemas: User, Doctor, Patient, Triage, Bed, AuditLog]
+    end
+
+    %% Connections
+    User --> UI
+    UI --> Palette
     
-    Backend --> |"Auth"| Auth
-    Backend --> |"ORM"| ORM
-    Backend --> |"AI Core"| AI
-    Backend --> |"Files"| Files
+    UI --> |"Secure Requests"| API
+    API --> Auth
+    Auth --> Lockdown
     
-    ORM --> |"Query"| Database
+    API --> TriageAI
+    API --> Auditor
+    
+    API --> Models
+    Models --> DB
 ```
 
 ---
 
 ## 🌟 Key Features
 
-### 🔐 Enterprise-Grade RBAC
-- **Super Admin**: Centralized command center for managing hospital branches, staff, audit logs, and global analytics.
-- **Doctors**: Advanced portal for digital prescriptions, patient history lookup, and appointment management.
-- **Receptionists**: Streamlined workflows for front-desk operations: billing, lab report uploads, and scheduling.
-- **Patients**: Self-service portal for appointment booking, instant payments, and secure access to medical records.
+### 🔐 Enterprise-Grade RBAC & Security Control
+- **Dynamic Permission Grid**: Role-based access controls separating clinical, administrative, and patient dashboards.
+- **Emergency Lockdown System**: A global panic mechanism for SuperAdmins that immediately blocks non-essential API endpoints, terminates standard staff sessions, and activates a visual red-state warning overlay across the UI.
+- **Compliance Audit Logging**: Comprehensive, tamper-resistant system ledger logging all administrative operations (account toggles, offboarding, bed updates, lockdowns) complete with severity level, operator identity, IP addresses, and custom descriptions.
 
-### 🧠 AI-Driven Healthcare (Triage & Assistant)
-- **AI Triage System**: Uses **Groq LLaMA 3.3-70B** to analyze symptoms and vitals, providing a risk score (0-100) for emergency prioritization.
-- **24/7 AI Medical Assistant**: A specialized chatbot for medical FAQs and hospital guidance, strictly sanitized for safety.
-- **Clinical Workspace**: Advanced, full-page diagnostic environment for doctors with React Portal-powered prescription modals and longitudinal history lookup.
-- 🔗 [Read the AI Architecture Guide](./ai_symptom_checker_architecture.md)
+### 🧠 AI-Driven Symptom Analysis & Intake
+- **Groq LLaMA 3.3-70B Integration**: Dynamically evaluates patient symptoms and vitals during triage to compute clinical risk scores (0-10) and identify possible medical conditions.
+- **24/7 AI Medical Assistant**: A built-in context-aware medical chatbot designed to handle patient inquiries and navigate hospital options safely.
 
-### 💳 Financial Intelligence & Billing
-- **Premium Billing Dashboard**: High-fidelity, glassmorphic UI for invoice management with real-time "Status Glow" indicators.
-- **One-Click Payments**: Deep integration with **Razorpay** for seamless appointment and billing transactions.
-- **Receipt Management**: Automated generation of clinical receipts (PDF) with unified financial tracking across reception and patient portals.
+### 📋 Live Interactive Triage & Kanban Queue
+- **Intake Flow Management**: Seamless patient registration and instant AI risk scoring.
+- **Live Queue Kanban Board**: A drag-and-drop workspace that visualizes patient pathways through the hospital workflow: `Pending` ➔ `Referred` ➔ `In-Consultation` ➔ `Completed`.
+- **Roster & Status Hygiene**: Clinicians can check-in and check-out patients directly from their consultation rooms, automatically synchronizing queue states across receptionist and doctor views.
 
-### 📊 Administrative Command & Analytics
-- **Daily Basis Tracking**: Admin capability to audit hospital performance (revenue, inflow, staff load) for any specific historical or current date.
-- **SuperAdmin Intelligence**: High-fidelity charts (Recharts) visualizing multi-day trends (7d, 30d, 90d, 1y) with dynamic range variance.
-- **Automated Scheduling**: Algorithmic time-slot generator for doctors, allowing for efficient consultation planning and bulk shift management.
-- **MRN Governance**: Centralized Medical Record Number (MRN) integration across all touchpoints for precise patient identity resolution.
-- 🔗 [Read the SuperAdmin Module Guide](./SUPERADMIN_FEATURES.md)
+### 🏥 Longitudinal EMR & Patient Record Continuity
+- **Medical Record Number (MRN) Registry**: Generates unique, immutable identity anchors for every patient to prevent duplicate chart creation.
+- **Unified Clinical Timeline**: Automatically aggregates prescriptions, triage records, lab reports, appointments, and invoices into a single sorted chronological history feed.
+- **Returning Patient Intelligence**:
+  - Displays vitals comparison trends (Current vs. Last Intake) side-by-side.
+  - Features an **Automatic Recall Card** displaying exactly what the current physician treated the patient for during their previous visit.
+  - Highlights missed follow-up appointments and active clinical alerts (e.g., allergies, chronic diseases).
+
+### 📊 Real-Time Bed Telemetry & Analytics
+- **Live Bed Capacity Telemetry**: High-fidelity dashboard visualizing total, occupied, and available general/ICU beds across different hospital departments.
+- **Operational Analytics**: Rich data visualization charts (using Recharts) representing historical revenue trends, department load distributions, and staff consulting throughput.
+
+### ⌨ Universal Command Palette
+- **Rapid Keyboard Access**: Hit `Ctrl+K` or `Cmd+K` from anywhere in the application to trigger a global command bar.
+- **Smart System Search**: Search patients, navigate to dashboards, trigger lockdown options, or log out instantly without lifting your hands from the keyboard.
 
 ---
 
 ## 🛠 Tech Stack
 
-### Frontend
-- **React 19 & Vite**: Ultra-fast component rendering and HMR.
-- **Tailwind CSS 4**: Modern utility-first styling with high performance.
-- **React Hook Form**: Zod-validated, performant form handling.
-- **Lucide React**: Clean, semantic iconography.
+### Frontend Client
+- **React 19 & Vite**: Component rendering with fast Hot Module Replacement.
+- **Tailwind CSS 4**: High-performance, modern utility-first styles.
+- **React Hook Form & Zod**: Schema-validated forms.
+- **Lucide React**: Vector icons.
 - **Recharts**: Responsive data visualization.
 
-### Backend
-- **Node.js 20+ & Express 5**: Modern, asynchronous API architecture.
-- **MongoDB & Mongoose**: Scalable NoSQL persistence with schema validation.
-- **JWT & Passport**: Secure authentication with Refresh Token rotation.
-- **Groq SDK**: High-performance LLM integration for AI features.
-- **Cloudinary / Multer**: Robust handling of medical media and assets.
+### Backend Server
+- **Node.js 20+ & Express 5**: Asynchronous routing.
+- **MongoDB & Mongoose**: Object modeling with schema-level validation.
+- **JWT & Passport**: Secure stateless authorization.
+- **Groq SDK**: Cloud-based LLaMA models for instant triage.
+- **Razorpay**: Direct API integration for financial transactions.
+- **Cloudinary / Multer**: Digital prescription receipt archiving.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Node.js** (v20.x recommended)
+- **Node.js** (v20.x or higher)
 - **MongoDB** (Local instance or Atlas Cluster)
 - **Groq API Key** (Sourced from [Groq Cloud](https://console.groq.com/))
 - **Razorpay API Key** (Available on [Razorpay Dashboard](https://dashboard.razorpay.com/))
@@ -99,10 +126,10 @@ graph TD
 git clone https://github.com/ksingla1885/OrvantaHealth.git
 cd OrvantaHealth
 
-# Setup Backend
+# Install Backend Dependencies
 cd backend && npm install
 
-# Setup Frontend
+# Install Frontend Dependencies
 cd ../frontend && npm install
 ```
 
@@ -116,7 +143,7 @@ JWT_REFRESH_SECRET=your_refresh_secret
 RAZORPAY_KEY_ID=your_razorpay_id
 RAZORPAY_KEY_SECRET=your_razorpay_secret
 GROQ_API_KEY_PRIMARY=your_groq_api_key
-CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_CLOUD_NAME=your_cloudinary_name
 CLOUDINARY_API_KEY=your_cloudinary_key
 CLOUDINARY_API_SECRET=your_cloudinary_secret
 EMAIL_SERVICE=gmail
@@ -124,13 +151,34 @@ EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
 ```
 
-### 3. Execution
-**Development Mode:**
+### 3. Seeding Test Records
+To initialize the system with mock users and clinical records, run the following utility scripts:
 ```bash
-# Terminal 1: Backend
+# In the backend directory:
+
+# Seed default SuperAdmin (admin@orvantahealth.com / Welcomeadmin)
+node seed.js
+
+# Seed emergency triage cases (critical patients assigned to doctors)
+node create_emergency_patient.js
+
+# Seed Marcus Brody (routine back pain patient assigned to Doctor Ketan)
+node create_patient_for_ketan.js
+```
+
+### 4. Running Validation Tests
+OrvantaHealth includes E2E validation scripts to verify cross-model data aggregation and timeline generation.
+```bash
+# Execute EMR Timeline Aggregation Validation
+node backend/tests/test-history-aggregation.js
+```
+
+### 5. Running the Application
+```bash
+# Terminal 1: Backend API
 cd backend && npm run dev
 
-# Terminal 2: Frontend
+# Terminal 2: Frontend Client
 cd frontend && npm run dev
 ```
 
@@ -141,40 +189,58 @@ cd frontend && npm run dev
 ```text
 OrvantaHealth/
 ├── backend/
-│   ├── config/          # Database, Passport, & Multi-Cloud configs
-│   ├── controllers/     # Controller logic (Auth, Appointment, Triage)
-│   ├── middleware/      # Auth (JWT/RBAC), Error Handlers, File Uploads
-│   ├── models/          # Mongoose Schemas (User, Patient, Report, etc.)
-│   ├── routes/          # Express Route definitions
-│   ├── services/        # Third-party integrations (AI, Payments, Mailer)
-│   └── utils/           # Helper functions & constants
-├── frontend/
-│   ├── src/
-│   │   ├── components/  # Atomic & Shared UI Components
-│   │   ├── context/     # Global State (Auth, UI, Theme)
-│   │   ├── pages/       # Route components (Dashboards, Auth, Landing)
-│   │   ├── services/    # API abstraction layer (Axios interceptors)
-│   │   └── assets/      # Global styles & static assets
-└── docs/                # Comprehensive technical documentation
+│   ├── config/          # Passport, database, and Cloudinary configurations
+│   ├── controllers/     # Controller logic (Auth, Triage, Analytics)
+│   ├── middleware/      # Auth (JWT/RBAC), Security lockdown, & File Uploads
+│   ├── models/          # Schemas (User, Patient, BedCapacity, AuditLog, TriageRecord)
+│   ├── routes/          # Express Route definitions (admin, doctor, triage, patient)
+│   ├── services/        # Third-party integrations (Groq AI, Razorpay)
+│   ├── utils/           # Shared constants & helpers
+│   └── tests/           # Integration validation scripts
+└── frontend/
+    └── src/
+        ├── assets/      # Custom styles and images
+        ├── components/  # Atomic components (CommandPalette, BackButton, Chatbot)
+        │   └── dashboard/# Feature panels (BedTelemetry, HealthTimeline, LiveQueueKanban)
+        ├── context/     # State stores (Auth, Theme, Chatbot)
+        ├── layouts/     # Dashboard sidebar templates
+        ├── pages/       # Dashboard routes (AuditLogs, SecurityControl, DoctorDashboard)
+        └── services/    # Axios API abstractions
 ```
 
 ---
 
+## 📡 API Reference (Highlights)
+
+| Method | Endpoint | Role | Description |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/api/admin/seed-superadmin` | Public | Seeds initial superadmin user. |
+| **POST** | `/api/admin/staff` | SuperAdmin | Creates new doctor or receptionist accounts. |
+| **DELETE**| `/api/admin/staff/:id` | SuperAdmin | Soft deletes (archives) staff records. |
+| **GET** | `/api/admin/audit-logs` | SuperAdmin | Retrieves system activity trails. |
+| **GET** | `/api/admin/beds` | SuperAdmin | Fetches live department bed telemetry. |
+| **POST** | `/api/admin/security/lockdown` | SuperAdmin | Toggles emergency system lockdown. |
+| **POST** | `/api/triage/intake` | Receptionist | Submits new patient and triggers Groq AI. |
+| **GET** | `/api/triage/queue` | Staff | Returns live lobby triage queue status. |
+| **POST** | `/api/triage/check-in/:id` | Staff | Updates triage status to consultation. |
+| **GET** | `/api/doctor/patient/:id/history`| Doctor | Assembles EMR history timeline. |
+| **POST** | `/api/doctor/prescription` | Doctor | Issues digital prescriptions and advice. |
+
+---
+
 ## 🛡 Security & Compliance
-- **RBAC Enforcement**: Granular access control for SuperAdmins, Doctors, and Staff.
-- **Data Integrity**: JWT fingerprinting and protection against XSS/CSRF.
-- **Secure Pay**: Encrypted payment processing via Razorpay.
-- **Medical Privacy**: HIPAA-aligned data handling strategies (work in progress).
+
+- **Lockdown Interceptor**: Active lockdown rejects requests from non-admin accounts and returns a `503 Service Unavailable` response.
+- **Audit Trails**: Records operations like offboarding, lockdown toggles, and bed modifications to ensure regulatory compliance.
+- **RBAC Strictness**: Express endpoints verified with JWT and role verification guards (`superAdminOnly`, `doctorOnly`, `patientOnly`).
+- **Data Protection**: Input validation with `express-validator` and password hashing with `bcryptjs`.
 
 ---
 
 ##  License
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
----
-
 <p align="center">
   <b>Built with ❤️ by Ketan</b><br/>
   <i>Modernizing Healthcare, One Patient at a Time.</i>
 </p>
-
