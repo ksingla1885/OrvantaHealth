@@ -3,7 +3,7 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](http://makeapullrequest.com)
 [![MERN Stack](https://img.shields.io/badge/Stack-MERN-informational)](https://www.mongodb.com/mern-stack)
-[![AI Powered](https://img.shields.io/badge/AI-Powered-purple.svg)](https://groq.com/)
+[![AI Powered](https://img.shields.io/badge/AI-Powered-purple.svg)](https://openrouter.ai/)
 [![React 19](https://img.shields.io/badge/React-19.0-cyan.svg)](https://react.dev/)
 [![Tailwind 4](https://img.shields.io/badge/Tailwind-4.0-blueviolet.svg)](https://tailwindcss.com/)
 
@@ -34,7 +34,7 @@ graph TD
         Auth[JWT & RBAC Security]
         Lockdown[Lockdown Middleware]
         Auditor[Audit Event Logger]
-        TriageAI[Groq LLaMA 3.3-70B Triage]
+        TriageAI[OpenRouter Triage AI]
     end
 
     subgraph Database [Persistence Layer - MongoDB]
@@ -65,9 +65,10 @@ graph TD
 - **Dynamic Permission Grid**: Role-based access controls separating clinical, administrative, and patient dashboards.
 - **Emergency Lockdown System**: A global panic mechanism for SuperAdmins that immediately blocks non-essential API endpoints, terminates standard staff sessions, and activates a visual red-state warning overlay across the UI.
 - **Compliance Audit Logging**: Comprehensive, tamper-resistant system ledger logging all administrative operations (account toggles, offboarding, bed updates, lockdowns) complete with severity level, operator identity, IP addresses, and custom descriptions.
+- **Staff Domain Restriction**: All created clinician and receptionist accounts must use an `@orvanta.com` email domain constraint to prevent unauthorized registrations.
 
 ### 🧠 AI-Driven Symptom Analysis & Intake
-- **Groq LLaMA 3.3-70B Integration**: Dynamically evaluates patient symptoms and vitals during triage to compute clinical risk scores (0-10) and identify possible medical conditions.
+- **OpenRouter AI Integration**: Dynamically evaluates patient symptoms and vitals during triage to compute clinical risk scores (0-10) and identify possible medical conditions.
 - **24/7 AI Medical Assistant**: A built-in context-aware medical chatbot designed to handle patient inquiries and navigate hospital options safely.
 
 ### 📋 Live Interactive Triage & Kanban Queue
@@ -77,7 +78,7 @@ graph TD
 
 ### 🏥 Longitudinal EMR & Patient Record Continuity
 - **Medical Record Number (MRN) Registry**: Generates unique, immutable identity anchors for every patient to prevent duplicate chart creation.
-- **Unified Clinical Timeline**: Automatically aggregates prescriptions, triage records, lab reports, appointments, and invoices into a single sorted chronological history feed.
+- **Unified Clinical Timeline**: Automatically aggregates prescriptions, triage records, lab reports, appointments, and invoices into a single sorted chronological history feed via a robust cross-model join (combining `Prescription`, `TriageRecord`, `LabReport`, and `Bill` models).
 - **Returning Patient Intelligence**:
   - Displays vitals comparison trends (Current vs. Last Intake) side-by-side.
   - Features an **Automatic Recall Card** displaying exactly what the current physician treated the patient for during their previous visit.
@@ -106,7 +107,7 @@ graph TD
 - **Node.js 20+ & Express 5**: Asynchronous routing.
 - **MongoDB & Mongoose**: Object modeling with schema-level validation.
 - **JWT & Passport**: Secure stateless authorization.
-- **Groq SDK**: Cloud-based LLaMA models for instant triage.
+- **OpenRouter SDK**: Completion routing to diverse free and premium LLM resources.
 - **Razorpay**: Direct API integration for financial transactions.
 - **Cloudinary / Multer**: Digital prescription receipt archiving.
 
@@ -117,7 +118,7 @@ graph TD
 ### Prerequisites
 - **Node.js** (v20.x or higher)
 - **MongoDB** (Local instance or Atlas Cluster)
-- **Groq API Key** (Sourced from [Groq Cloud](https://console.groq.com/))
+- **OpenRouter API Key** (Sourced from [OpenRouter](https://openrouter.ai/))
 - **Razorpay API Key** (Available on [Razorpay Dashboard](https://dashboard.razorpay.com/))
 
 ### 1. Installation
@@ -142,7 +143,8 @@ JWT_SECRET=your_jwt_secret
 JWT_REFRESH_SECRET=your_refresh_secret
 RAZORPAY_KEY_ID=your_razorpay_id
 RAZORPAY_KEY_SECRET=your_razorpay_secret
-GROQ_API_KEY_PRIMARY=your_groq_api_key
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=poolside/laguna-s-2.1:free
 CLOUDINARY_CLOUD_NAME=your_cloudinary_name
 CLOUDINARY_API_KEY=your_cloudinary_key
 CLOUDINARY_API_SECRET=your_cloudinary_secret
@@ -152,18 +154,12 @@ EMAIL_PASS=your_app_password
 ```
 
 ### 3. Seeding Test Records
-To initialize the system with mock users and clinical records, run the following utility scripts:
+To initialize the system with the default SuperAdmin credentials, run the seeding script:
 ```bash
 # In the backend directory:
 
 # Seed default SuperAdmin (admin@orvantahealth.com / Welcomeadmin)
 node seed.js
-
-# Seed emergency triage cases (critical patients assigned to doctors)
-node create_emergency_patient.js
-
-# Seed Marcus Brody (routine back pain patient assigned to Doctor Ketan)
-node create_patient_for_ketan.js
 ```
 
 ### 4. Running Validation Tests
@@ -220,7 +216,7 @@ OrvantaHealth/
 | **GET** | `/api/admin/audit-logs` | SuperAdmin | Retrieves system activity trails. |
 | **GET** | `/api/admin/beds` | SuperAdmin | Fetches live department bed telemetry. |
 | **POST** | `/api/admin/security/lockdown` | SuperAdmin | Toggles emergency system lockdown. |
-| **POST** | `/api/triage/intake` | Receptionist | Submits new patient and triggers Groq AI. |
+| **POST** | `/api/triage/intake` | Receptionist | Submits new patient and triggers OpenRouter AI. |
 | **GET** | `/api/triage/queue` | Staff | Returns live lobby triage queue status. |
 | **POST** | `/api/triage/check-in/:id` | Staff | Updates triage status to consultation. |
 | **GET** | `/api/doctor/patient/:id/history`| Doctor | Assembles EMR history timeline. |
