@@ -235,7 +235,8 @@ const Landing = () => {
                 gsap.from(cards, {
                     y: 60, opacity: 0, scale: 0.95,
                     duration: 0.7, stagger: 0.08, ease: 'power3.out',
-                    scrollTrigger: { trigger: featuresRef.current, start: 'top 85%' }
+                    scrollTrigger: { trigger: featuresRef.current, start: 'top 85%' },
+                    clearProps: 'all'
                 });
             }
 
@@ -272,7 +273,8 @@ const Landing = () => {
                 });
                 gsap.from(securityRef.current.querySelectorAll('.security-badge-card'), {
                     y: 30, opacity: 0, stagger: 0.1, duration: 0.7, ease: 'power3.out',
-                    scrollTrigger: { trigger: securityRef.current.querySelector('.security-badges'), start: 'top 88%' }
+                    scrollTrigger: { trigger: securityRef.current.querySelector('.security-badges'), start: 'top 88%' },
+                    clearProps: 'all'
                 });
             }
 
@@ -280,7 +282,8 @@ const Landing = () => {
             if (testimonialsRef.current) {
                 gsap.from(testimonialsRef.current.querySelectorAll('.testimonial-card'), {
                     y: 50, opacity: 0, stagger: 0.18, duration: 0.8, ease: 'power3.out',
-                    scrollTrigger: { trigger: testimonialsRef.current, start: 'top 85%' }
+                    scrollTrigger: { trigger: testimonialsRef.current, start: 'top 85%' },
+                    clearProps: 'all'
                 });
             }
 
@@ -300,7 +303,14 @@ const Landing = () => {
 
         }, rootRef);
 
-        return () => ctx.revert();
+        const refreshTimeout = setTimeout(() => {
+            ScrollTrigger.refresh();
+        }, 1000);
+
+        return () => {
+            ctx.revert();
+            clearTimeout(refreshTimeout);
+        };
     }, []);
 
     return (

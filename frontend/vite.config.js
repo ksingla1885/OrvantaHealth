@@ -21,7 +21,8 @@ export default defineConfig(({ mode }) => {
       'process.env.REACT_APP_API_URL': JSON.stringify(env.REACT_APP_API_URL || 'http://localhost:5000/api'),
     },
     server: {
-      port: 3000,
+      port: 3010,
+      strictPort: true,
       open: true,
     },
     build: {

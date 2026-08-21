@@ -4,11 +4,9 @@ const TriageRecord = require('../models/TriageRecord');
 const User = require('../models/User');
 const Patient = require('../models/Patient');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
-const Groq = require('groq-sdk');
-
 // AI Logic for Triage
 const runAITriage = async (symptoms, age, gender) => {
-  const apiKey = process.env.GROQ_API_KEY_PRIMARY || process.env.GROQ_API_KEY_BACKUP;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return {
       urgencyLevel: 'Routine',
@@ -18,7 +16,8 @@ const runAITriage = async (symptoms, age, gender) => {
     };
   }
 
-  const groq = new Groq({ apiKey });
+  const { OpenRouter } = await import('@openrouter/sdk');
+  const openrouter = new OpenRouter({ apiKey });
   const systemPrompt = `You are a highly experienced Medical Triage Assistant. 
 Analyze the following patient symptoms and provide:
 1. Urgency Level: Must be one of ['Routine', 'Urgent', 'Emergency']
@@ -38,18 +37,20 @@ JSON Format:
   const userPrompt = `Patient: ${gender}, Age: ${age}. Symptoms: ${symptoms}`;
 
   try {
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      model: "llama-3.3-70b-versatile",
-      temperature: 0.1,
-      max_tokens: 500,
-      response_format: { type: "json_object" }
+    const response = await openrouter.chat.send({
+      chatRequest: {
+        model: process.env.OPENROUTER_MODEL || "poolside/laguna-s-2.1:free",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.1,
+        max_tokens: 500,
+        response_format: { type: "json_object" }
+      }
     });
 
-    return JSON.parse(chatCompletion.choices[0]?.message?.content);
+    return JSON.parse(response.choices[0]?.message?.content);
   } catch (error) {
     console.error('AI Triage Error:', error);
     return {

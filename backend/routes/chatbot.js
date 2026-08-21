@@ -44,10 +44,10 @@ const isHealthRelated = (query) => {
   return healthKeywords.some(keyword => lowerQuery.includes(keyword));
 };
 
-// Generate response using Groq API
-const generateGroqResponse = async (query, apiKey) => {
-  const Groq = require('groq-sdk');
-  const groq = new Groq({ apiKey });
+// Generate response using OpenRouter API
+const generateOpenRouterResponse = async (query, apiKey) => {
+  const { OpenRouter } = await import('@openrouter/sdk');
+  const openrouter = new OpenRouter({ apiKey });
 
   const systemPrompt = `You are a dedicated Healthcare and Medical Assistant for the OrvantaHealth Hospital Management System. 
   
@@ -64,25 +64,27 @@ const generateGroqResponse = async (query, apiKey) => {
   Remember: If it's not about health, medicine, or the hospital, DO NOT answer it.`;
 
   try {
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: query
-        }
-      ],
-      model: "llama-3.3-70b-versatile", // Using a newer, more capable model
-      temperature: 0.3, // Lower temperature for more factual and constrained responses
-      max_tokens: 500
+    const response = await openrouter.chat.send({
+      chatRequest: {
+        model: process.env.OPENROUTER_MODEL || "poolside/laguna-s-2.1:free",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: query
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 500
+      }
     });
 
-    return chatCompletion.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
+    return response.choices[0]?.message?.content || "I apologize, but I couldn't generate a response. Please try again.";
   } catch (error) {
-    console.error('Groq API error:', error);
+    console.error('OpenRouter API error:', error);
     throw error;
   }
 };
@@ -115,29 +117,18 @@ router.post('/chat', [
     }
 
     let response;
-    let usedBackupKey = false;
 
-    // Try primary API key first
     try {
-      response = await generateGroqResponse(message, process.env.GROQ_API_KEY_PRIMARY);
-    } catch (primaryError) {
-      console.error('Primary Groq API failed:', primaryError);
-
-      // Try backup API key
-      try {
-        if (process.env.GROQ_API_KEY_BACKUP) {
-          response = await generateGroqResponse(message, process.env.GROQ_API_KEY_BACKUP);
-          usedBackupKey = true;
-        } else {
-          throw new Error('Backup API key not configured');
-        }
-      } catch (backupError) {
-        console.error('Backup Groq API also failed:', backupError);
-        return res.status(503).json({
-          success: false,
-          message: 'Chatbot service is temporarily unavailable. Please try again later.'
-        });
+      if (!process.env.OPENROUTER_API_KEY) {
+        throw new Error('OpenRouter API key not configured');
       }
+      response = await generateOpenRouterResponse(message, process.env.OPENROUTER_API_KEY);
+    } catch (error) {
+      console.error('OpenRouter API failed:', error);
+      return res.status(503).json({
+        success: false,
+        message: 'Chatbot service is temporarily unavailable. Please try again later.'
+      });
     }
 
     res.json({
@@ -145,7 +136,7 @@ router.post('/chat', [
       data: {
         response,
         isHealthRelated: true,
-        usedBackupKey
+        usedBackupKey: false
       }
     });
   } catch (error) {
@@ -161,9 +152,9 @@ router.post('/chat', [
 router.get('/status', authenticateToken, async (req, res) => {
   try {
     const status = {
-      isAvailable: !!(process.env.GROQ_API_KEY_PRIMARY || process.env.GROQ_API_KEY_BACKUP),
-      hasPrimaryKey: !!process.env.GROQ_API_KEY_PRIMARY,
-      hasBackupKey: !!process.env.GROQ_API_KEY_BACKUP,
+      isAvailable: !!process.env.OPENROUTER_API_KEY,
+      hasPrimaryKey: !!process.env.OPENROUTER_API_KEY,
+      hasBackupKey: false,
       rateLimit: {
         windowMs: 60000, // 1 minute
         maxRequests: 10
