@@ -127,7 +127,7 @@ router.post('/chat', [
       console.error('OpenRouter API failed:', error);
       return res.status(503).json({
         success: false,
-        message: 'Chatbot service is temporarily unavailable. Please try again later.'
+        message: `Chatbot service is temporarily unavailable: ${error.message || error}`
       });
     }
 

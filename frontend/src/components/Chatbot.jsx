@@ -156,10 +156,10 @@ const Chatbot = () => {
             <button
               type="submit"
               disabled={!inputMessage.trim() || isLoading}
-              className="absolute right-2 bottom-1.5 w-10 h-10 flex items-center justify-center rounded-xl bg-brand-dark text-white shadow-sm hover:bg-opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed mb-0.5"
+              className="absolute right-2 bottom-2 w-8 h-8 flex items-center justify-center rounded-lg bg-brand-dark text-white shadow-sm hover:bg-opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed mb-0.5"
               aria-label="Send message"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4" />
             </button>
           </div>
           <p className="text-[10px] text-slate-400 mt-2 text-center uppercase tracking-widest font-bold">

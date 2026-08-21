@@ -64,7 +64,7 @@ export const ChatbotProvider = ({ children }) => {
         },
       });
 
-      const response = await api.post('/chatbot/chat', { message });
+      const response = await api.post('/chatbot/chat', { message }, { timeout: 60000 });
 
       if (response.data.success) {
         dispatch({
