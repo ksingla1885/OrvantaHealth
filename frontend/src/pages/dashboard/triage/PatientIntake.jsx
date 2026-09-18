@@ -76,35 +76,34 @@ const PatientIntake = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto pb-20 animate-fade-in">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12 border-b border-slate-100 pb-8">
+    <div className="max-w-[1600px] px-4 md:px-8 mx-auto pb-20 animate-fade-in">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 border-b border-slate-100 pb-6">
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="h-4 w-4 text-brand-teal animate-pulse" />
-            <span className="text-[11px] font-black text-brand-teal uppercase tracking-widest">Medical Intelligence</span>
+            <span className="text-[11px] font-bold text-brand-teal uppercase tracking-widest">Medical Intelligence</span>
           </div>
-          <h1 className="text-5xl font-black text-brand-dark font-display tracking-tight leading-none mb-2">
-            Patient <span className="italic text-brand-teal">Intake</span>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight mb-2">
+            Patient Intake
           </h1>
-          <p className="text-slate-500 font-medium max-w-md">
+          <p className="text-slate-500 text-sm max-w-md">
             Digital enrollment and automated triage analysis for incoming walk-in patients.
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Column: Personal Info & Symptoms */}
-        <div className="lg:col-span-8 space-y-8">
-          <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-premium relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-teal to-blue-500 opacity-50"></div>
-            
-            <h3 className="text-xl font-black text-brand-dark font-display mb-8 flex items-center gap-3">
-              <User className="h-5 w-5 text-brand-teal" /> Personal Identity
-            </h3>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+        
+        {/* Column 1: Personal Identity */}
+        <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200/80 shadow-sm relative overflow-hidden flex flex-col h-full">
+          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <User className="h-5 w-5 text-brand-teal" /> Personal Identity
+          </h3>
 
+          <div className="space-y-6">
             {/* Auto-suggest dropdown to search existing patients */}
-            <div className="relative mb-8 p-6 bg-slate-50/70 border border-slate-200/60 rounded-[1.75rem] z-30">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block mb-2">Search Registered Patients</label>
+            <div className="relative z-30">
+              <label className="text-xs font-medium text-slate-500 block mb-1.5">Search Registered Patients</label>
               <div className="relative">
                 <input
                   type="text"
@@ -114,25 +113,19 @@ const PatientIntake = () => {
                     setShowDropdown(true);
                   }}
                   onFocus={() => setShowDropdown(true)}
-                  className="w-full bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] h-[58px] pl-11 pr-10 font-bold text-slate-800 focus:border-brand-teal focus:ring-4 focus:ring-brand-teal/10 outline-none transition-all shadow-sm text-sm"
-                  placeholder="Type name, email, or MRN to autocomplete..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm text-slate-800 focus:bg-white focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none transition-all shadow-sm"
+                  placeholder="Name, email, or MRN..."
                 />
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-teal" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => {
                       setSearchQuery('');
                       setSelectedPatientId(null);
-                      setFormData(prev => ({
-                        ...prev,
-                        patientName: '',
-                        age: '',
-                        gender: 'male',
-                        contactNumber: ''
-                      }));
+                      setFormData(prev => ({ ...prev, patientName: '', age: '', gender: 'male', contactNumber: '' }));
                     }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold hover:text-slate-600 p-1"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold hover:text-slate-600 p-1"
                   >
                     ✕
                   </button>
@@ -140,7 +133,7 @@ const PatientIntake = () => {
               </div>
 
               {showDropdown && searchQuery.trim() && (
-                <div className="absolute left-6 right-6 mt-1.5 bg-white border-2 border-slate-100 rounded-2xl shadow-xl z-50 max-h-48 overflow-y-auto custom-scrollbar">
+                <div className="absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto custom-scrollbar">
                   {patients
                     .filter(p => {
                       const name = `${p.userId?.profile?.firstName || ''} ${p.userId?.profile?.lastName || ''}`.toLowerCase();
@@ -179,13 +172,13 @@ const PatientIntake = () => {
                           setShowDropdown(false);
                           toast.success(`Selected: ${fullName}`);
                         }}
-                        className="w-full text-left px-5 py-3 hover:bg-slate-50 font-bold text-xs text-slate-700 border-b border-slate-100 last:border-b-0 flex items-center justify-between cursor-pointer"
+                        className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-sm text-slate-700 border-b border-slate-100 last:border-b-0 flex items-center justify-between cursor-pointer"
                       >
                         <div>
-                          <p className="text-brand-dark text-sm">{p.userId?.profile?.firstName || ''} {p.userId?.profile?.lastName || ''}</p>
-                          <p className="text-[10px] text-slate-400 font-semibold">{p.userId?.email || ''}</p>
+                          <p className="font-medium text-slate-800">{p.userId?.profile?.firstName || ''} {p.userId?.profile?.lastName || ''}</p>
+                          <p className="text-xs text-slate-500">{p.userId?.email || ''}</p>
                         </div>
-                        <span className="text-[9px] font-black font-mono text-brand-teal bg-brand-light px-2 py-0.5 rounded-full border border-brand-teal/20">
+                        <span className="text-[10px] font-medium text-brand-teal bg-brand-light px-2 py-0.5 rounded border border-brand-teal/20">
                           {p.medicalRecordNumber ? `#${p.medicalRecordNumber}` : 'No MRN'}
                         </span>
                       </button>
@@ -194,170 +187,176 @@ const PatientIntake = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="patientName"
-                    value={formData.patientName}
-                    onChange={handleChange}
-                    className="input pl-11 bg-slate-50/50 border-slate-100 focus:bg-white transition-all font-bold"
-                    placeholder="Enter patient's name"
-                    required
-                  />
-                  <Clipboard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-teal" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Contact Number</label>
-                <div className="relative">
-                  <input
-                    type="tel"
-                    name="contactNumber"
-                    value={formData.contactNumber}
-                    onChange={handleChange}
-                    className="input pl-11 bg-slate-50/50 border-slate-100 focus:bg-white transition-all font-bold"
-                    placeholder="+91-XXXXX-XXXXX"
-                    required
-                  />
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-teal" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Age & Gender</label>
-                <div className="flex gap-4">
-                  <input
-                    type="number"
-                    name="age"
-                    value={formData.age}
-                    onChange={handleChange}
-                    className="input bg-slate-50/50 border-slate-100 focus:bg-white transition-all font-bold w-24"
-                    placeholder="Age"
-                    required
-                  />
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleChange}
-                    className="input flex-1 bg-slate-50/50 border-slate-100 focus:bg-white transition-all font-bold appearance-none px-6"
-                    required
-                  >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-500 block">Full Name</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="patientName"
+                  value={formData.patientName}
+                  onChange={handleChange}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-800 focus:bg-white focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none transition-all shadow-sm"
+                  placeholder="Enter patient's name"
+                  required
+                />
+                <Clipboard className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               </div>
             </div>
 
-            <h3 className="text-xl font-black text-brand-dark font-display mb-6 flex items-center gap-3">
-              <Activity className="h-5 w-5 text-rose-500" /> Sensation & Symptoms
-            </h3>
-            <div className="relative group">
-              <div className="absolute inset-0 bg-brand-teal/5 rounded-[2.5rem] -m-1.5 opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
-              <textarea
-                name="symptoms"
-                value={formData.symptoms}
-                onChange={handleChange}
-                rows={6}
-                className="input min-h-[200px] rounded-[2rem] bg-slate-50/50 border-2 border-slate-100 focus:bg-white focus:shadow-2xl transition-all relative z-10 p-8 text-lg font-medium leading-relaxed"
-                placeholder="Describe current medical complaints and symptoms in detail for AI analysis..."
-                required
-              />
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-500 block">Contact Number</label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  name="contactNumber"
+                  value={formData.contactNumber}
+                  onChange={handleChange}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm text-slate-800 focus:bg-white focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none transition-all shadow-sm"
+                  placeholder="+91-XXXXX-XXXXX"
+                  required
+                />
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-500 block">Age</label>
+                <input
+                  type="number"
+                  name="age"
+                  value={formData.age}
+                  onChange={handleChange}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm text-slate-800 focus:bg-white focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none transition-all shadow-sm"
+                  placeholder="Age"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-slate-500 block">Gender</label>
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm text-slate-800 focus:bg-white focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none transition-all shadow-sm appearance-none"
+                  required
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Vitals & Action */}
-        <div className="lg:col-span-4 space-y-8">
-          <div className="bg-brand-dark rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-teal opacity-10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+        {/* Column 2: Symptoms */}
+        <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200/80 shadow-sm relative overflow-hidden flex flex-col h-full">
+          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <Activity className="h-5 w-5 text-rose-500" /> Sensation & Symptoms
+          </h3>
+          
+          <div className="flex-1 flex flex-col gap-4">
+            <textarea
+              name="symptoms"
+              value={formData.symptoms}
+              onChange={handleChange}
+              className="w-full flex-1 min-h-[250px] bg-slate-50 border border-slate-200 rounded-xl p-5 text-sm text-slate-800 focus:bg-white focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none transition-all shadow-sm resize-none"
+              placeholder="Describe current medical complaints and symptoms in detail for AI analysis..."
+              required
+            />
             
-            <h3 className="text-xl font-black font-display mb-10 flex items-center gap-3">
-              <Zap className="h-5 w-5 text-brand-teal" /> Vital Status
-            </h3>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-teal-100/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <Thermometer className="h-3 w-3" /> Body Temp (°F)
-                </label>
-                <input
-                  type="text"
-                  name="vitals.temperature"
-                  value={formData.vitals.temperature}
-                  onChange={handleChange}
-                  className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-brand-teal transition-all"
-                  placeholder="98.6"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-teal-100/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <Droplets className="h-3 w-3" /> Blood Pressure
-                </label>
-                <input
-                  type="text"
-                  name="vitals.bloodPressure"
-                  value={formData.vitals.bloodPressure}
-                  onChange={handleChange}
-                  className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-brand-teal transition-all"
-                  placeholder="120/80"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-teal-100/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <Heart className="h-3 w-3" /> Heart Rate (BPM)
-                </label>
-                <input
-                  type="text"
-                  name="vitals.pulseRate"
-                  value={formData.vitals.pulseRate}
-                  onChange={handleChange}
-                  className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-brand-teal transition-all"
-                  placeholder="72"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-teal-100/40 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  <Zap className="h-3 w-3 text-emerald-400" /> SpO2 (%)
-                </label>
-                <input
-                  type="text"
-                  name="vitals.spO2"
-                  value={formData.vitals.spO2}
-                  onChange={handleChange}
-                  className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-4 text-white font-bold outline-none focus:border-brand-teal transition-all"
-                  placeholder="98"
-                />
-              </div>
+            <div className="p-5 bg-blue-50/50 rounded-xl border border-blue-100 border-dashed">
+              <h4 className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                <Zap className="h-3.5 w-3.5" /> Intelligence Note
+              </h4>
+              <p className="text-xs text-slate-500 leading-relaxed italic">
+                System processes symptoms using Large Biological Models to calculate risk scores and urgency levels automatically.
+              </p>
             </div>
+          </div>
+        </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-12 py-6 bg-brand-teal rounded-[2rem] text-sm font-black uppercase tracking-[0.3em] shadow-[0_20px_40px_-10px_rgba(13,148,136,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group"
-            >
-              {loading ? (
-                <div className="loading-spinner border-white/30 border-t-white h-5 w-5"></div>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 group-hover:translate-x-2 transition-transform" />
-                  INITIALIZE TRIAGE
-                </>
-              )}
-            </button>
+        {/* Column 3: Vitals & Action */}
+        <div className="bg-slate-900 rounded-[2rem] p-6 md:p-8 text-white shadow-lg relative overflow-hidden flex flex-col h-full">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-teal/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+          
+          <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2 relative z-10">
+            <Zap className="h-5 w-5 text-brand-teal" /> Vital Status
+          </h3>
+
+          <div className="grid grid-cols-2 gap-4 mb-auto relative z-10">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-400 flex items-center gap-1.5">
+                <Thermometer className="h-3.5 w-3.5" /> Temp (°F)
+              </label>
+              <input
+                type="text"
+                name="vitals.temperature"
+                value={formData.vitals.temperature}
+                onChange={handleChange}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-white focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all shadow-inner"
+                placeholder="98.6"
+              />
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-400 flex items-center gap-1.5">
+                <Droplets className="h-3.5 w-3.5" /> BP
+              </label>
+              <input
+                type="text"
+                name="vitals.bloodPressure"
+                value={formData.vitals.bloodPressure}
+                onChange={handleChange}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-white focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all shadow-inner"
+                placeholder="120/80"
+              />
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-400 flex items-center gap-1.5">
+                <Heart className="h-3.5 w-3.5" /> HR (BPM)
+              </label>
+              <input
+                type="text"
+                name="vitals.pulseRate"
+                value={formData.vitals.pulseRate}
+                onChange={handleChange}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-white focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all shadow-inner"
+                placeholder="72"
+              />
+            </div>
+            
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-400 flex items-center gap-1.5">
+                <Zap className="h-3.5 w-3.5 text-emerald-400" /> SpO2 (%)
+              </label>
+              <input
+                type="text"
+                name="vitals.spO2"
+                value={formData.vitals.spO2}
+                onChange={handleChange}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-white focus:border-brand-teal focus:ring-1 focus:ring-brand-teal outline-none transition-all shadow-inner"
+                placeholder="98"
+              />
+            </div>
           </div>
 
-          <div className="p-8 bg-blue-50/50 rounded-[2.5rem] border border-blue-100 border-dashed">
-            <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <Zap className="h-3.5 w-3.5" /> Intelligence Note
-            </h4>
-            <p className="text-xs text-slate-500 leading-relaxed italic">
-              "System will process symptoms using Large Biological Models to calculate risk scores and urgency levels."
-            </p>
-          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full mt-8 py-3.5 bg-brand-teal text-white rounded-xl text-sm font-bold shadow-md hover:bg-teal-500 active:scale-95 transition-all flex items-center justify-center gap-2 relative z-10"
+          >
+            {loading ? (
+              <div className="loading-spinner border-white/30 border-t-white h-4 w-4"></div>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                Initialize Triage
+              </>
+            )}
+          </button>
         </div>
       </form>
     </div>

@@ -222,34 +222,34 @@ const TriageQueue = () => {
       </div>
 
       {/* ── MAIN HEADER & WORKFLOW CONTROL BAR ── */}
-      <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-200/80 shadow-premium space-y-6 relative overflow-hidden">
+      <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 relative overflow-hidden">
         
         {/* Glow decorative background pill */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-teal/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10">
           
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1.5 px-3 py-1 bg-brand-teal/10 text-brand-teal rounded-full text-[10px] font-black uppercase tracking-widest border border-brand-teal/20">
-                <span className="h-2 w-2 rounded-full bg-brand-teal animate-pulse" />
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-teal-50 text-teal-600 rounded-full text-xs font-medium border border-teal-100">
+                <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
                 Live Telemetry Stream
               </span>
 
               {/* Role Context Pill */}
-              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                 isDoctor 
-                  ? 'bg-purple-100 text-purple-700 border border-purple-200' 
-                  : 'bg-blue-100 text-blue-700 border border-blue-200'
+                  ? 'bg-purple-50 text-purple-700 border border-purple-100' 
+                  : 'bg-blue-50 text-blue-700 border border-blue-100'
               }`}>
                 {isDoctor ? '👨‍⚕️ Doctor Desk' : '📋 Receptionist Control'}
               </span>
             </div>
 
-            <h1 className="text-3xl md:text-5xl font-black text-brand-dark font-display tracking-tight leading-none">
-              Triage <span className="italic text-brand-teal font-light">Lobby</span>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight leading-tight">
+              Triage Lobby
             </h1>
-            <p className="text-slate-500 font-medium text-xs md:text-sm max-w-xl">
+            <p className="text-slate-500 text-sm max-w-xl leading-relaxed">
               Real-time telemetry stream of AI-assessed patient intake. Prioritize clinical interventions by risk score & urgency level.
             </p>
           </div>
@@ -260,21 +260,21 @@ const TriageQueue = () => {
             {isReceptionist && (
               <button 
                 onClick={() => navigate('/receptionist/triage/intake')}
-                className="px-5 py-3.5 bg-gradient-to-r from-brand-teal to-teal-600 text-white rounded-2xl font-black text-xs uppercase tracking-wider hover:from-teal-600 hover:to-brand-dark transition-all shadow-lg shadow-brand-teal/20 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-medium text-sm transition-all shadow-sm flex items-center justify-center gap-2"
               >
-                <UserPlus className="h-4 w-4" />
-                + New Intake Assessment
+                <UserPlus className="h-4 w-4 text-brand-teal" />
+                New Intake Assessment
               </button>
             )}
 
             {/* Status Tab Selector */}
-            <div className="flex bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/70 shadow-inner flex-wrap gap-1">
+            <div className="flex bg-slate-50 p-1.5 rounded-xl border border-slate-200 flex-wrap gap-1">
               <button 
                 onClick={() => setFilter('pending')}
-                className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   filter === 'pending' 
-                  ? 'bg-white text-brand-dark shadow-md border border-slate-200/50' 
-                  : 'text-slate-500 hover:text-brand-dark'
+                  ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50' 
+                  : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 Pending Queue
@@ -283,15 +283,15 @@ const TriageQueue = () => {
               {isDoctor && (
                 <button 
                   onClick={() => setFilter('my-referrals')}
-                  className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all relative ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all relative ${
                     filter === 'my-referrals' 
-                    ? 'bg-brand-dark text-white shadow-lg shadow-brand-dark/20' 
-                    : 'text-slate-500 hover:text-brand-dark'
+                    ? 'bg-slate-800 text-white shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
                   My Referrals
                   {referredToMeCount > 0 && filter !== 'my-referrals' && (
-                    <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white shadow-md animate-bounce">
+                    <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-xs font-bold text-white shadow-sm animate-bounce">
                       {referredToMeCount}
                     </span>
                   )}
@@ -301,10 +301,10 @@ const TriageQueue = () => {
               {user?.role !== 'receptionist' && (
                 <button 
                   onClick={() => setFilter('resolved')}
-                  className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     filter === 'resolved' 
-                    ? 'bg-white text-brand-dark shadow-md border border-slate-200/50' 
-                    : 'text-slate-500 hover:text-brand-dark'
+                    ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50' 
+                    : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
                   Resolved Cases
@@ -313,7 +313,7 @@ const TriageQueue = () => {
 
               <button 
                 onClick={fetchQueue}
-                className="p-2.5 bg-brand-dark text-white rounded-xl hover:bg-brand-teal transition-all shadow-md active:scale-95 ml-1"
+                className="p-2 bg-white border border-slate-200 text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-700 transition-colors shadow-sm ml-1"
                 title="Refresh Stream"
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -329,13 +329,13 @@ const TriageQueue = () => {
           
           {/* Search Bar */}
           <div className="relative w-full sm:w-96">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input 
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search patient name, ID, or symptoms..."
-              className="w-full pl-11 pr-10 py-3 bg-slate-50/90 rounded-2xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 transition-all shadow-inner"
+              className="w-full pl-10 pr-10 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-700 outline-none focus:bg-white focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 transition-all shadow-sm"
             />
             {searchQuery ? (
               <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-bold hover:text-slate-600 p-1">
@@ -350,7 +350,7 @@ const TriageQueue = () => {
 
           {/* Urgency Filter Pills */}
           <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">Urgency Level:</span>
+            <span className="text-xs font-medium text-slate-500 mr-1">Urgency Level:</span>
             {[
               { id: 'all', label: 'All Cases' },
               { id: 'emergency', label: '🚨 Emergency' },
@@ -360,10 +360,10 @@ const TriageQueue = () => {
               <button
                 key={u.id}
                 onClick={() => setUrgencyFilter(u.id)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   urgencyFilter === u.id
-                  ? 'bg-brand-teal text-white shadow-md shadow-brand-teal/20 ring-2 ring-brand-teal/30'
-                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+                  ? 'bg-brand-teal text-white shadow-sm'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
                 {u.label}

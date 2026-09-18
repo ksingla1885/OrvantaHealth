@@ -400,6 +400,7 @@ const StaffProfile = ({ user }) => {
     address: user?.profile?.address || ''
   });
 
+  const isReceptionist = user?.role === 'receptionist';
   const fullName = `${user?.profile?.firstName || ''} ${user?.profile?.lastName || ''}`.trim() || 'Staff Member';
   const roleLabel = user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Staff';
   const initials = `${user?.profile?.firstName?.[0] || ''}${user?.profile?.lastName?.[0] || ''}`.toUpperCase();
@@ -451,26 +452,28 @@ const StaffProfile = ({ user }) => {
               )}
             </div>
             {/* Camera upload */}
-            <label className="absolute -bottom-2 -right-2 h-8 w-8 rounded-xl bg-brand-teal border-2 border-brand-dark flex items-center justify-center cursor-pointer hover:bg-teal-500 transition-colors shadow-lg">
-              <Camera className="h-4 w-4 text-white" />
-              <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                if (file.size > 5 * 1024 * 1024) { toast.error('File too large (max 5MB)'); return; }
-                const fd = new FormData();
-                fd.append('avatar', file);
-                try {
-                  const res = await api.post('/auth/profile/avatar', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-                  if (res.data.success) {
-                    toast.success('Avatar updated');
-                    const u = JSON.parse(localStorage.getItem('user'));
-                    u.profile.avatar = res.data.data.avatar;
-                    localStorage.setItem('user', JSON.stringify(u));
-                    window.location.reload();
-                  }
-                } catch { toast.error('Upload failed'); }
-              }} />
-            </label>
+            {!isReceptionist && (
+              <label className="absolute -bottom-2 -right-2 h-8 w-8 rounded-xl bg-brand-teal border-2 border-brand-dark flex items-center justify-center cursor-pointer hover:bg-teal-500 transition-colors shadow-lg">
+                <Camera className="h-4 w-4 text-white" />
+                <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  if (file.size > 5 * 1024 * 1024) { toast.error('File too large (max 5MB)'); return; }
+                  const fd = new FormData();
+                  fd.append('avatar', file);
+                  try {
+                    const res = await api.post('/auth/profile/avatar', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                    if (res.data.success) {
+                      toast.success('Avatar updated');
+                      const u = JSON.parse(localStorage.getItem('user'));
+                      u.profile.avatar = res.data.data.avatar;
+                      localStorage.setItem('user', JSON.stringify(u));
+                      window.location.reload();
+                    }
+                  } catch { toast.error('Upload failed'); }
+                }} />
+              </label>
+            )}
           </div>
 
           {/* Name + role */}
@@ -517,27 +520,29 @@ const StaffProfile = ({ user }) => {
         <div className="flex items-center justify-between px-8 py-6 border-b border-slate-50">
           <div>
             <h2 className="text-xl font-black text-brand-dark font-display">Personal Details</h2>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Editable clinical identity</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{isReceptionist ? 'Clinical identity' : 'Editable clinical identity'}</p>
           </div>
-          {!isEditing ? (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-light border border-brand-teal/10 text-brand-dark hover:bg-brand-teal hover:text-white transition-all font-black text-xs uppercase tracking-widest"
-            >
-              <Edit2 className="h-3.5 w-3.5" /> Edit Profile
-            </button>
-          ) : (
-            <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setIsEditing(false)}
-                className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-brand-dark border border-slate-100 hover:border-slate-200 transition-all">
-                Cancel
+          {!isReceptionist && (
+            !isEditing ? (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-light border border-brand-teal/10 text-brand-dark hover:bg-brand-teal hover:text-white transition-all font-black text-xs uppercase tracking-widest"
+              >
+                <Edit2 className="h-3.5 w-3.5" /> Edit Profile
               </button>
-              <button type="button" onClick={handleSave} disabled={saving}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-teal text-white text-xs font-black uppercase tracking-widest hover:bg-teal-600 transition-all disabled:opacity-60 shadow-lg">
-                <Save className="h-3.5 w-3.5" />
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-brand-dark border border-slate-100 hover:border-slate-200 transition-all">
+                  Cancel
+                </button>
+                <button type="button" onClick={handleSave} disabled={saving}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-teal text-white text-xs font-black uppercase tracking-widest hover:bg-teal-600 transition-all disabled:opacity-60 shadow-lg">
+                  <Save className="h-3.5 w-3.5" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            )
           )}
         </div>
 
@@ -609,8 +614,9 @@ const StaffProfile = ({ user }) => {
         <div>
           <p className="text-sm font-black text-brand-dark">Profile Access Notice</p>
           <p className="text-xs font-medium text-slate-500 mt-1 leading-relaxed">
-            You can edit your personal information such as date of birth, gender, and address.
-            To update your email, phone number, or role, please contact the hospital administrator.
+            {isReceptionist
+              ? "Your profile information is managed by the administration team. To update any details, please contact the hospital administrator."
+              : "You can edit your personal information such as date of birth, gender, and address. To update your email, phone number, or role, please contact the hospital administrator."}
           </p>
         </div>
       </div>

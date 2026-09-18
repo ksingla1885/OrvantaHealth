@@ -284,149 +284,80 @@ const PatientManagement = () => {
 
       {/* ── PATIENT PROFILE MODAL ── */}
       {showPatientModal && selectedPatient && (
-        <div className="fixed inset-0 z-[200] flex items-start justify-center pt-16 px-4 pb-4">
-          <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-lg animate-fade-in" onClick={() => setShowPatientModal(false)} />
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm animate-fade-in" onClick={() => setShowPatientModal(false)} />
 
-          <div className="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-lg animate-slide-up border border-slate-100 max-h-[calc(100vh-5rem)] flex flex-col overflow-y-auto">
-
-            {/* ── HERO HEADER ── */}
-            <div className="relative h-44 bg-brand-dark shrink-0">
-              <div className="absolute inset-0 overflow-hidden rounded-t-[2rem]">
-                <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-brand-teal opacity-20 blur-2xl" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-rose-500 opacity-10 blur-xl" />
-                <svg className="absolute inset-0 w-full h-full opacity-5" viewBox="0 0 400 176" fill="none">
-                  <circle cx="340" cy="20" r="80" stroke="white" strokeWidth="1"/>
-                  <circle cx="340" cy="20" r="50" stroke="white" strokeWidth="0.5"/>
-                  <line x1="0" y1="100" x2="400" y2="80" stroke="white" strokeWidth="0.5"/>
-                </svg>
-              </div>
-
-              <button onClick={() => setShowPatientModal(false)}
-                className="absolute top-5 right-5 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all z-10">
-                <X className="h-4 w-4" />
+          <div className="relative bg-white rounded-[2rem] shadow-xl w-full max-w-md animate-slide-up flex flex-col">
+            
+            {/* Header Area */}
+            <div className="p-8 pb-6 relative">
+              <button onClick={() => setShowPatientModal(false)} className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors">
+                <X className="h-5 w-5" />
               </button>
 
-              <div className="absolute top-5 left-5 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/10">
-                <Hash className="h-3 w-3 text-brand-teal" />
-                <span className="text-[10px] font-black text-white uppercase tracking-widest">{selectedPatient.medicalRecordNumber || 'Unassigned'}</span>
-              </div>
-
-              {/* Avatar — overflows intentionally */}
-              <div className="absolute -bottom-9 left-8 z-10">
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-[1.25rem] bg-brand-teal opacity-30 blur-md scale-110" />
-                  <div className="relative h-20 w-20 rounded-[1.25rem] bg-gradient-to-br from-brand-teal to-brand-dark border-4 border-white shadow-2xl flex items-center justify-center text-white text-3xl font-black tracking-tighter">
-                    {selectedPatient.userId.profile.firstName[0]}{selectedPatient.userId.profile.lastName[0]}
+              <div className="flex flex-col items-center text-center mt-2">
+                <div className="h-20 w-20 rounded-full bg-slate-50 border border-slate-100 text-slate-600 flex items-center justify-center text-2xl font-light tracking-tight mb-4 shadow-sm">
+                  {selectedPatient.userId.profile.firstName[0]}{selectedPatient.userId.profile.lastName[0]}
+                </div>
+                <h2 className="text-2xl font-semibold text-slate-800 tracking-tight mb-1">
+                  {selectedPatient.userId.profile.firstName} {selectedPatient.userId.profile.lastName}
+                </h2>
+                <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                  <span>#{selectedPatient.medicalRecordNumber || 'Unassigned'}</span>
+                  <span className="text-slate-300">•</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className={`h-1.5 w-1.5 rounded-full ${selectedPatient.userId.isActive ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                    <span>{selectedPatient.userId.isActive ? 'Active' : 'Inactive'}</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Status pill — overflows intentionally */}
-              <div className="absolute -bottom-4 right-8 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 shadow-sm z-10">
-                <div className={`h-1.5 w-1.5 rounded-full ${selectedPatient.userId.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-400'}`} />
-                <span className={`text-[10px] font-black uppercase tracking-widest ${selectedPatient.userId.isActive ? 'text-emerald-600' : 'text-rose-500'}`}>
-                  {selectedPatient.userId.isActive ? 'Active' : 'Inactive'}
-                </span>
               </div>
             </div>
 
-            {/* ── BODY ── */}
-            <div className="px-8 pt-14 pb-8 space-y-7">
-              <div>
-                <h2 className="text-3xl font-black font-display text-brand-dark leading-tight">
-                  {selectedPatient.userId.profile.firstName} {selectedPatient.userId.profile.lastName}
-                </h2>
-                <p className="text-xs font-semibold text-slate-400 mt-1">{selectedPatient.userId.email?.toLowerCase()}</p>
-              </div>
-
-              {/* Stat cards */}
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: 'Age',    value: `${getAge(selectedPatient.userId.profile.dateOfBirth)}`, unit: 'yr',  icon: User2,      bg: 'bg-brand-teal/10',  color: 'text-brand-teal' },
-                  { label: 'Gender', value: selectedPatient.userId.profile.gender || '—', unit: '', icon: Stethoscope, bg: 'bg-violet-50',    color: 'text-violet-500', capitalize: true },
-                ].map((s, i) => (
-                  <div key={i} className="flex flex-col gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:shadow-md hover:-translate-y-0.5 transition-all">
-                    <div className={`h-8 w-8 rounded-xl ${s.bg} flex items-center justify-center`}>
-                      <s.icon className={`h-4 w-4 ${s.color}`} />
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{s.label}</p>
-                      <p className={`text-xl font-black leading-none mt-0.5 ${s.uppercase ? 'uppercase' : s.capitalize ? 'capitalize' : ''} ${s.color}`}>
-                        {s.value}{s.unit && <span className="text-xs font-bold ml-0.5 text-slate-400">{s.unit}</span>}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Contact row */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <Phone className="h-4 w-4 text-brand-teal shrink-0" />
-                  <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Phone</p>
-                    <p className="text-xs font-bold text-brand-dark">{selectedPatient.userId.profile.phone || '—'}</p>
-                  </div>
+            {/* Body Area */}
+            <div className="px-8 pb-8 space-y-6">
+              
+              <div className="grid grid-cols-2 gap-y-6 gap-x-4 p-6 bg-slate-50/50 rounded-2xl border border-slate-100/50">
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Age</p>
+                  <p className="text-sm font-medium text-slate-700">{getAge(selectedPatient.userId.profile.dateOfBirth)} years</p>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <Mail className="h-4 w-4 text-violet-500 shrink-0" />
-                  <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Email</p>
-                    <p className="text-xs font-bold text-brand-dark truncate">{selectedPatient.userId.email || '—'}</p>
-                  </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Gender</p>
+                  <p className="text-sm font-medium text-slate-700 capitalize">{selectedPatient.userId.profile.gender || '—'}</p>
                 </div>
-              </div>
-
-              {/* Address */}
-              <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Residential Address</p>
-                <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div className="h-8 w-8 rounded-xl bg-brand-light flex items-center justify-center shrink-0 mt-0.5">
-                    <MapPin className="h-4 w-4 text-brand-teal" />
-                  </div>
-                  <p className="text-sm font-semibold text-slate-600 leading-relaxed pt-1">
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Phone</p>
+                  <p className="text-sm font-medium text-slate-700">{selectedPatient.userId.profile.phone || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Email</p>
+                  <p className="text-sm font-medium text-slate-700 break-all" title={selectedPatient.userId.email}>{selectedPatient.userId.email || '—'}</p>
+                </div>
+                <div className="col-span-2 pt-2 border-t border-slate-100/80">
+                  <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Residential Address</p>
+                  <p className="text-sm font-medium text-slate-700 leading-relaxed">
                     {selectedPatient.userId.profile.address || 'No address on file'}
                   </p>
                 </div>
               </div>
 
-              {/* Actions (receptionist only) */}
+              {/* Actions Footer */}
               {user?.role !== 'superadmin' && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => { setShowPatientModal(false); setShowLabModal(true); }}
-                    className="group flex items-center gap-3 p-4 rounded-2xl bg-brand-dark hover:bg-slate-800 text-white transition-all hover:-translate-y-0.5 hover:shadow-xl"
+                    className="flex-1 py-3 px-4 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-xl transition-all shadow-sm flex justify-center items-center gap-2"
                   >
-                    <div className="h-9 w-9 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-brand-teal/20 transition-colors">
-                      <FileUp className="h-4 w-4 text-brand-teal" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-white/40">Lab</p>
-                      <p className="text-sm font-bold">Upload Report</p>
-                    </div>
+                    <FileUp className="h-4 w-4 text-slate-400" /> Lab Report
                   </button>
                   <button
                     onClick={() => { setShowPatientModal(false); setShowBillModal(true); }}
-                    className="group flex items-center gap-3 p-4 rounded-2xl bg-brand-teal hover:bg-teal-600 text-white transition-all hover:-translate-y-0.5 hover:shadow-xl"
+                    className="flex-1 py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-xl transition-all shadow-sm flex justify-center items-center gap-2"
                   >
-                    <div className="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
-                      <Activity className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-white/60">Billing</p>
-                      <p className="text-sm font-bold">Generate Bill</p>
-                    </div>
+                    <Activity className="h-4 w-4 text-slate-400" /> Generate Bill
                   </button>
                 </div>
               )}
-
-              {/* Close */}
-              <button
-                onClick={() => setShowPatientModal(false)}
-                className="w-full py-4 rounded-2xl border-2 border-slate-100 bg-white hover:bg-slate-50 text-brand-dark font-black text-sm uppercase tracking-widest transition-all hover:border-brand-teal/30 hover:text-brand-teal flex items-center justify-center gap-2"
-              >
-                <X className="h-4 w-4" /> Close Profile
-              </button>
             </div>
           </div>
         </div>

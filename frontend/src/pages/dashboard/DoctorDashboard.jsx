@@ -59,11 +59,11 @@ const DoctorDashboard = () => {
   const getDutyBadgeStyles = () => {
     switch (dutyStatus) {
       case 'rounds':
-        return { bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20', dot: 'bg-amber-400', label: 'On Rounds / Surgery' };
+        return { bg: 'bg-amber-50 border-amber-100 text-amber-700', dot: 'bg-amber-500', label: 'On Rounds / Surgery' };
       case 'busy':
-        return { bg: 'bg-rose-500/10 text-rose-400 border-rose-500/20', dot: 'bg-rose-400', label: 'Emergency / DND' };
+        return { bg: 'bg-rose-50 border-rose-100 text-rose-700', dot: 'bg-rose-500', label: 'Emergency / DND' };
       default:
-        return { bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-400', label: 'Available for Consults' };
+        return { bg: 'bg-emerald-50 border-emerald-100 text-emerald-700', dot: 'bg-emerald-500', label: 'Available for Consults' };
     }
   };
 
@@ -113,75 +113,72 @@ const DoctorDashboard = () => {
     <div className="space-y-10 animate-fade-in pb-16">
       
       {/* ── CLINICIAN HERO COMMAND BANNER ── */}
-      <div className="relative bg-gradient-to-br from-slate-950 via-[#0a2323] to-[#041a1a] rounded-[3rem] p-8 md:p-12 text-white shadow-2xl overflow-hidden border border-teal-500/20">
-        {/* Background Glass Orbs */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-teal/15 rounded-full blur-[140px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none translate-y-1/3 -translate-x-1/3" />
+      <div className="relative bg-white rounded-[2rem] p-8 md:p-10 border border-slate-100 shadow-sm overflow-hidden flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        
+        {/* Subtle background accent */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-teal/5 rounded-full blur-[80px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
+        
+        {/* Left Column: Doctor Profile & Greeting */}
+        <div className="relative z-10 space-y-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-100 text-slate-500">
+              <Sparkles className="h-3 w-3 text-brand-teal" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Clinical Decision Suite</span>
+            </div>
+            <span className="text-xs text-slate-400 font-medium">
+              {format(currentTime, 'EEEE, MMM dd • hh:mm a')}
+            </span>
+          </div>
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          
-          {/* Left Column: Doctor Profile & Greeting */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-teal/20 border border-brand-teal/30 text-teal-300">
-                <Sparkles className="h-3.5 w-3.5 text-brand-teal animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Clinical Decision Suite</span>
-              </div>
-              <span className="text-xs text-teal-200/50 font-mono font-medium">
-                {format(currentTime, 'EEEE, MMM dd • hh:mm:ss a')}
+          <div className="space-y-2">
+            <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight leading-tight">
+              Welcome back, <span className="text-brand-teal">Dr. {doctorName}</span>
+            </h1>
+            <div className="flex items-center gap-3 text-xs text-slate-500 font-medium flex-wrap pt-1">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-600">
+                <Stethoscope className="h-3.5 w-3.5 text-brand-teal" />
+                {user?.doctorProfile?.specialization || 'Cardiology & Internal Medicine'}
+              </span>
+              <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 text-[11px] font-medium tracking-wide">
+                Wing: {user?.doctorProfile?.department || 'Main Clinical Operations'}
+              </span>
+              <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 text-[11px] font-medium tracking-wide">
+                Lic. #{user?.doctorProfile?.licenseNumber || 'MD-84920'}
               </span>
             </div>
+          </div>
+        </div>
 
-            <div className="space-y-1">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black font-display tracking-tight leading-tight">
-                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-300 via-emerald-300 to-cyan-200">Dr. {doctorName}</span>
-              </h1>
-              <div className="flex items-center gap-3 text-xs text-teal-100/70 font-medium flex-wrap pt-1">
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-teal-200 font-bold">
-                  <Stethoscope className="h-3.5 w-3.5 text-brand-teal" />
-                  {user?.doctorProfile?.specialization || 'Cardiology & Internal Medicine'}
-                </span>
-                <span className="px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-teal-200/80 font-mono text-[11px]">
-                  Wing: {user?.doctorProfile?.department || 'Main Clinical Operations'}
-                </span>
-                <span className="px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-teal-200/80 font-mono text-[11px]">
-                  Lic. #{user?.doctorProfile?.licenseNumber || 'MD-84920'}
-                </span>
-              </div>
+        {/* Right Column: Duty Switcher & Live Controls */}
+        <div className="relative z-10 flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-4 shrink-0">
+          
+          {/* Shift Duty Status Badge */}
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${getDutyBadgeStyles().bg} transition-all`}>
+            <div className={`w-2.5 h-2.5 rounded-full ${getDutyBadgeStyles().dot} shadow-sm`} />
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold uppercase tracking-widest opacity-70">Shift Status</span>
+              <span className="text-xs font-bold">
+                {getDutyBadgeStyles().label}
+              </span>
             </div>
           </div>
 
-          {/* Right Column: Duty Switcher & Live Controls */}
-          <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-3 shrink-0">
-            {/* Shift Duty Status Badge (Read-Only for Doctors) */}
-            <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl backdrop-blur-md border ${getDutyBadgeStyles().bg} shadow-lg transition-all`}>
-              <div className={`w-3 h-3 rounded-full ${getDutyBadgeStyles().dot} animate-pulse shadow-sm`} />
-              <div className="flex flex-col">
-                <span className="text-[9px] font-black uppercase tracking-widest opacity-60 font-display">Shift Duty Status</span>
-                <span className="text-xs font-black uppercase tracking-wider text-white">
-                  {getDutyBadgeStyles().label}
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Action Button */}
-            <div className="flex gap-2 w-full sm:w-auto">
-              <button
-                onClick={fetchStats}
-                className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl border border-white/10 transition-all shadow-md active:scale-95"
-                title="Refresh Clinical Telemetry"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => window.location.href = '/receptionist/triage/queue'}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-brand-teal hover:bg-teal-400 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-teal-900/30 transition-all hover:scale-105 active:scale-95"
-              >
-                <Zap className="h-4 w-4" /> Open Triage Lobby
-              </button>
-            </div>
+          {/* Quick Action Buttons */}
+          <div className="flex gap-3 w-full sm:w-auto">
+            <button
+              onClick={fetchStats}
+              className="p-3.5 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 rounded-xl border border-slate-200 transition-colors shadow-sm"
+              title="Refresh Clinical Telemetry"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => window.location.href = '/receptionist/triage/queue'}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm rounded-xl transition-colors shadow-sm"
+            >
+              <Zap className="h-4 w-4 text-brand-teal" /> Open Triage Lobby
+            </button>
           </div>
-
         </div>
       </div>
 
