@@ -451,19 +451,28 @@ const DoctorsManagement = () => {
       {showDoctorModal && selectedDoctor && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-brand-dark/60 backdrop-blur-md animate-fade-in" onClick={() => setShowDoctorModal(false)}></div>
-          <div className="bg-white rounded-[3rem] shadow-premium w-full max-w-2xl relative animate-slide-up overflow-hidden border border-slate-100">
-            <div className="h-48 bg-brand-dark relative overflow-hidden">
-              <div className="absolute inset-x-0 bottom-0 h-full bg-gradient-to-t from-brand-dark/80 to-transparent"></div>
-              <div className="absolute top-10 right-10 flex gap-4">
-                <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur text-[10px] font-black text-white uppercase tracking-widest border border-white/10">License: {selectedDoctor.licenseNumber}</div>
+          <div className="bg-white rounded-[3rem] shadow-premium w-full max-w-4xl relative animate-slide-up overflow-hidden border border-slate-100">
+            <div className="h-36 bg-brand-dark relative">
+              <div className="absolute inset-x-0 bottom-0 h-full bg-gradient-to-t from-brand-dark/80 to-transparent pointer-events-none"></div>
+              
+              <button 
+                onClick={() => setShowDoctorModal(false)}
+                className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors z-10 backdrop-blur"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+
+              <div className="absolute top-7 right-20 flex gap-4 z-10">
+                <div className="px-4 py-1.5 rounded-xl bg-white/10 backdrop-blur text-[10px] font-black text-white uppercase tracking-widest border border-white/10">License: {selectedDoctor.licenseNumber}</div>
               </div>
-              <div className="absolute -bottom-10 left-12 h-32 w-32 rounded-[2.5rem] bg-brand-teal shadow-2xl flex items-center justify-center text-white text-4xl font-black border-8 border-white">
+
+              <div className="absolute -bottom-8 left-10 h-28 w-28 rounded-full bg-brand-teal shadow-2xl flex items-center justify-center text-white text-3xl font-black border-[6px] border-white z-10">
                 {selectedDoctor.userId?.profile?.firstName?.[0] || 'D'}
               </div>
             </div>
 
-            <div className="px-12 pt-16 pb-12 overflow-y-auto max-h-[70vh]">
-              <div className="flex justify-between items-start mb-10">
+            <div className="px-10 pt-14 pb-8 overflow-y-auto max-h-[60vh]">
+              <div className="flex justify-between items-start mb-8">
                 <div>
                   <h2 className="text-4xl font-black font-display text-brand-dark leading-none mb-2">
                     Dr. {selectedDoctor.userId?.profile?.firstName} {selectedDoctor.userId?.profile?.lastName}
@@ -480,23 +489,47 @@ const DoctorsManagement = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                <div className="p-4 bg-slate-50 rounded-2xl">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Exp.</p>
-                  <p className="text-sm font-black text-brand-dark">{selectedDoctor.experience} Years</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="p-5 bg-slate-50 hover:bg-slate-100 transition-colors rounded-2xl flex items-center gap-4 border border-slate-100">
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-white shadow-sm flex items-center justify-center text-brand-teal">
+                    <Activity className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Exp.</p>
+                    <p className="text-sm font-black text-brand-dark">{selectedDoctor.experience} Years</p>
+                  </div>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-2xl">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Qualification</p>
-                  <p className="text-sm font-black text-brand-dark truncate">{selectedDoctor.qualifications}</p>
+
+                <div className="p-5 bg-slate-50 hover:bg-slate-100 transition-colors rounded-2xl flex items-center gap-4 border border-slate-100">
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-white shadow-sm flex items-center justify-center text-brand-teal">
+                    <Star className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Qualification</p>
+                    <p className="text-sm font-black text-brand-dark line-clamp-2 break-words" title={selectedDoctor.qualifications}>{selectedDoctor.qualifications}</p>
+                  </div>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-center">
-                  <span className="text-[10px] font-black text-[#0F3A3A] uppercase tracking-widest whitespace-nowrap">Clinical Excellence Accredited</span>
+
+                <div className="p-5 bg-slate-50 hover:bg-slate-100 transition-colors rounded-2xl flex items-center gap-4 border border-slate-100">
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-white shadow-sm flex items-center justify-center text-amber-500">
+                    <Star className="h-5 w-5 fill-current" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Accreditation</p>
+                    <p className="text-sm font-black text-brand-dark line-clamp-2 break-words">Clinical Excellence</p>
+                  </div>
                 </div>
-                 <div className="p-4 bg-slate-50 rounded-2xl">
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Unit Status</p>
-                  <span className={`text-[10px] font-black uppercase ${selectedDoctor.userId.isActive ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    {selectedDoctor.userId.isActive ? 'Authorization Active' : 'Account Locked'}
-                  </span>
+
+                <div className="p-5 bg-slate-50 hover:bg-slate-100 transition-colors rounded-2xl flex items-center gap-4 border border-slate-100">
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                    {selectedDoctor.userId.isActive ? <UserCheck className="h-5 w-5 text-emerald-500" /> : <UserX className="h-5 w-5 text-rose-500" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Unit Status</p>
+                    <span className={`text-sm font-black uppercase truncate block ${selectedDoctor.userId.isActive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {selectedDoctor.userId.isActive ? 'Active' : 'Locked'}
+                    </span>
+                  </div>
                 </div>
               </div>
 

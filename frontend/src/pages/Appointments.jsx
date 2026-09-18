@@ -7,9 +7,8 @@ import {
   LogIn, LogOut, ClipboardList, Ban, ChevronDown, CreditCard, Banknote
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { format } from 'date-fns';
 import PrescriptionModal from '../components/PrescriptionModal';
-import ConfirmDialog from '../components/ConfirmDialog';
+import ConfirmModal from '../components/ConfirmModal';
 
 /* ─── Status config ─────────────────────────────────────────────────────── */
 const STATUS_CONFIG = {
@@ -514,15 +513,15 @@ const Appointments = () => {
       )}
 
       {/* ── Cancel Confirmation ── */}
-      <ConfirmDialog
+      <ConfirmModal
         isOpen={confirmDialog.open}
         title="Cancel Appointment?"
         message="Are you sure you want to cancel this appointment? This action cannot be undone."
-        confirmLabel="Yes, Cancel It"
-        cancelLabel="Keep Appointment"
-        variant="danger"
+        confirmText="Yes, Cancel It"
+        cancelText="Keep Appointment"
+        type="danger"
         onConfirm={confirmCancel}
-        onCancel={() => setConfirmDialog({ open: false, appointmentId: null })}
+        onClose={() => setConfirmDialog({ open: false, appointmentId: null })}
       />
 
 
