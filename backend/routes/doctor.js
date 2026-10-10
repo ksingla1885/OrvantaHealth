@@ -2,150 +2,97 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const multer = require('multer');
-const path = require('path');
-const { authenticateToken, doctorOnly, authorizeRoles } = require('../middleware/auth');
-const Doctor = require('../models/Doctor');
-const Patient = require('../models/Patient');
-const Appointment = require('../models/Appointment');
-const Prescription = require('../models/Prescription');
-const TriageRecord = require('../models/TriageRecord');
-const LabReport = require('../models/LabReport');
-const Bill = require('../models/Bill');
+const { authenticateToken, doctorOnly } = require('../middleware/auth');
+const prisma = require('../prismaClient');
 
-const { prescriptionStorage } = require('../config/cloudinary');
+const { prescriptionStorage } = require('../config/s3Storage');
 
-// Configure multer for prescription uploads using Cloudinary
 const upload = multer({
   storage: prescriptionStorage,
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-// Authentication middleware for all doctor routes
 router.use(authenticateToken);
 
 // Update doctor availability (doctors update their own, receptionist/superadmin can update any doctor)
-// This route is placed BEFORE doctorOnly middleware to allow other authorized roles
 router.patch('/availability', [
   body('days').isArray(),
   body('timeSlots').isArray(),
-  body('doctorId').optional().isMongoId() // For receptionist/superadmin to update specific doctor
+  body('doctorId').optional().isUUID()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation errors',
-        errors: errors.array()
-      });
+      return res.status(400).json({ success: false, message: 'Validation errors', errors: errors.array() });
     }
 
     const { days, timeSlots, doctorId } = req.body;
+    const userId = req.user.id || req.user._id;
     let doctor;
 
-    // Check authorization
     if (req.user.role === 'doctor') {
-      // Doctors can only update their own availability
-      doctor = await Doctor.findOne({ userId: req.user._id });
-      if (!doctor) {
-        return res.status(404).json({
-          success: false,
-          message: 'Doctor profile not found'
-        });
-      }
+      doctor = await prisma.doctor.findUnique({ where: { userId } });
+      if (!doctor) return res.status(404).json({ success: false, message: 'Doctor profile not found' });
     } else if (req.user.role === 'receptionist' || req.user.role === 'superadmin') {
-      // Receptionists and superadmins can update any doctor's availability
-      if (!doctorId) {
-        return res.status(400).json({
-          success: false,
-          message: 'doctorId is required for receptionist/superadmin'
-        });
-      }
-      doctor = await Doctor.findById(doctorId);
-      if (!doctor) {
-        return res.status(404).json({
-          success: false,
-          message: 'Doctor not found'
-        });
-      }
+      if (!doctorId) return res.status(400).json({ success: false, message: 'doctorId is required for receptionist/superadmin' });
+      doctor = await prisma.doctor.findUnique({ where: { id: doctorId } });
+      if (!doctor) return res.status(404).json({ success: false, message: 'Doctor not found' });
     } else {
-      return res.status(403).json({
-        success: false,
-        message: 'Only doctors, receptionists, and superadmins can update availability'
-      });
+      return res.status(403).json({ success: false, message: 'Only doctors, receptionists, and superadmins can update availability' });
     }
 
-    doctor.availability = { days, timeSlots };
-    await doctor.save();
-
-    // Populate before sending back to UI
-    await doctor.populate('userId', 'email profile isActive lastLogin');
-
-    res.json({
-      success: true,
-      message: 'Availability updated successfully',
-      data: { doctor }
+    doctor = await prisma.doctor.update({
+      where: { id: doctor.id },
+      data: { availability: { days, timeSlots } },
+      include: { user: { select: { email: true, profile: true, isActive: true, lastLogin: true } } }
     });
+
+    res.json({ success: true, message: 'Availability updated successfully', data: { doctor } });
   } catch (error) {
     console.error('Update availability error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error updating availability'
-    });
+    res.status(500).json({ success: false, message: 'Server error updating availability' });
   }
 });
 
-// All routes below this line require doctor-specific authentication
 router.use(doctorOnly);
 
 // Get doctor dashboard stats
 router.get('/dashboard-stats', async (req, res) => {
   try {
-    const doctor = await Doctor.findOne({ userId: req.user._id });
-    if (!doctor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor profile not found'
-      });
-    }
+    const userId = req.user.id || req.user._id;
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor) return res.status(404).json({ success: false, message: 'Doctor profile not found' });
 
-    // Today's Patients
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
-    const todayPatients = await Appointment.countDocuments({
-      doctorId: doctor._id,
-      date: { $gte: startOfToday, $lte: endOfToday },
-      status: { $ne: 'pending' }
+    const todayPatients = await prisma.appointment.count({
+      where: {
+        doctorId: doctor.id,
+        date: { gte: startOfToday, lte: endOfToday },
+        status: { not: 'pending' }
+      }
     });
 
-    // Total Network (Unique Patients)
-    const uniquePatients = await Appointment.distinct('patientId', {
-      doctorId: doctor._id
+    const uniquePatientsRecords = await prisma.appointment.findMany({
+      where: { doctorId: doctor.id },
+      distinct: ['patientId'],
+      select: { patientId: true }
     });
-    const totalNetwork = uniquePatients.length;
+    const totalNetwork = uniquePatientsRecords.length;
 
-    // Active Scripts (Total Prescriptions Issued)
-    const activeScripts = await Prescription.countDocuments({
-      doctorId: doctor._id
+    const activeScripts = await prisma.prescription.count({
+      where: { doctorId: doctor.id }
     });
 
-    // Recent Interactions
-    const recentInteractions = await Appointment.find({
-      doctorId: doctor._id,
-      status: 'completed'
-    })
-      .populate({
-        path: 'patientId',
-        populate: {
-          path: 'userId',
-          select: 'profile'
-        }
-      })
-      .sort({ updatedAt: -1 })
-      .limit(5);
+    const recentInteractions = await prisma.appointment.findMany({
+      where: { doctorId: doctor.id, status: 'completed' },
+      include: { patient: { include: { user: { select: { profile: true } } } } },
+      orderBy: { updatedAt: 'desc' },
+      take: 5
+    });
 
     res.json({
       success: true,
@@ -157,97 +104,72 @@ router.get('/dashboard-stats', async (req, res) => {
           dutyStatus: doctor.dutyStatus || 'available'
         },
         recentInteractions: recentInteractions.map(interaction => ({
-          id: interaction._id,
-          patientName: `${interaction.patientId?.userId?.profile?.firstName || 'Unknown'} ${interaction.patientId?.userId?.profile?.lastName || 'Patient'}`,
-          procedure: interaction.reason || 'Consultation',
+          id: interaction.id,
+          patientName: `${interaction.patient?.user?.profile?.firstName || 'Unknown'} ${interaction.patient?.user?.profile?.lastName || 'Patient'}`,
+          procedure: interaction.symptoms || 'Consultation', // using symptoms as reason
           time: interaction.updatedAt
         }))
       }
     });
   } catch (error) {
     console.error('Get doctor dashboard stats error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error fetching dashboard stats'
-    });
+    res.status(500).json({ success: false, message: 'Server error fetching dashboard stats' });
   }
 });
 
 // Get doctor profile
 router.get('/profile', async (req, res) => {
   try {
-    const doctor = await Doctor.findOne({ userId: req.user._id })
-      .populate('userId', 'email profile');
-
-    if (!doctor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor profile not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: { doctor }
+    const userId = req.user.id || req.user._id;
+    const doctor = await prisma.doctor.findUnique({
+      where: { userId },
+      include: { user: { select: { email: true, profile: true } } }
     });
+
+    if (!doctor) return res.status(404).json({ success: false, message: 'Doctor profile not found' });
+
+    res.json({ success: true, data: { doctor } });
   } catch (error) {
     console.error('Get doctor profile error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-
 
 // Get assigned appointments
 router.get('/appointments', async (req, res) => {
   try {
-    const doctor = await Doctor.findOne({ userId: req.user._id });
-    if (!doctor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor profile not found'
-      });
-    }
+    const userId = req.user.id || req.user._id;
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor) return res.status(404).json({ success: false, message: 'Doctor profile not found' });
 
-    let query = { doctorId: doctor._id };
+    let query = { doctorId: doctor.id };
 
-    // Add date filter if provided
     if (req.query.date) {
       const startDate = new Date(req.query.date);
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 1);
-
-      query.date = {
-        $gte: startDate,
-        $lt: endDate
-      };
+      query.date = { gte: startDate, lt: endDate };
     }
 
-    // Add status filter if provided
     if (req.query.status) {
       query.status = req.query.status;
     } else {
-      query.status = { $ne: 'pending' }; // Doctors should NOT see pending appointments
+      query.status = { not: 'pending' };
     }
 
-    const appointments = await Appointment.find(query)
-      .populate('patientId')
-      .populate('patientId.userId', 'profile')
-      .populate('prescription')
-      .sort({ date: -1, 'timeSlot.start': -1 });
-
-    res.json({
-      success: true,
-      data: { appointments }
+    const appointments = await prisma.appointment.findMany({
+      where: query,
+      include: {
+        patient: { include: { user: { select: { profile: true } } } },
+        prescription: true
+      },
+      orderBy: [{ date: 'desc' }] // we can't easily order by JSON timeSlot.start, but date is fine
     });
+
+    res.json({ success: true, data: { appointments } });
   } catch (error) {
     console.error('Get appointments error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error fetching appointments'
-    });
+    res.status(500).json({ success: false, message: 'Server error fetching appointments' });
   }
 });
 
@@ -255,51 +177,64 @@ router.get('/appointments', async (req, res) => {
 router.get('/patient/:patientId/history', async (req, res) => {
   try {
     const { patientId } = req.params;
+    const userId = req.user.id || req.user._id;
 
-    const doctor = await Doctor.findOne({ userId: req.user._id });
-    if (!doctor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor profile not found'
-      });
-    }
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor) return res.status(404).json({ success: false, message: 'Doctor profile not found' });
 
-    const patient = await Patient.findById(patientId)
-      .populate('userId', 'profile email')
-      .populate('medicalHistory.doctor', 'profile');
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId },
+      include: { user: { select: { profile: true, email: true } } }
+    });
 
-    if (!patient) {
-      return res.status(404).json({
-        success: false,
-        message: 'Patient not found'
-      });
-    }
+    if (!patient) return res.status(404).json({ success: false, message: 'Patient not found' });
 
-    // Longitudinal Cross-Model Join
+    // Ensure backwards compatibility with old triage logic
+    const patientProfile = patient.user?.profile || {};
+    const patientName = `${patientProfile.firstName || ''} ${patientProfile.lastName || ''}`.trim();
+    const phone = patientProfile.phone || '';
+
     const [prescriptions, triageRecords, labReports, bills, appointments] = await Promise.all([
-      Prescription.find({ patientId }).populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } }).sort({ createdAt: -1 }),
-      TriageRecord.find({
-        $or: [
-          { patientId },
-          { contactNumber: patient.userId?.profile?.phone },
-          { patientName: `${patient.userId?.profile?.firstName} ${patient.userId?.profile?.lastName}`.trim() }
-        ]
-      }).populate('doctorReferred', 'profile').sort({ createdAt: -1 }),
-      LabReport.find({ patientId }).populate('uploadedBy', 'profile').populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } }).sort({ reportDate: -1 }),
-      Bill.find({ patientId }).populate('createdBy', 'profile').sort({ createdAt: -1 }),
-      Appointment.find({ patientId }).populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } }).sort({ date: -1 })
+      prisma.prescription.findMany({
+        where: { patientId },
+        include: { doctor: { include: { user: { select: { profile: true } } } } },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.triageRecord.findMany({
+        where: {
+          OR: [
+            { patientId },
+            { contactNumber: phone },
+            { patientName: { contains: patientName } }
+          ]
+        },
+        include: { doctorReferred: { select: { profile: true } } },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.labReport.findMany({
+        where: { patientId },
+        include: {
+          uploadedBy: { select: { profile: true } },
+          doctor: { include: { user: { select: { profile: true } } } }
+        },
+        orderBy: { reportDate: 'desc' }
+      }),
+      prisma.bill.findMany({
+        where: { patientId },
+        include: { createdBy: { select: { profile: true } } },
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.appointment.findMany({
+        where: { patientId },
+        include: { doctor: { include: { user: { select: { profile: true } } } } },
+        orderBy: { date: 'desc' }
+      })
     ]);
 
-    // Returning Patient Intelligence Calculations
-    // 1. Automatic Recall: Last Prescription with current Doctor
-    const lastPrescriptionWithDoctor = await Prescription.findOne({
-      patientId,
-      doctorId: doctor._id
-    }).sort({ createdAt: -1 });
+    const lastPrescriptionWithDoctor = prescriptions.find(p => p.doctorId === doctor.id) || null;
 
-    // 2. Vitals Trends
     const vitalsHistory = triageRecords
-      .filter(tr => tr.vitals && (tr.vitals.temperature || tr.vitals.bloodPressure || tr.vitals.pulseRate || tr.vitals.spO2))
+      .filter(tr => tr.vitals && Object.keys(tr.vitals).length > 0)
       .map(tr => ({
         date: tr.createdAt,
         temperature: tr.vitals.temperature,
@@ -308,7 +243,6 @@ router.get('/patient/:patientId/history', async (req, res) => {
         spO2: tr.vitals.spO2
       }));
 
-    // 3. Missed Follow-ups (Pending or Confirmed appointments in the past)
     const today = new Date();
     today.setHours(0,0,0,0);
     const missedFollowUps = appointments.filter(apt => 
@@ -316,137 +250,79 @@ router.get('/patient/:patientId/history', async (req, res) => {
       ['pending', 'confirmed'].includes(apt.status)
     );
 
-    // 4. Global Timeline Construction
     const timeline = [];
 
-    // Add Prescriptions
     prescriptions.forEach(p => {
       timeline.push({
-        id: p._id,
-        date: p.createdAt,
-        type: 'prescription',
+        id: p.id, date: p.createdAt, type: 'prescription',
         title: `Prescription issued for ${p.diagnosis}`,
-        doctor: p.doctorId?.userId?.profile ? `Dr. ${p.doctorId.userId.profile.firstName} ${p.doctorId.userId.profile.lastName}` : 'System Clinician',
+        doctor: p.doctor?.user?.profile ? `Dr. ${p.doctor.user.profile.firstName} ${p.doctor.user.profile.lastName}` : 'System Clinician',
         facility: p.receipt ? 'Prescription Receipt Available' : 'Digital Prescription',
         status: 'Dispensed',
-        details: {
-          diagnosis: p.diagnosis,
-          medicines: p.medicines,
-          advice: p.advice,
-          tests: p.tests,
-          followUpDate: p.followUpDate,
-          receipt: p.receipt
-        }
+        details: { diagnosis: p.diagnosis, medicines: p.medicines, advice: p.advice, tests: p.tests, followUpDate: p.followUpDate, receipt: p.receipt }
       });
     });
 
-    // Add Triage Records
     triageRecords.forEach(tr => {
+      const ai = tr.aiAnalysis || {};
       timeline.push({
-        id: tr._id,
-        date: tr.createdAt,
-        type: 'triage',
+        id: tr.id, date: tr.createdAt, type: 'triage',
         title: tr.status === 'resolved' ? 'Walk-In Triage Resolved' : 'Symptom Triage Intake',
         doctor: tr.doctorReferred?.profile ? `Referred to Dr. ${tr.doctorReferred.profile.firstName} ${tr.doctorReferred.profile.lastName}` : 'Lobby Queue',
-        facility: `Risk Score: ${tr.aiAnalysis?.riskScore || 0}/10 (${tr.aiAnalysis?.urgencyLevel || 'Routine'})`,
+        facility: `Risk Score: ${ai.riskScore || 0}/10 (${ai.urgencyLevel || 'Routine'})`,
         status: tr.status === 'resolved' ? 'Archived' : 'Active Intake',
-        details: {
-          symptoms: tr.symptoms,
-          vitals: tr.vitals,
-          aiAnalysis: tr.aiAnalysis,
-          diagnosis: tr.diagnosis,
-          prescribedMedicines: tr.prescribedMedicines,
-          advice: tr.advice,
-          tests: tr.tests
-        }
+        details: { symptoms: tr.symptoms, vitals: tr.vitals, aiAnalysis: ai, diagnosis: tr.diagnosis, prescribedMedicines: tr.prescribedMedicines, advice: tr.advice, tests: tr.tests }
       });
     });
 
-    // Add Lab Reports
     labReports.forEach(lr => {
       timeline.push({
-        id: lr._id,
-        date: lr.reportDate,
-        type: 'lab',
+        id: lr.id, date: lr.reportDate, type: 'lab',
         title: lr.testName,
-        doctor: lr.doctorId?.userId?.profile ? `Ordered by Dr. ${lr.doctorId.userId.profile.firstName} ${lr.doctorId.userId.profile.lastName}` : 'General Referral',
+        doctor: lr.doctor?.user?.profile ? `Ordered by Dr. ${lr.doctor.user.profile.firstName} ${lr.doctor.user.profile.lastName}` : 'General Referral',
         facility: `Type: ${lr.testType} • Report File Available`,
         status: 'Completed',
-        details: {
-          testName: lr.testName,
-          testType: lr.testType,
-          results: lr.results,
-          conclusion: lr.conclusion,
-          recommendations: lr.recommendations,
-          reportFile: lr.reportFile
-        }
+        details: { testName: lr.testName, testType: lr.testType, results: lr.results, conclusion: lr.conclusion, recommendations: lr.recommendations, reportFile: lr.reportFile }
       });
     });
 
-    // Add Bills
     bills.forEach(b => {
       timeline.push({
-        id: b._id,
-        date: b.createdAt,
-        type: 'billing',
+        id: b.id, date: b.createdAt, type: 'billing',
         title: `Invoice Generated: ₹${b.total}`,
         doctor: b.createdBy?.profile ? `Billed by ${b.createdBy.profile.firstName}` : 'Billing System',
         facility: b.paymentMethod ? `Paid via ${b.paymentMethod}` : 'Dues Pending',
         status: b.status.toUpperCase(),
-        details: {
-          items: b.items,
-          total: b.total,
-          status: b.status,
-          dueDate: b.dueDate,
-          receipt: b.receipt
-        }
+        details: { items: b.items, total: b.total, status: b.status, dueDate: b.dueDate, receipt: b.receipt }
       });
     });
 
-    // Add Appointments
     appointments.forEach(apt => {
       timeline.push({
-        id: apt._id,
-        date: apt.date,
-        type: 'consultation',
-        title: `Appointment Slot: ${apt.timeSlot?.start} - ${apt.timeSlot?.end}`,
-        doctor: apt.doctorId?.userId?.profile ? `Dr. ${apt.doctorId.userId.profile.firstName} ${apt.doctorId.userId.profile.lastName}` : 'Central Queue',
+        id: apt.id, date: apt.date, type: 'consultation',
+        title: `Appointment Slot: ${apt.timeSlot?.start || ''} - ${apt.timeSlot?.end || ''}`,
+        doctor: apt.doctor?.user?.profile ? `Dr. ${apt.doctor.user.profile.firstName} ${apt.doctor.user.profile.lastName}` : 'Central Queue',
         facility: `Type: ${apt.consultationType || 'In-Person'}`,
         status: apt.status.toUpperCase(),
-        details: {
-          status: apt.status,
-          symptoms: apt.symptoms,
-          notes: apt.notes,
-          cancellationReason: apt.cancellationReason
-        }
+        details: { status: apt.status, symptoms: apt.symptoms, notes: apt.notes, cancellationReason: apt.cancellationReason }
       });
     });
 
-    // Sort timeline chronologically (latest first)
     timeline.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     res.json({
       success: true,
-      data: {
-        patient,
-        timeline,
-        vitalsHistory,
-        lastPrescriptionWithDoctor,
-        missedFollowUps
-      }
+      data: { patient, timeline, vitalsHistory, lastPrescriptionWithDoctor, missedFollowUps }
     });
   } catch (error) {
     console.error('Get patient history error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error fetching patient history'
-    });
+    res.status(500).json({ success: false, message: 'Server error fetching patient history' });
   }
 });
 
 // Create prescription
 router.post('/prescription', [
-  body('appointmentId').isMongoId(),
+  body('appointmentId').isUUID(),
   body('diagnosis').notEmpty().trim(),
   body('medicines').isArray(),
   body('medicines.*.name').notEmpty().trim(),
@@ -456,85 +332,46 @@ router.post('/prescription', [
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation errors',
-        errors: errors.array()
-      });
-    }
+    if (!errors.isEmpty()) return res.status(400).json({ success: false, message: 'Validation errors', errors: errors.array() });
 
     const { appointmentId, diagnosis, medicines, tests, advice, followUpDate } = req.body;
+    const userId = req.user.id || req.user._id;
 
-    const doctor = await Doctor.findOne({ userId: req.user._id });
-    if (!doctor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor profile not found'
-      });
-    }
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor) return res.status(404).json({ success: false, message: 'Doctor profile not found' });
 
-    // Get appointment
-    const appointment = await Appointment.findById(appointmentId);
-    if (!appointment) {
-      return res.status(404).json({
-        success: false,
-        message: 'Appointment not found'
-      });
-    }
+    let appointment = await prisma.appointment.findUnique({ where: { id: appointmentId } });
+    if (!appointment) return res.status(404).json({ success: false, message: 'Appointment not found' });
 
-    // Check if appointment belongs to this doctor
-    if (appointment.doctorId.toString() !== doctor._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      });
-    }
+    if (appointment.doctorId !== doctor.id) return res.status(403).json({ success: false, message: 'Access denied' });
+    if (appointment.status !== 'checked_out') return res.status(403).json({ success: false, message: 'Prescription can only be created after patient checkout' });
 
-    // Check if appointment is checked_out
-    if (appointment.status !== 'checked_out') {
-      return res.status(403).json({
-        success: false,
-        message: 'Prescription can only be created after patient checkout'
-      });
-    }
-
-    // Create prescription
-    const prescription = new Prescription({
-      appointmentId,
-      patientId: appointment.patientId,
-      doctorId: doctor._id,
-      diagnosis,
-      medicines,
-      tests: tests || [],
-      advice,
-      followUpDate: followUpDate ? new Date(followUpDate) : undefined
+    const prescription = await prisma.prescription.create({
+      data: {
+        appointmentId,
+        patientId: appointment.patientId,
+        doctorId: doctor.id,
+        diagnosis,
+        medicines,
+        tests: tests || [],
+        advice,
+        followUpDate: followUpDate ? new Date(followUpDate) : null
+      },
+      include: {
+        patient: { include: { user: { select: { profile: true } } } },
+        doctor: { include: { user: { select: { profile: true } } } }
+      }
     });
 
-    await prescription.save();
-
-    // Link prescription to appointment
-    appointment.prescription = prescription._id;
-    appointment.status = 'completed';
-    await appointment.save();
-
-    // Populate for response
-    await prescription.populate([
-      { path: 'patientId', populate: { path: 'userId', select: 'profile' } },
-      { path: 'doctorId', populate: { path: 'userId', select: 'profile' } }
-    ]);
-
-    res.status(201).json({
-      success: true,
-      message: 'Prescription created successfully',
-      data: { prescription }
+    appointment = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status: 'completed' }
     });
+
+    res.status(201).json({ success: true, message: 'Prescription created successfully', data: { prescription } });
   } catch (error) {
     console.error('Create prescription error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error creating prescription'
-    });
+    res.status(500).json({ success: false, message: 'Server error creating prescription' });
   }
 });
 
@@ -542,211 +379,122 @@ router.post('/prescription', [
 router.get('/prescription/appointment/:appointmentId', async (req, res) => {
   try {
     const { appointmentId } = req.params;
-    const prescription = await Prescription.findOne({ appointmentId })
-      .populate({ path: 'patientId', populate: { path: 'userId', select: 'profile' } })
-      .populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } });
-
-    if (!prescription) {
-      return res.status(404).json({
-        success: false,
-        message: 'Prescription not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: { prescription }
+    const prescription = await prisma.prescription.findUnique({
+      where: { appointmentId },
+      include: {
+        patient: { include: { user: { select: { profile: true } } } },
+        doctor: { include: { user: { select: { profile: true } } } }
+      }
     });
+
+    if (!prescription) return res.status(404).json({ success: false, message: 'Prescription not found' });
+
+    res.json({ success: true, data: { prescription } });
   } catch (error) {
     console.error('Get prescription error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error fetching prescription'
-    });
+    res.status(500).json({ success: false, message: 'Server error fetching prescription' });
   }
 });
 
 // Update prescription
 router.patch('/prescription/:prescriptionId', [
   body('diagnosis').optional().trim(),
-  body('medicines').optional().isArray(),
-  body('medicines.*.name').optional().notEmpty().trim(),
-  body('medicines.*.dosage').optional().notEmpty().trim(),
-  body('medicines.*.frequency').optional().notEmpty().trim(),
-  body('medicines.*.duration').optional().notEmpty().trim()
+  body('medicines').optional().isArray()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation errors',
-        errors: errors.array()
-      });
-    }
+    if (!errors.isEmpty()) return res.status(400).json({ success: false, message: 'Validation errors', errors: errors.array() });
 
     const { prescriptionId } = req.params;
     const { diagnosis, medicines, tests, advice, followUpDate } = req.body;
+    const userId = req.user.id || req.user._id;
 
-    const doctor = await Doctor.findOne({ userId: req.user._id });
-    if (!doctor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor profile not found'
-      });
-    }
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor) return res.status(404).json({ success: false, message: 'Doctor profile not found' });
 
-    const prescription = await Prescription.findById(prescriptionId);
-    if (!prescription) {
-      return res.status(404).json({
-        success: false,
-        message: 'Prescription not found'
-      });
-    }
+    let prescription = await prisma.prescription.findUnique({ where: { id: prescriptionId } });
+    if (!prescription) return res.status(404).json({ success: false, message: 'Prescription not found' });
 
-    // Check if prescription belongs to this doctor
-    if (prescription.doctorId.toString() !== doctor._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      });
-    }
+    if (prescription.doctorId !== doctor.id) return res.status(403).json({ success: false, message: 'Access denied' });
 
-    // Update fields
-    if (diagnosis) prescription.diagnosis = diagnosis;
-    if (medicines) prescription.medicines = medicines;
-    if (tests) prescription.tests = tests;
-    if (advice) prescription.advice = advice;
-    if (followUpDate) prescription.followUpDate = new Date(followUpDate);
-
-    await prescription.save();
-
-    res.json({
-      success: true,
-      message: 'Prescription updated successfully',
-      data: { prescription }
+    prescription = await prisma.prescription.update({
+      where: { id: prescriptionId },
+      data: {
+        diagnosis: diagnosis || prescription.diagnosis,
+        medicines: medicines || prescription.medicines,
+        tests: tests || prescription.tests,
+        advice: advice || prescription.advice,
+        followUpDate: followUpDate ? new Date(followUpDate) : prescription.followUpDate
+      }
     });
+
+    res.json({ success: true, message: 'Prescription updated successfully', data: { prescription } });
   } catch (error) {
     console.error('Update prescription error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error updating prescription'
-    });
+    res.status(500).json({ success: false, message: 'Server error updating prescription' });
   }
 });
 
 // Upload prescription receipt
 router.post('/prescription/:prescriptionId/receipt', upload.single('receipt'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'No file uploaded'
-      });
-    }
+    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
 
     const { prescriptionId } = req.params;
+    const userId = req.user.id || req.user._id;
 
-    const doctor = await Doctor.findOne({ userId: req.user._id });
-    if (!doctor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor profile not found'
-      });
-    }
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor) return res.status(404).json({ success: false, message: 'Doctor profile not found' });
 
-    const prescription = await Prescription.findById(prescriptionId);
-    if (!prescription) {
-      return res.status(404).json({
-        success: false,
-        message: 'Prescription not found'
-      });
-    }
+    let prescription = await prisma.prescription.findUnique({ where: { id: prescriptionId } });
+    if (!prescription) return res.status(404).json({ success: false, message: 'Prescription not found' });
 
-    // Check if prescription belongs to this doctor
-    if (prescription.doctorId.toString() !== doctor._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      });
-    }
+    if (prescription.doctorId !== doctor.id) return res.status(403).json({ success: false, message: 'Access denied' });
 
-    // Update prescription with file path
-    prescription.receipt = req.file.path;
-    await prescription.save();
+    prescription = await prisma.prescription.update({
+      where: { id: prescriptionId },
+      data: { receipt: req.file.path }
+    });
 
     res.json({
       success: true,
       message: 'Prescription receipt uploaded successfully',
-      data: {
-        filename: req.file.path,
-        prescription
-      }
+      data: { filename: req.file.path, prescription }
     });
   } catch (error) {
     console.error('Upload prescription receipt error:', error);
-    if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
-        success: false,
-        message: 'File size too large. Maximum size is 5MB'
-      });
-    }
-    res.status(500).json({
-      success: false,
-      message: 'Server error uploading receipt'
-    });
+    if (error.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ success: false, message: 'File size too large. Maximum size is 5MB' });
+    res.status(500).json({ success: false, message: 'Server error uploading receipt' });
   }
 });
 
 // Get doctor's prescriptions
 router.get('/prescriptions', async (req, res) => {
   try {
-    const doctor = await Doctor.findOne({ userId: req.user._id });
-    if (!doctor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor profile not found'
-      });
-    }
+    const userId = req.user.id || req.user._id;
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor) return res.status(404).json({ success: false, message: 'Doctor profile not found' });
 
-    const prescriptions = await Prescription.find({ doctorId: doctor._id })
-      .populate({
-        path: 'patientId',
-        populate: {
-          path: 'userId',
-          select: 'profile'
-        }
-      })
-      .populate({
-        path: 'doctorId',
-        populate: {
-          path: 'userId',
-          select: 'profile'
-        }
-      })
-      .populate('appointmentId', 'date timeSlot')
-      .sort({ createdAt: -1 });
-
-    // Map fields to match frontend expectations
-    const mappedPrescriptions = prescriptions.map(p => {
-      const obj = p.toObject();
-      return {
-        ...obj,
-        medications: obj.medicines, // map medicines to medications
-        instructions: obj.advice   // map advice to instructions
-      };
+    const prescriptions = await prisma.prescription.findMany({
+      where: { doctorId: doctor.id },
+      include: {
+        patient: { include: { user: { select: { profile: true } } } },
+        doctor: { include: { user: { select: { profile: true } } } },
+        appointment: { select: { date: true, timeSlot: true } }
+      },
+      orderBy: { createdAt: 'desc' }
     });
 
-    res.json({
-      success: true,
-      data: { prescriptions: mappedPrescriptions }
-    });
+    const mappedPrescriptions = prescriptions.map(p => ({
+      ...p,
+      medications: p.medicines,
+      instructions: p.advice
+    }));
+
+    res.json({ success: true, data: { prescriptions: mappedPrescriptions } });
   } catch (error) {
     console.error('Get prescriptions error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error fetching prescriptions'
-    });
+    res.status(500).json({ success: false, message: 'Server error fetching prescriptions' });
   }
 });
 
@@ -754,45 +502,25 @@ router.get('/prescriptions', async (req, res) => {
 router.patch('/appointment/:appointmentId/complete', async (req, res) => {
   try {
     const { appointmentId } = req.params;
+    const userId = req.user.id || req.user._id;
 
-    const doctor = await Doctor.findOne({ userId: req.user._id });
-    if (!doctor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Doctor profile not found'
-      });
-    }
+    const doctor = await prisma.doctor.findUnique({ where: { userId } });
+    if (!doctor) return res.status(404).json({ success: false, message: 'Doctor profile not found' });
 
-    const appointment = await Appointment.findById(appointmentId);
-    if (!appointment) {
-      return res.status(404).json({
-        success: false,
-        message: 'Appointment not found'
-      });
-    }
+    let appointment = await prisma.appointment.findUnique({ where: { id: appointmentId } });
+    if (!appointment) return res.status(404).json({ success: false, message: 'Appointment not found' });
 
-    // Check if appointment belongs to this doctor
-    if (appointment.doctorId.toString() !== doctor._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      });
-    }
+    if (appointment.doctorId !== doctor.id) return res.status(403).json({ success: false, message: 'Access denied' });
 
-    appointment.status = 'completed';
-    await appointment.save();
-
-    res.json({
-      success: true,
-      message: 'Appointment marked as completed',
-      data: { appointment }
+    appointment = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status: 'completed' }
     });
+
+    res.json({ success: true, message: 'Appointment marked as completed', data: { appointment } });
   } catch (error) {
     console.error('Complete appointment error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error completing appointment'
-    });
+    res.status(500).json({ success: false, message: 'Server error completing appointment' });
   }
 });
 

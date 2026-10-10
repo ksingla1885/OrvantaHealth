@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const prisma = require('../prismaClient');
 
 const allowedOrigins = [
   'http://localhost:3000',
@@ -34,7 +34,12 @@ const authenticateToken = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password -refreshToken');
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+    
+    if (user) {
+      delete user.password;
+      delete user.refreshToken;
+    }
 
     if (!user || !user.isActive) {
       return res.status(401).json({

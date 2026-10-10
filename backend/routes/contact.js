@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const ContactMessage = require('../models/ContactMessage');
 const { authenticateToken, superAdminOnly } = require('../middleware/auth');
-
+const prisma = require('../prismaClient');
 const { sendEmail } = require('../utils/emailService');
 
 // @route   POST /api/contact
@@ -12,13 +11,16 @@ router.post('/', async (req, res) => {
   try {
     const { name, email, facility, role, phone, message } = req.body;
 
-    const newMessage = await ContactMessage.create({
-      name,
-      email,
-      facility,
-      role,
-      phone,
-      message
+    const newMessage = await prisma.contactMessage.create({
+      data: {
+        name,
+        email,
+        facility,
+        role,
+        phone,
+        message,
+        status: 'new'
+      }
     });
 
     res.status(201).json({
@@ -39,7 +41,9 @@ router.post('/', async (req, res) => {
 // @access  Private/SuperAdmin
 router.get('/', authenticateToken, superAdminOnly, async (req, res) => {
   try {
-    const messages = await ContactMessage.find().sort({ createdAt: -1 });
+    const messages = await prisma.contactMessage.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.status(200).json({
       success: true,
@@ -66,15 +70,15 @@ router.put('/:id/status', authenticateToken, superAdminOnly, async (req, res) =>
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
 
-    const message = await ContactMessage.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true }
-    );
+    const { id } = req.params;
 
-    if (!message) {
-      return res.status(404).json({ success: false, message: 'Message not found' });
-    }
+    let message = await prisma.contactMessage.findUnique({ where: { id } });
+    if (!message) return res.status(404).json({ success: false, message: 'Message not found' });
+
+    message = await prisma.contactMessage.update({
+      where: { id },
+      data: { status }
+    });
 
     res.status(200).json({
       success: true,
@@ -95,18 +99,18 @@ router.put('/:id/status', authenticateToken, superAdminOnly, async (req, res) =>
 router.post('/:id/reply', authenticateToken, superAdminOnly, async (req, res) => {
   try {
     const { replyMessage } = req.body;
+    const { id } = req.params;
 
     if (!replyMessage) {
       return res.status(400).json({ success: false, message: 'Reply message is required' });
     }
 
-    const message = await ContactMessage.findById(req.params.id);
+    let message = await prisma.contactMessage.findUnique({ where: { id } });
 
     if (!message) {
       return res.status(404).json({ success: false, message: 'Message not found' });
     }
 
-    // Send email to standard user
     const emailSubject = `Re: Your Inquiry with OrvantaHealth`;
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -121,16 +125,16 @@ router.post('/:id/reply', authenticateToken, superAdminOnly, async (req, res) =>
       </div>
     `;
 
-    // Fire & Forget email or await it
     await sendEmail({
       to: message.email,
       subject: emailSubject,
       html: emailHtml
     });
 
-    // Update message status directly to replied
-    message.status = 'replied';
-    await message.save();
+    message = await prisma.contactMessage.update({
+      where: { id },
+      data: { status: 'replied' }
+    });
 
     res.status(200).json({
       success: true,

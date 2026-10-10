@@ -1,8 +1,4 @@
-const User = require('../models/User');
-const Doctor = require('../models/Doctor');
-const Patient = require('../models/Patient');
-const Appointment = require('../models/Appointment');
-const Bill = require('../models/Bill');
+const prisma = require('../prismaClient');
 const PDFDocument = require('pdfkit');
 
 // Get system overview
@@ -16,60 +12,36 @@ const getSystemOverview = async (req, res) => {
       totalUsers,
       activeUsers,
       recentRegistrations,
-      systemHealth,
-      appointmentTrends,
-      revenueTrends
+      recentAppointments,
+      recentBills
     ] = await Promise.all([
-      User.countDocuments(),
-      User.countDocuments({ isActive: true }),
-      User.countDocuments({
-        createdAt: {
-          $gte: timeLimit
-        }
+      prisma.user.count(),
+      prisma.user.count({ where: { isActive: true } }),
+      prisma.user.count({ where: { createdAt: { gte: timeLimit } } }),
+      prisma.appointment.findMany({
+        where: { createdAt: { gte: timeLimit } },
+        select: { createdAt: true }
       }),
-      Promise.resolve({ status: 'healthy', uptime: process.uptime() }),
-      Appointment.aggregate([
-        {
-          $match: {
-            createdAt: { $gte: timeLimit }
-          }
-        },
-        {
-          $group: {
-            _id: {
-              $dateToString: {
-                format: '%Y-%m-%d',
-                date: '$createdAt'
-              }
-            },
-            count: { $sum: 1 }
-          }
-        },
-        { $sort: { _id: -1 } },
-        { $limit: rangeInDays }
-      ]),
-      Bill.aggregate([
-        {
-          $match: {
-            status: 'paid',
-            createdAt: { $gte: timeLimit }
-          }
-        },
-        {
-          $group: {
-            _id: {
-              $dateToString: {
-                format: '%Y-%m-%d',
-                date: '$createdAt'
-              }
-            },
-            total: { $sum: '$total' }
-          }
-        },
-        { $sort: { _id: -1 } },
-        { $limit: rangeInDays }
-      ])
+      prisma.bill.findMany({
+        where: { status: 'paid', createdAt: { gte: timeLimit } },
+        select: { createdAt: true, total: true }
+      })
     ]);
+
+    const appointmentTrendsObj = {};
+    recentAppointments.forEach(apt => {
+      const d = apt.createdAt.toISOString().split('T')[0];
+      appointmentTrendsObj[d] = (appointmentTrendsObj[d] || 0) + 1;
+    });
+
+    const revenueTrendsObj = {};
+    recentBills.forEach(bill => {
+      const d = bill.createdAt.toISOString().split('T')[0];
+      revenueTrendsObj[d] = (revenueTrendsObj[d] || 0) + bill.total;
+    });
+
+    const appointmentTrends = Object.keys(appointmentTrendsObj).map(k => ({ _id: k, count: appointmentTrendsObj[k] })).sort((a, b) => b._id.localeCompare(a._id)).slice(0, rangeInDays);
+    const revenueTrends = Object.keys(revenueTrendsObj).map(k => ({ _id: k, total: revenueTrendsObj[k] })).sort((a, b) => b._id.localeCompare(a._id)).slice(0, rangeInDays);
 
     res.json({
       success: true,
@@ -77,110 +49,92 @@ const getSystemOverview = async (req, res) => {
         totalUsers,
         activeUsers,
         recentRegistrations,
-        systemHealth,
+        systemHealth: { status: 'healthy', uptime: process.uptime() },
         appointmentTrends: appointmentTrends.reverse(),
         revenueTrends: revenueTrends.reverse()
       }
     });
   } catch (error) {
     console.error('System overview error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error fetching system overview'
-    });
+    res.status(500).json({ success: false, message: 'Server error fetching system overview' });
   }
 };
 
 // Get detailed user analytics
 const getUserAnalytics = async (req, res) => {
   try {
-    const userStats = await User.aggregate([
-      {
-        $group: {
-          _id: '$role',
-          count: { $sum: 1 },
-          active: {
-            $sum: { $cond: ['$isActive', 1, 0] }
-          }
-        }
-      }
-    ]);
+    const users = await prisma.user.findMany({
+      select: { role: true, isActive: true, createdAt: true }
+    });
 
-    const monthlyRegistrations = await User.aggregate([
-      {
-        $match: {
-          createdAt: {
-            $gte: new Date(Date.now() - 12 * 30 * 24 * 60 * 60 * 1000)
-          }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            $dateToString: {
-              format: '%Y-%m',
-              date: '$createdAt'
-            }
-          },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]);
+    const userStatsObj = {};
+    users.forEach(u => {
+      if (!userStatsObj[u.role]) userStatsObj[u.role] = { count: 0, active: 0 };
+      userStatsObj[u.role].count += 1;
+      if (u.isActive) userStatsObj[u.role].active += 1;
+    });
+
+    const userStats = Object.keys(userStatsObj).map(role => ({
+      _id: role,
+      count: userStatsObj[role].count,
+      active: userStatsObj[role].active
+    }));
+
+    const timeLimit = new Date(Date.now() - 12 * 30 * 24 * 60 * 60 * 1000);
+    const recentUsers = users.filter(u => new Date(u.createdAt) >= timeLimit);
+
+    const monthlyObj = {};
+    recentUsers.forEach(u => {
+      const m = u.createdAt.toISOString().slice(0, 7); // YYYY-MM
+      monthlyObj[m] = (monthlyObj[m] || 0) + 1;
+    });
+
+    const monthlyRegistrations = Object.keys(monthlyObj).map(m => ({
+      _id: m,
+      count: monthlyObj[m]
+    })).sort((a, b) => a._id.localeCompare(b._id));
 
     res.json({
       success: true,
-      data: {
-        userStats,
-        monthlyRegistrations
-      }
+      data: { userStats, monthlyRegistrations }
     });
   } catch (error) {
     console.error('User analytics error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error fetching user analytics'
-    });
+    res.status(500).json({ success: false, message: 'Server error fetching user analytics' });
   }
 };
 
 // Get department statistics
 const getDepartmentStats = async (req, res) => {
   try {
-    const departmentStats = await Doctor.aggregate([
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'userDetails'
-        }
-      },
-      { $unwind: '$userDetails' },
-      {
-        $group: {
-          _id: '$department',
-          count: { $sum: 1 },
-          doctors: {
-            $push: {
-              name: {
-                $concat: ['$userDetails.profile.firstName', ' ', '$userDetails.profile.lastName']
-              },
-              experience: '$experience',
-              consultationFee: '$consultationFee'
-            }
-          }
-        }
-      },
-      {
-        $lookup: {
-          from: 'appointments',
-          localField: 'doctors._id',
-          foreignField: 'doctorId',
-          as: 'appointments'
-        }
+    const doctors = await prisma.doctor.findMany({
+      include: {
+        user: { select: { profile: true } },
+        appointments: { select: { id: true } }
       }
-    ]);
+    });
+
+    const deptObj = {};
+    doctors.forEach(doc => {
+      const dept = doc.department || 'General';
+      if (!deptObj[dept]) deptObj[dept] = { count: 0, doctors: [], appointments: [] };
+      
+      deptObj[dept].count += 1;
+      deptObj[dept].doctors.push({
+        _id: doc.id,
+        name: `${doc.user?.profile?.firstName || ''} ${doc.user?.profile?.lastName || ''}`.trim(),
+        experience: doc.experience,
+        consultationFee: doc.consultationFee
+      });
+      deptObj[dept].appointments.push(...doc.appointments);
+    });
+
+    const departmentStats = Object.keys(deptObj).map(dept => ({
+      _id: dept,
+      count: deptObj[dept].count,
+      doctors: deptObj[dept].doctors,
+      appointments: deptObj[dept].appointments
+    }));
 
     res.json({
       success: true,
@@ -188,10 +142,7 @@ const getDepartmentStats = async (req, res) => {
     });
   } catch (error) {
     console.error('Department stats error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error fetching department statistics'
-    });
+    res.status(500).json({ success: false, message: 'Server error fetching department statistics' });
   }
 };
 
@@ -203,9 +154,9 @@ const exportData = async (req, res) => {
 
     switch (type) {
       case 'users':
-        const users = await User.find({})
-          .select('email role profile isActive createdAt lastLogin')
-          .lean();
+        const users = await prisma.user.findMany({
+          select: { email: true, role: true, profile: true, isActive: true, createdAt: true, lastLogin: true }
+        });
         data = users.map(u => ({
           'Name': `${u.profile?.firstName || ''} ${u.profile?.lastName || ''}`.trim(),
           'Email': u.email,
@@ -217,42 +168,43 @@ const exportData = async (req, res) => {
         break;
 
       case 'patients':
-        const patients = await Patient.find({})
-          .populate('userId', 'email profile isActive createdAt')
-          .lean();
+        const patients = await prisma.patient.findMany({
+          include: { user: { select: { email: true, profile: true, isActive: true, createdAt: true } } }
+        });
         data = patients.map(p => ({
-          'Patient Name': `${p.userId?.profile?.firstName || ''} ${p.userId?.profile?.lastName || ''}`.trim(),
-          'Email': p.userId?.email || '-',
-          'Phone': p.userId?.profile?.phone || '-',
-          'Gender': p.userId?.profile?.gender || '-',
+          'Patient Name': `${p.user?.profile?.firstName || ''} ${p.user?.profile?.lastName || ''}`.trim(),
+          'Email': p.user?.email || '-',
+          'Phone': p.user?.profile?.phone || '-',
+          'Gender': p.user?.profile?.gender || '-',
           'Allergies': p.allergies?.length > 0 ? p.allergies.join(', ') : 'None',
           'Blood Group': p.bloodGroup || '-',
-          'Status': p.userId?.isActive ? 'Active' : 'Inactive'
+          'Status': p.user?.isActive ? 'Active' : 'Inactive'
         }));
         break;
 
       case 'doctors':
-        const doctors = await Doctor.find({})
-          .populate('userId', 'email profile isActive createdAt')
-          .lean();
+        const doctors = await prisma.doctor.findMany({
+          include: { user: { select: { email: true, profile: true, isActive: true, createdAt: true } } }
+        });
         
         data = doctors.map(doc => ({
-          'Doctor Name': `${doc.userId?.profile?.firstName || ''} ${doc.userId?.profile?.lastName || ''}`.trim(),
-          'Email-ID': doc.userId?.email || '-',
+          'Doctor Name': `${doc.user?.profile?.firstName || ''} ${doc.user?.profile?.lastName || ''}`.trim(),
+          'Email-ID': doc.user?.email || '-',
           'Specialization': doc.specialization || '-',
           'Experience': `${doc.experience || 0} Years`,
           'Fee (INR)': doc.consultationFee || 0,
           'Academic Qualification': doc.qualifications || '-',
           'License Number': doc.licenseNumber || '-',
           'Department': doc.department || '-',
-          'Contact Number': doc.userId?.profile?.phone || '-'
+          'Contact Number': doc.user?.profile?.phone || '-'
         }));
         break;
 
       case 'receptionists':
-        const receptionists = await User.find({ role: 'receptionist' })
-          .select('email profile isActive createdAt')
-          .lean();
+        const receptionists = await prisma.user.findMany({
+          where: { role: 'receptionist' },
+          select: { email: true, profile: true, isActive: true, createdAt: true }
+        });
         data = receptionists.map(r => ({
           'Receptionist Name': `${r.profile?.firstName || ''} ${r.profile?.lastName || ''}`.trim(),
           'Email-ID': r.email,
@@ -263,17 +215,17 @@ const exportData = async (req, res) => {
         break;
 
       case 'appointments':
-        const appointments = await Appointment.find({})
-          .populate('patientId', 'userId')
-          .populate({ path: 'patientId', populate: { path: 'userId', select: 'profile' } })
-          .populate('doctorId', 'userId')
-          .populate({ path: 'doctorId', populate: { path: 'userId', select: 'profile' } })
-          .lean();
+        const appointments = await prisma.appointment.findMany({
+          include: {
+            patient: { include: { user: { select: { profile: true } } } },
+            doctor: { include: { user: { select: { profile: true } } } }
+          }
+        });
         data = appointments.map(a => ({
           'Date': new Date(a.date).toLocaleDateString(),
           'Time': `${a.timeSlot?.start} - ${a.timeSlot?.end}`,
-          'Patient': `${a.patientId?.userId?.profile?.firstName || ''} ${a.patientId?.userId?.profile?.lastName || ''}`.trim(),
-          'Doctor': `Dr. ${a.doctorId?.userId?.profile?.firstName || ''} ${a.doctorId?.userId?.profile?.lastName || ''}`.trim(),
+          'Patient': `${a.patient?.user?.profile?.firstName || ''} ${a.patient?.user?.profile?.lastName || ''}`.trim(),
+          'Doctor': `Dr. ${a.doctor?.user?.profile?.firstName || ''} ${a.doctor?.user?.profile?.lastName || ''}`.trim(),
           'Status': a.status,
           'Type': a.consultationType,
           'Payment': a.paymentStatus
@@ -281,26 +233,26 @@ const exportData = async (req, res) => {
         break;
 
       case 'audit':
+        const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+        const todayEnd = new Date(new Date().setHours(23, 59, 59, 999));
+        
         const [patientCount, doctorCount, appointmentCount, revenueData] = await Promise.all([
-          Patient.countDocuments(),
-          Doctor.countDocuments(),
-          Appointment.countDocuments({
-            date: {
-              $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-              $lt: new Date(new Date().setHours(23, 59, 59, 999))
-            }
+          prisma.patient.count(),
+          prisma.doctor.count(),
+          prisma.appointment.count({
+            where: { date: { gte: todayStart, lt: todayEnd } }
           }),
-          Bill.aggregate([
-            { $match: { status: 'paid' } },
-            { $group: { _id: null, total: { $sum: '$total' } } }
-          ])
+          prisma.bill.aggregate({
+            _sum: { total: true },
+            where: { status: 'paid' }
+          })
         ]);
 
         data = [
           { 'Metric Category': 'General Statistics', 'Metric Name': 'Total Patients', 'Value': patientCount },
           { 'Metric Category': 'General Statistics', 'Metric Name': 'Total Doctors', 'Value': doctorCount },
           { 'Metric Category': 'Activity', 'Metric Name': "Today's Appointments", 'Value': appointmentCount },
-          { 'Metric Category': 'Finance', 'Metric Name': 'Total Revenue', 'Value': `₹${(revenueData[0]?.total || 0).toLocaleString()}` },
+          { 'Metric Category': 'Finance', 'Metric Name': 'Total Revenue', 'Value': `₹${(revenueData._sum.total || 0).toLocaleString()}` },
           { 'Metric Category': 'System Health', 'Metric Name': 'Status', 'Value': 'Healthy' },
           { 'Metric Category': 'System Health', 'Metric Name': 'Database', 'Value': 'Connected/Protected' },
           { 'Metric Category': 'System Health', 'Metric Name': 'API Node', 'Value': 'Responsive' },
@@ -309,28 +261,26 @@ const exportData = async (req, res) => {
         break;
 
       case 'revenue':
-        const bills = await Bill.find({})
-          .populate('patientId', 'userId')
-          .populate({ path: 'patientId', populate: { path: 'userId', select: 'profile' } })
-          .populate('appointmentId', 'date')
-          .sort({ createdAt: -1 })
-          .lean();
+        const bills = await prisma.bill.findMany({
+          include: {
+            patient: { include: { user: { select: { profile: true } } } },
+            appointment: { select: { date: true } }
+          },
+          orderBy: { createdAt: 'desc' }
+        });
 
         data = bills.map(bill => ({
-          'Invoice ID': bill.invoiceNumber || bill._id.toString().substring(0, 8).toUpperCase(),
+          'Invoice ID': bill.id.substring(0, 8).toUpperCase(),
           'Date': new Date(bill.createdAt).toLocaleDateString(),
-          'Patient Name': `${bill.patientId?.userId?.profile?.firstName || ''} ${bill.patientId?.userId?.profile?.lastName || ''}`.trim(),
+          'Patient Name': `${bill.patient?.user?.profile?.firstName || ''} ${bill.patient?.user?.profile?.lastName || ''}`.trim(),
           'Total Amount (INR)': bill.total || 0,
           'Status': bill.status?.toUpperCase() || 'PENDING',
-          'Payment Method': bill.paymentMethod || 'Razorpay',
-          'Appointment Date': bill.appointmentId?.date ? new Date(bill.appointmentId.date).toLocaleDateString() : '-'
+          'Payment Method': bill.paymentMethod || 'Online',
+          'Appointment Date': bill.appointment?.date ? new Date(bill.appointment.date).toLocaleDateString() : '-'
         }));
         break;
       default:
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid export type'
-        });
+        return res.status(400).json({ success: false, message: 'Invalid export type' });
     }
 
     const filename = `${type}_export_${new Date().toISOString().split('T')[0]}.${format || 'json'}`;
@@ -338,7 +288,6 @@ const exportData = async (req, res) => {
     if (format === 'pdf') {
       return generatePDFReport(data, type, res, filename);
     } else if (format === 'csv') {
-      // Convert to CSV format
       const csv = convertToCSV(data);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -350,33 +299,23 @@ const exportData = async (req, res) => {
     }
   } catch (error) {
     console.error('Export data error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error exporting data'
-    });
+    res.status(500).json({ success: false, message: 'Server error exporting data' });
   }
 };
 
-// Helper function to convert JSON to CSV
 const convertToCSV = (data) => {
   if (!data || data.length === 0) return '';
-
   const headers = Object.keys(data[0]);
   const csvHeaders = headers.join(',');
-
   const csvRows = data.map(row => {
     return headers.map(header => {
       const value = row[header];
-      return typeof value === 'string' && value.includes(',')
-        ? `"${value}"`
-        : value;
+      return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
     }).join(',');
   });
-
   return [csvHeaders, ...csvRows].join('\n');
 };
 
-// Helper function to generate PDF Report
 const generatePDFReport = (data, type, res, filename) => {
   if (!data || data.length === 0) {
     const doc = new PDFDocument({ margin: 30, size: 'A4' });
@@ -391,71 +330,49 @@ const generatePDFReport = (data, type, res, filename) => {
   const headers = Object.keys(data[0]);
   const isLandscape = headers.length > 6;
   
-  const doc = new PDFDocument({ 
-    margin: 30, 
-    size: 'A4', 
-    layout: isLandscape ? 'landscape' : 'portrait' 
-  });
-
+  const doc = new PDFDocument({ margin: 30, size: 'A4', layout: isLandscape ? 'landscape' : 'portrait' });
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   doc.pipe(res);
 
-  // Header
   doc.rect(0, 0, doc.page.width, 80).fill('#0f3a3a');
-  doc.fillColor('white').fontSize(24).font('Helvetica-Bold')
-    .text('OrvantaHealth', 50, 25);
-  doc.fontSize(10).font('Helvetica')
-    .text('Analytics Export Report', 50, 55);
+  doc.fillColor('white').fontSize(24).font('Helvetica-Bold').text('OrvantaHealth', 50, 25);
+  doc.fontSize(10).font('Helvetica').text('Analytics Export Report', 50, 55);
   doc.fontSize(14).text(type.toUpperCase() + ' DATA', 0, 35, { align: 'right', width: doc.page.width - 50 });
 
   doc.moveDown(3);
-  doc.fillColor('#334155').fontSize(10).font('Helvetica')
-    .text(`Generated on: ${new Date().toLocaleString()}`, 50, 95);
+  doc.fillColor('#334155').fontSize(10).font('Helvetica').text(`Generated on: ${new Date().toLocaleString()}`, 50, 95);
   doc.moveDown(2);
 
-  // Draw Table
   const tableWidth = doc.page.width - 100;
   const colWidth = tableWidth / headers.length;
   let startY = doc.y + 10;
   let startX = 50;
 
-  // Table Header Background
   doc.rect(startX, startY, tableWidth, 20).fill('#f0f9f9');
   doc.fillColor('#0f3a3a').fontSize(isLandscape ? 7 : 8).font('Helvetica-Bold');
 
   headers.forEach((header, i) => {
-    doc.text(header.toUpperCase(), startX + (i * colWidth), startY + 6, {
-      width: colWidth,
-      align: 'left'
-    });
+    doc.text(header.toUpperCase(), startX + (i * colWidth), startY + 6, { width: colWidth, align: 'left' });
   });
 
   startY += 20;
   doc.fillColor('#475569').font('Helvetica').fontSize(isLandscape ? 6 : 7);
 
   data.forEach((row, rowIndex) => {
-    // Check for page break
     if (startY > doc.page.height - 50) {
       doc.addPage();
       startY = 50;
-      // Re-draw header on new page
       doc.rect(startX, startY, tableWidth, 20).fill('#f0f9f9');
       doc.fillColor('#0f3a3a').fontSize(isLandscape ? 7 : 8).font('Helvetica-Bold');
       headers.forEach((header, i) => {
-        doc.text(header.toUpperCase(), startX + (i * colWidth), startY + 6, {
-          width: colWidth,
-          align: 'left'
-        });
+        doc.text(header.toUpperCase(), startX + (i * colWidth), startY + 6, { width: colWidth, align: 'left' });
       });
       startY += 20;
       doc.fillColor('#475569').font('Helvetica').fontSize(isLandscape ? 6 : 7);
     }
 
-    // Row Background for readability
-    if (rowIndex % 2 === 1) {
-      doc.rect(startX, startY, tableWidth, 15).fill('#fafafa');
-    }
+    if (rowIndex % 2 === 1) doc.rect(startX, startY, tableWidth, 15).fill('#fafafa');
 
     headers.forEach((header, i) => {
       let val = row[header];
@@ -464,11 +381,7 @@ const generatePDFReport = (data, type, res, filename) => {
       } else {
         val = String(val || '-').substring(0, 30);
       }
-      
-      doc.fillColor('#475569').text(val, startX + (i * colWidth), startY + 4, {
-        width: colWidth,
-        align: 'left'
-      });
+      doc.fillColor('#475569').text(val, startX + (i * colWidth), startY + 4, { width: colWidth, align: 'left' });
     });
     startY += 15;
   });

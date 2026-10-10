@@ -1,26 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken, patientOnly } = require('../middleware/auth');
-const Patient = require('../models/Patient');
-const Doctor = require('../models/Doctor');
-const Appointment = require('../models/Appointment');
-const Bill = require('../models/Bill');
-const Prescription = require('../models/Prescription');
-const LabReport = require('../models/LabReport');
-const TriageRecord = require('../models/TriageRecord');
+const prisma = require('../prismaClient');
 
 // Public endpoint - Get available doctors (no authentication required)
 router.get('/doctors', async (req, res) => {
   try {
-    const doctors = await Doctor.find({ isAvailable: true })
-      .populate({
-        path: 'userId',
-        match: { isActive: true, isOffboarded: false },
-        select: 'profile'
-      })
-      .sort({ 'rating.average': -1 });
+    const doctors = await prisma.doctor.findMany({
+      where: { isAvailable: true },
+      include: {
+        user: {
+          select: { profile: true, isActive: true, isOffboarded: true }
+        }
+      }
+    });
 
-    const activeDoctors = doctors.filter(doc => doc.userId !== null);
+    const activeDoctors = doctors.filter(doc => 
+      doc.user && doc.user.isActive && !doc.user.isOffboarded
+    );
 
     res.json({
       success: true,
@@ -40,11 +37,10 @@ router.use(authenticateToken);
 router.use(patientOnly);
 
 // Middleware to attach patient record to request
-// This is necessary because some models store patientId (from Patient collection) 
-// instead of userId (from User collection)
 const attachPatient = async (req, res, next) => {
   try {
-    const patient = await Patient.findOne({ userId: req.user._id });
+    const userId = req.user.id || req.user._id;
+    const patient = await prisma.patient.findUnique({ where: { userId } });
     if (!patient) {
       return res.status(404).json({
         success: false,
@@ -64,9 +60,15 @@ router.use(attachPatient);
 // Get patient profile
 router.get('/profile', async (req, res) => {
   try {
-    const patient = await Patient.findOne({ userId: req.user._id })
-      .populate('userId', 'email profile')
-      .populate('medicalHistory.doctor', 'profile');
+    const userId = req.user.id || req.user._id;
+    const patient = await prisma.patient.findUnique({
+      where: { userId },
+      include: {
+        user: {
+          select: { email: true, profile: true }
+        }
+      }
+    });
 
     if (!patient) {
       return res.status(404).json({
@@ -92,17 +94,17 @@ router.get('/profile', async (req, res) => {
 router.patch('/profile', async (req, res) => {
   try {
     const { bloodGroup, emergencyContact, insuranceInfo, allergies } = req.body;
+    const userId = req.user.id || req.user._id;
 
-    const patient = await Patient.findOneAndUpdate(
-      { userId: req.user._id },
-      {
+    const patient = await prisma.patient.update({
+      where: { userId },
+      data: {
         bloodGroup,
-        emergencyContact,
-        insuranceInfo,
-        allergies
-      },
-      { new: true }
-    );
+        emergencyContact: emergencyContact ? emergencyContact : undefined,
+        insuranceInfo: insuranceInfo ? insuranceInfo : undefined,
+        allergies: allergies ? allergies : undefined
+      }
+    });
 
     res.json({
       success: true,
@@ -123,8 +125,12 @@ router.get('/doctor/:doctorId/availability', async (req, res) => {
   try {
     const { doctorId } = req.params;
 
-    const doctor = await Doctor.findById(doctorId)
-      .populate('userId', 'profile');
+    const doctor = await prisma.doctor.findUnique({
+      where: { id: doctorId },
+      include: {
+        user: { select: { profile: true } }
+      }
+    });
 
     if (!doctor || !doctor.isAvailable) {
       return res.status(404).json({
@@ -133,15 +139,21 @@ router.get('/doctor/:doctorId/availability', async (req, res) => {
       });
     }
 
-    // Get booked slots for the next 60 days (covers all selectable dates in the booking UI)
+    // Get booked slots for the next 60 days
     const today = new Date();
     const sixtyDaysLater = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
 
-    const bookedAppointments = await Appointment.find({
-      doctorId,
-      date: { $gte: today, $lte: sixtyDaysLater },
-      status: { $in: ['pending', 'confirmed', 'checked_in'] }
-    }).select('date timeSlot');
+    const bookedAppointments = await prisma.appointment.findMany({
+      where: {
+        doctorId,
+        date: { gte: today, lte: sixtyDaysLater },
+        status: { in: ['pending', 'confirmed', 'checked_in'] }
+      },
+      select: {
+        date: true,
+        timeSlot: true
+      }
+    });
 
     res.json({
       success: true,
@@ -164,10 +176,17 @@ router.get('/doctor/:doctorId/availability', async (req, res) => {
 // Get patient appointments
 router.get('/appointments', async (req, res) => {
   try {
-    const appointments = await Appointment.find({ patientId: req.patient._id })
-      .populate('doctorId')
-      .populate('doctorId.userId', 'profile')
-      .sort({ date: -1 });
+    const appointments = await prisma.appointment.findMany({
+      where: { patientId: req.patient.id },
+      include: {
+        doctor: {
+          include: {
+            user: { select: { profile: true } }
+          }
+        }
+      },
+      orderBy: { date: 'desc' }
+    });
 
     res.json({
       success: true,
@@ -185,16 +204,20 @@ router.get('/appointments', async (req, res) => {
 // Get patient bills
 router.get('/bills', async (req, res) => {
   try {
-    const bills = await Bill.find({ patientId: req.patient._id })
-      .populate({
-        path: 'appointmentId',
-        populate: {
-          path: 'doctorId',
-          populate: { path: 'userId', select: 'profile' }
-        }
-      })
-      .populate('createdBy', 'profile')
-      .sort({ createdAt: -1 });
+    const bills = await prisma.bill.findMany({
+      where: { patientId: req.patient.id },
+      include: {
+        appointment: {
+          include: {
+            doctor: {
+              include: { user: { select: { profile: true } } }
+            }
+          }
+        },
+        createdBy: { select: { profile: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.json({
       success: true,
@@ -212,23 +235,24 @@ router.get('/bills', async (req, res) => {
 // Get patient prescriptions
 router.get('/prescriptions', async (req, res) => {
   try {
-    const prescriptions = await Prescription.find({ patientId: req.patient._id })
-      .populate({
-        path: 'doctorId',
-        populate: {
-          path: 'userId',
-          select: 'profile'
+    const prescriptions = await prisma.prescription.findMany({
+      where: { patientId: req.patient.id },
+      include: {
+        doctor: {
+          include: {
+            user: { select: { profile: true } }
+          }
         }
-      })
-      .sort({ createdAt: -1 });
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     // Map fields to match frontend expectations
     const mappedPrescriptions = prescriptions.map(p => {
-      const obj = p.toObject();
       return {
-        ...obj,
-        medications: obj.medicines, // map medicines to medications
-        instructions: obj.advice   // map advice to instructions
+        ...p,
+        medications: p.medicines, // map medicines to medications
+        instructions: p.advice   // map advice to instructions
       };
     });
 
@@ -248,13 +272,16 @@ router.get('/prescriptions', async (req, res) => {
 // Get patient lab reports
 router.get('/lab-reports', async (req, res) => {
   try {
-    const labReports = await LabReport.find({ patientId: req.patient._id })
-      .populate({
-        path: 'doctorId',
-        populate: { path: 'userId', select: 'profile' }
-      })
-      .populate('uploadedBy', 'profile')
-      .sort({ reportDate: -1 });
+    const labReports = await prisma.labReport.findMany({
+      where: { patientId: req.patient.id },
+      include: {
+        doctor: {
+          include: { user: { select: { profile: true } } }
+        },
+        uploadedBy: { select: { profile: true } }
+      },
+      orderBy: { reportDate: 'desc' }
+    });
 
     res.json({
       success: true,
@@ -269,5 +296,4 @@ router.get('/lab-reports', async (req, res) => {
   }
 });
 
-// End of patient routes
 module.exports = router;

@@ -1,11 +1,9 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
 const cookieParser = require('cookie-parser');
+const prisma = require('./prismaClient');
 require('dotenv').config();
 
 const app = express();
@@ -56,22 +54,11 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      imgSrc: ["'self'", "data:", "https://br-cold-voice-b304mec5.storage.c-4.ap-southeast-1.aws.neon.tech"],
       connectSrc: ["'self'", "https://api.razorpay.com"],
     },
   },
 }));
-
-// Data sanitization against NoSQL query injection (in-place for Express 5 compatibility)
-app.use((req, res, next) => {
-  if (req.body) mongoSanitize.sanitize(req.body);
-  if (req.params) mongoSanitize.sanitize(req.params);
-  if (req.query) mongoSanitize.sanitize(req.query);
-  next();
-});
-
-// Data sanitization against XSS (Handled primarily by Helmet CSP and React's built-in escaping)
-// app.use(xss());
 
 
 // Enable trust proxy for rate limiting behind proxies
@@ -130,10 +117,10 @@ app.get('/', (req, res) => {
 });
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/orvantahealth')
-  .then(() => console.log('✓ Connected to MongoDB'))
+prisma.$connect()
+  .then(() => console.log('✓ Connected to Neon PostgreSQL via Prisma'))
   .catch(err => {
-    console.error('✗ MongoDB connection error:', err.message);
+    console.error('✗ Prisma connection error:', err.message);
     process.exit(1);
   });
 
@@ -197,8 +184,8 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     console.log(`${signal} received. Shutting down gracefully...`);
     server.close(() => {
       console.log('Server closed');
-      mongoose.connection.close(false).then(() => {
-        console.log('MongoDB connection closed');
+      prisma.$disconnect().then(() => {
+        console.log('Prisma connection closed');
         if (signal === 'SIGUSR2') {
           process.kill(process.pid, 'SIGUSR2');
         } else {

@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
-const Patient = require('../models/Patient');
-const Doctor = require('../models/Doctor');
+const prisma = require('../prismaClient');
+const bcrypt = require('bcryptjs');
 const { generateTokens, verifyRefreshToken } = require('../utils/jwtUtils');
 const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
-const { profilePicStorage } = require('../config/cloudinary');
+const { profilePicStorage } = require('../config/s3Storage');
 
 const cookieOptions = {
   httpOnly: true,
@@ -46,7 +45,7 @@ router.post('/create-superadmin', async (req, res) => {
     const adminPassword = 'Welcomeadmin';
 
     // Check if admin exists
-    const existingAdmin = await User.findOne({ email: adminEmail });
+    const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
     if (existingAdmin) {
       return res.json({
         success: true,
@@ -59,22 +58,25 @@ router.post('/create-superadmin', async (req, res) => {
       });
     }
 
-    // Create new admin
-    const admin = new User({
-      email: adminEmail,
-      password: adminPassword,
-      role: 'superadmin',
-      profile: {
-        firstName: 'Super',
-        lastName: 'Admin',
-        phone: '1234567890',
-        gender: 'other',
-        address: 'Hospital HQ'
-      },
-      isActive: true
-    });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(adminPassword, salt);
 
-    await admin.save();
+    // Create new admin
+    const admin = await prisma.user.create({
+      data: {
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'superadmin',
+        profile: {
+          firstName: 'Super',
+          lastName: 'Admin',
+          phone: '1234567890',
+          gender: 'other',
+          address: 'Hospital HQ'
+        },
+        isActive: true
+      }
+    });
 
     res.json({
       success: true,
@@ -115,7 +117,7 @@ router.post('/register', [
     const { email, password, firstName, lastName, phone, dateOfBirth, gender, address } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -124,33 +126,39 @@ router.post('/register', [
     }
 
     try {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
       // Create new user
-      const user = new User({
-        email,
-        password,
-        role: 'patient',
-        profile: {
-          firstName,
-          lastName,
-          phone: phone || undefined,
-          dateOfBirth: dateOfBirth || undefined,
-          gender: gender || undefined,
-          address: address || undefined
+      const user = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          role: 'patient',
+          profile: {
+            firstName,
+            lastName,
+            phone: phone || undefined,
+            dateOfBirth: dateOfBirth || undefined,
+            gender: gender || undefined,
+            address: address || undefined
+          }
         }
       });
 
-      await user.save();
-
       // Create patient profile
-      const patient = new Patient({ userId: user._id });
-      await patient.save();
+      const patient = await prisma.patient.create({
+        data: { userId: user.id, medicalRecordNumber: `MRN-${Math.floor(100000 + Math.random() * 900000)}`, medicalHistory: [], allergies: [], medications: [], emergencyContact: {}, insuranceInfo: {} }
+      });
 
       // Generate tokens
-      const tokens = generateTokens(user._id);
+      const tokens = generateTokens(user.id);
 
       // Save refresh token to user
-      user.refreshToken = tokens.refreshToken;
-      await user.save();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { refreshToken: tokens.refreshToken }
+      });
 
       res.cookie('accessToken', tokens.accessToken, accessCookieOptions);
       res.cookie('refreshToken', tokens.refreshToken, refreshCookieOptions);
@@ -163,14 +171,7 @@ router.post('/register', [
         }
       });
     } catch (saveError) {
-      // If user was created but something failed afterwards, delete the user to allow retry
-      // This prevents "half-created" accounts
-      const createdUser = await User.findOne({ email });
-      if (createdUser) {
-        await User.findByIdAndDelete(createdUser._id);
-        // Also try to delete patient profile if it was somehow created
-        await Patient.deleteOne({ userId: createdUser._id });
-      }
+      console.error(saveError);
       throw saveError;
     }
   } catch (error) {
@@ -209,7 +210,7 @@ router.post('/login', loginLimiter, [
     const { email, password } = req.body;
 
     // Find user
-    const user = await User.findOne({ email }).select('+password');
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !user.isActive) {
       return res.status(401).json({
         success: false,
@@ -227,7 +228,7 @@ router.post('/login', loginLimiter, [
     }
 
     // Check password
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
@@ -235,16 +236,17 @@ router.post('/login', loginLimiter, [
       });
     }
 
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
-
     // Generate tokens
-    const tokens = generateTokens(user._id);
+    const tokens = generateTokens(user.id);
 
-    // Save refresh token
-    user.refreshToken = tokens.refreshToken;
-    await user.save();
+    // Update last login and refresh token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLogin: new Date(),
+        refreshToken: tokens.refreshToken
+      }
+    });
 
     res.cookie('accessToken', tokens.accessToken, accessCookieOptions);
     res.cookie('refreshToken', tokens.refreshToken, refreshCookieOptions);
@@ -281,7 +283,7 @@ router.post('/refresh', async (req, res) => {
     const decoded = verifyRefreshToken(refreshToken);
 
     // Find user
-    const user = await User.findById(decoded.userId);
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
     if (!user || !user.isActive || user.refreshToken !== refreshToken) {
       return res.status(403).json({
         success: false,
@@ -290,11 +292,13 @@ router.post('/refresh', async (req, res) => {
     }
 
     // Generate new tokens
-    const tokens = generateTokens(user._id);
+    const tokens = generateTokens(user.id);
 
     // Update refresh token
-    user.refreshToken = tokens.refreshToken;
-    await user.save();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: tokens.refreshToken }
+    });
 
     res.cookie('accessToken', tokens.accessToken, accessCookieOptions);
     res.cookie('refreshToken', tokens.refreshToken, refreshCookieOptions);
@@ -316,7 +320,10 @@ router.post('/refresh', async (req, res) => {
 router.post('/logout', authenticateToken, async (req, res) => {
   try {
     // Remove refresh token from user
-    await User.findByIdAndUpdate(req.user._id, { $unset: { refreshToken: 1 } });
+    await prisma.user.update({
+      where: { id: req.user.id || req.user._id },
+      data: { refreshToken: null }
+    });
 
     res.clearCookie('accessToken', cookieOptions);
     res.clearCookie('refreshToken', cookieOptions);
@@ -338,12 +345,16 @@ router.post('/logout', authenticateToken, async (req, res) => {
 router.get('/me', authenticateToken, async (req, res) => {
   try {
     let profileData = null;
+    const userId = req.user.id || req.user._id;
 
     // Get additional profile data based on role
     if (req.user.role === 'patient') {
-      profileData = await Patient.findOne({ userId: req.user._id });
+      profileData = await prisma.patient.findUnique({ where: { userId: userId } });
     } else if (req.user.role === 'doctor') {
-      profileData = await Doctor.findOne({ userId: req.user._id }).populate('userId', 'email profile');
+      profileData = await prisma.doctor.findUnique({ 
+        where: { userId: userId },
+        include: { user: { select: { email: true, profile: true } } }
+      });
     }
 
     res.json({
@@ -366,21 +377,25 @@ router.get('/me', authenticateToken, async (req, res) => {
 router.patch('/profile', authenticateToken, async (req, res) => {
   try {
     const { dateOfBirth, gender, address } = req.body;
+    const userId = req.user.id || req.user._id;
 
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      {
-        'profile.dateOfBirth': dateOfBirth,
-        'profile.gender': gender,
-        'profile.address': address
-      },
-      { new: true }
-    ).select('-password -refreshToken');
+    const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+    let profile = (existingUser.profile) || {};
+    if (dateOfBirth) profile.dateOfBirth = dateOfBirth;
+    if (gender) profile.gender = gender;
+    if (address) profile.address = address;
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { profile }
+    });
+    
+    const { password, refreshToken, ...userWithoutSensitiveData } = user;
 
     res.json({
       success: true,
       message: 'Profile updated successfully',
-      data: { user }
+      data: { user: userWithoutSensitiveData }
     });
   } catch (error) {
     console.error('Update user profile error:', error);
@@ -401,24 +416,30 @@ router.post('/profile/avatar', authenticateToken, upload.single('avatar'), async
       });
     }
 
-    const user = await User.findById(req.user._id);
-    if (!user) {
+    const userId = req.user.id || req.user._id;
+    const existingUser = await prisma.user.findUnique({ where: { id: userId } });
+    
+    if (!existingUser) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
 
-    // Update avatar in profile
-    user.profile.avatar = req.file.path;
-    await user.save();
+    let profile = (existingUser.profile) || {};
+    profile.avatar = req.file.path;
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { profile }
+    });
 
     res.json({
       success: true,
       message: 'Profile picture updated successfully',
       data: {
         avatar: req.file.path,
-        user: user.toJSON()
+        user
       }
     });
   } catch (error) {

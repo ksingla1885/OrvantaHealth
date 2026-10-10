@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const TriageRecord = require('../models/TriageRecord');
-const User = require('../models/User');
-const Patient = require('../models/Patient');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+const prisma = require('../prismaClient');
+
 // AI Logic for Triage
 const runAITriage = async (symptoms, age, gender) => {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -66,6 +65,7 @@ JSON Format:
 router.post('/intake', authenticateToken, authorizeRoles('receptionist', 'superadmin'), async (req, res) => {
   try {
     const { patientName, age, gender, contactNumber, symptoms, vitals, patientId } = req.body;
+    const userId = req.user.id || req.user._id;
     
     // Generate unique Triage ID
     const triageId = 'TRG-' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000);
@@ -75,19 +75,20 @@ router.post('/intake', authenticateToken, authorizeRoles('receptionist', 'supera
 
     // Resolve patientId automatically if not passed
     let resolvedPatientId = patientId || null;
+    
     if (!resolvedPatientId && contactNumber) {
       const cleanPhone = contactNumber.replace(/\D/g, '');
       if (cleanPhone && cleanPhone.length >= 10) {
-        const regexStr = cleanPhone.slice(-10); // Match last 10 digits
-        const matchingUser = await User.findOne({
-          role: 'patient',
-          'profile.phone': { $regex: regexStr }
-        });
-        if (matchingUser) {
-          const patient = await Patient.findOne({ userId: matchingUser._id });
-          if (patient) {
-            resolvedPatientId = patient._id;
+        const matchingUsers = await prisma.user.findMany({
+          where: {
+            role: 'patient',
+            profile: { path: ['phone'], string_contains: cleanPhone.slice(-10) }
           }
+        });
+        
+        if (matchingUsers.length > 0) {
+          const patient = await prisma.patient.findUnique({ where: { userId: matchingUsers[0].id } });
+          if (patient) resolvedPatientId = patient.id;
         }
       }
     }
@@ -96,39 +97,33 @@ router.post('/intake', authenticateToken, authorizeRoles('receptionist', 'supera
     if (!resolvedPatientId && patientName) {
       const nameParts = patientName.trim().split(/\s+/);
       const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ');
-      const query = { role: 'patient' };
-      
-      if (lastName) {
-        query['profile.firstName'] = new RegExp(`^${firstName}$`, 'i');
-        query['profile.lastName'] = new RegExp(`^${lastName}$`, 'i');
-      } else {
-        query['profile.firstName'] = new RegExp(`^${firstName}$`, 'i');
-      }
-
-      const matchingUser = await User.findOne(query);
-      if (matchingUser) {
-        const patient = await Patient.findOne({ userId: matchingUser._id });
-        if (patient) {
-          resolvedPatientId = patient._id;
+      // simplified name match for Prisma
+      const matchingUsers = await prisma.user.findMany({
+        where: {
+          role: 'patient',
+          profile: { path: ['firstName'], string_contains: firstName }
         }
+      });
+      if (matchingUsers.length > 0) {
+        const patient = await prisma.patient.findUnique({ where: { userId: matchingUsers[0].id } });
+        if (patient) resolvedPatientId = patient.id;
       }
     }
 
-    const newRecord = new TriageRecord({
-      patientName,
-      age,
-      gender,
-      contactNumber,
-      symptoms,
-      vitals,
-      aiAnalysis,
-      receptionistId: req.user.id,
-      triageId,
-      patientId: resolvedPatientId
+    const newRecord = await prisma.triageRecord.create({
+      data: {
+        patientName,
+        age: parseInt(age) || 0,
+        gender,
+        contactNumber,
+        symptoms,
+        vitals: vitals || {},
+        aiAnalysis: aiAnalysis || {},
+        receptionistId: userId,
+        triageId,
+        patientId: resolvedPatientId
+      }
     });
-
-    await newRecord.save();
 
     res.status(201).json({
       success: true,
@@ -145,9 +140,10 @@ router.post('/intake', authenticateToken, authorizeRoles('receptionist', 'supera
 router.get('/queue', authenticateToken, async (req, res) => {
   try {
     const { status } = req.query;
+    const userId = req.user.id || req.user._id;
     let query = {};
+    
     if (status === 'resolved') {
-        // Only Doctors and SuperAdmins can see resolved patient history
         if (req.user.role === 'receptionist') {
             return res.status(403).json({
                 success: false,
@@ -156,27 +152,29 @@ router.get('/queue', authenticateToken, async (req, res) => {
         }
         
         query.status = 'resolved';
-        // If doctor, they only see THEIR resolved patients
         if (req.user.role === 'doctor') {
-            query.doctorReferred = req.user.id;
+            query.doctorReferredId = userId;
         }
     } else {
-        // If doctor, they see THEIR active patients (referred, in-consultation, or completed)
         if (req.user.role === 'doctor') {
-            query.status = { $in: ['referred', 'in-consultation', 'completed'] };
-            query.doctorReferred = req.user.id;
+            query.status = { in: ['referred', 'in-consultation', 'completed'] };
+            query.doctorReferredId = userId;
         } else {
-            // Receptionists/Admins see the general lobby (all except resolved)
-            query.status = { $in: ['pending', 'referred', 'in-consultation', 'completed'] };
+            query.status = { in: ['pending', 'referred', 'in-consultation', 'completed'] };
         }
     }
 
-    const queue = await TriageRecord.find(query)
-      .populate('doctorReferred', 'profile')
-      .sort({ createdAt: -1 });
+    const queue = await prisma.triageRecord.findMany({
+      where: query,
+      include: {
+        doctorReferred: { select: { profile: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
     
     res.json({ success: true, data: { queue } });
   } catch (error) {
+    console.error('Fetch queue error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch queue' });
   }
 });
@@ -184,10 +182,14 @@ router.get('/queue', authenticateToken, async (req, res) => {
 // 3. Get Triage Records Referred to Doctor
 router.get('/doctor/referred', authenticateToken, authorizeRoles('doctor'), async (req, res) => {
   try {
-    const referred = await TriageRecord.find({ 
-      doctorReferred: req.user.id,
-      status: { $in: ['referred', 'in-consultation', 'completed'] }
-    }).sort({ createdAt: -1 });
+    const userId = req.user.id || req.user._id;
+    const referred = await prisma.triageRecord.findMany({
+      where: {
+        doctorReferredId: userId,
+        status: { in: ['referred', 'in-consultation', 'completed'] }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
     
     res.json({ success: true, data: { referred } });
   } catch (error) {
@@ -199,34 +201,41 @@ router.get('/doctor/referred', authenticateToken, authorizeRoles('doctor'), asyn
 router.post('/prescribe/:id', authenticateToken, async (req, res) => {
   try {
     const { medicines, diagnosis, tests, advice, followUpDate } = req.body;
-    const triageRecord = await TriageRecord.findById(req.params.id);
+    const { id } = req.params;
+    const userId = req.user.id || req.user._id;
+
+    const triageRecord = await prisma.triageRecord.findUnique({ where: { id } });
 
     if (!triageRecord) {
       return res.status(404).json({ success: false, message: 'Record not found' });
     }
 
-    triageRecord.prescribedMedicines = medicines;
-    triageRecord.diagnosis = diagnosis;
-    triageRecord.tests = tests;
-    triageRecord.advice = advice;
-    triageRecord.followUpDate = followUpDate;
+    let updateData = {
+      prescribedMedicines: medicines || [],
+      diagnosis,
+      tests: tests || [],
+      advice,
+      followUpDate: followUpDate ? new Date(followUpDate) : null,
+      status: 'resolved',
+      resolvedAt: new Date()
+    };
     
-    // Automatically assign to prescribing doctor if not already assigned
     if (req.user.role === 'doctor') {
-      triageRecord.doctorReferred = req.user.id;
+      updateData.doctorReferredId = userId;
     }
     
-    triageRecord.status = 'resolved';
-    triageRecord.resolvedAt = new Date();
-    
-    await triageRecord.save();
+    const updatedRecord = await prisma.triageRecord.update({
+      where: { id },
+      data: updateData
+    });
 
     res.json({
       success: true,
       message: 'Prescription associated and triage record closed',
-      data: { triage: triageRecord }
+      data: { triage: updatedRecord }
     });
   } catch (error) {
+    console.error('Prescribe triage error:', error);
     res.status(500).json({ success: false, message: 'Failed to update record' });
   }
 });
@@ -235,23 +244,31 @@ router.post('/prescribe/:id', authenticateToken, async (req, res) => {
 router.post('/refer/:id', authenticateToken, authorizeRoles('receptionist', 'superadmin'), async (req, res) => {
   try {
     const { doctorId } = req.body;
-    const triageRecord = await TriageRecord.findById(req.params.id);
+    const { id } = req.params;
+
+    const triageRecord = await prisma.triageRecord.findUnique({ where: { id } });
 
     if (!triageRecord) {
       return res.status(404).json({ success: false, message: 'Record not found' });
     }
 
-    triageRecord.doctorReferred = doctorId;
-    triageRecord.status = 'referred';
-    
-    await triageRecord.save();
+    // doctorId coming from frontend might be User ID of doctor or Doctor ID
+    // Let's assume it's User ID since TriageRecord references User
+    const updatedRecord = await prisma.triageRecord.update({
+      where: { id },
+      data: {
+        doctorReferredId: doctorId,
+        status: 'referred'
+      }
+    });
 
     res.json({
       success: true,
       message: 'Patient referred successfully',
-      data: { triage: triageRecord }
+      data: { triage: updatedRecord }
     });
   } catch (error) {
+    console.error('Refer to doctor error:', error);
     res.status(500).json({ success: false, message: 'Failed to refer to doctor' });
   }
 });
@@ -259,12 +276,17 @@ router.post('/refer/:id', authenticateToken, authorizeRoles('receptionist', 'sup
 // 6. Check-In (Doctor starts session)
 router.post('/check-in/:id', authenticateToken, authorizeRoles('doctor', 'receptionist', 'superadmin'), async (req, res) => {
   try {
-    const record = await TriageRecord.findById(req.params.id);
+    const { id } = req.params;
+    const record = await prisma.triageRecord.findUnique({ where: { id } });
     if (!record) return res.status(404).json({ success: false, message: 'Record not found' });
     
-    record.status = 'in-consultation';
-    record.checkedInAt = new Date();
-    await record.save();
+    await prisma.triageRecord.update({
+      where: { id },
+      data: {
+        status: 'in-consultation',
+        checkedInAt: new Date()
+      }
+    });
     
     res.json({ success: true, message: 'Patient checked-in successfully' });
   } catch (error) {
@@ -275,12 +297,17 @@ router.post('/check-in/:id', authenticateToken, authorizeRoles('doctor', 'recept
 // 7. Check-Out (Doctor finishes session)
 router.post('/check-out/:id', authenticateToken, authorizeRoles('doctor', 'receptionist', 'superadmin'), async (req, res) => {
   try {
-    const record = await TriageRecord.findById(req.params.id);
+    const { id } = req.params;
+    const record = await prisma.triageRecord.findUnique({ where: { id } });
     if (!record) return res.status(404).json({ success: false, message: 'Record not found' });
     
-    record.status = 'completed';
-    record.checkedOutAt = new Date();
-    await record.save();
+    await prisma.triageRecord.update({
+      where: { id },
+      data: {
+        status: 'completed',
+        checkedOutAt: new Date()
+      }
+    });
     
     res.json({ success: true, message: 'Patient checked-out successfully' });
   } catch (error) {

@@ -1,0 +1,235 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  password       String
+  role           String
+  profile        Json
+  isActive       Boolean   @default(true)
+  isOffboarded   Boolean   @default(false)
+  offboardedAt   DateTime?
+  offboardedById String?
+  offboardedBy   User?     @relation("UserOffboardedBy", fields: [offboardedById], references: [id])
+  lastLogin      DateTime?
+  refreshToken   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  offboardedUsers       User[]         @relation("UserOffboardedBy")
+  doctor                Doctor?
+  patient               Patient?
+  cancelledAppointments Appointment[]  @relation("CancelledAppointments")
+  receptionistTriage    TriageRecord[] @relation("ReceptionistTriage")
+  doctorReferredTriage  TriageRecord[] @relation("DoctorReferredTriage")
+  createdBills          Bill[]         @relation("CreatedBills")
+  uploadedLabReports    LabReport[]    @relation("UploadedLabReports")
+  performedAuditLogs    AuditLog[]     @relation("AuditLogsPerformed")
+  targetAuditLogs       AuditLog[]     @relation("AuditLogsTarget")
+}
+
+model Doctor {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  name            String   @default("")
+  specialization  String
+  qualifications  String
+  experience      Int
+  licenseNumber   String   @unique
+  consultationFee Float
+  availability    Json
+  isAvailable     Boolean  @default(true)
+  dutyStatus      String   @default("available")
+  rating          Json
+  department      String
+  leaves          Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  appointments  Appointment[]
+  prescriptions Prescription[]
+  labReports    LabReport[]
+}
+
+model Patient {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id])
+  medicalRecordNumber String   @unique
+  medicalHistory      Json
+  allergies           Json
+  medications         Json
+  emergencyContact    Json
+  bloodGroup          String?
+  insuranceInfo       Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  appointments  Appointment[]
+  triageRecords TriageRecord[]
+  bills         Bill[]
+  prescriptions Prescription[]
+  labReports    LabReport[]
+}
+
+model Appointment {
+  id                 String        @id @default(uuid())
+  patientId          String
+  patient            Patient       @relation(fields: [patientId], references: [id])
+  doctorId           String
+  doctor             Doctor        @relation(fields: [doctorId], references: [id])
+  date               DateTime
+  timeSlot           Json
+  status             String        @default("pending")
+  paymentMode        String        @default("at_reception")
+  paymentStatus      String        @default("pending")
+  paymentDetails     Json?
+  consultationType   String        @default("in-person")
+  symptoms           String?
+  notes              String?
+  patientDocuments   Json?
+  prescriptionId     String?       @unique
+  prescription       Prescription? @relation("AppointmentPrescription", fields: [prescriptionId], references: [id])
+  cancellationReason String?
+  cancelledById      String?
+  cancelledBy        User?         @relation("CancelledAppointments", fields: [cancelledById], references: [id])
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  bills Bill[]
+}
+
+model TriageRecord {
+  id                  String    @id @default(uuid())
+  patientName         String
+  age                 Int
+  gender              String
+  contactNumber       String
+  symptoms            String
+  vitals              Json?
+  aiAnalysis          Json?
+  receptionistId      String
+  receptionist        User      @relation("ReceptionistTriage", fields: [receptionistId], references: [id])
+  doctorReferredId    String?
+  doctorReferred      User?     @relation("DoctorReferredTriage", fields: [doctorReferredId], references: [id])
+  patientId           String?
+  patient             Patient?  @relation(fields: [patientId], references: [id])
+  status              String    @default("pending")
+  diagnosis           String?
+  prescribedMedicines Json?
+  tests               Json?
+  advice              String?
+  followUpDate        DateTime?
+  triageId            String    @unique
+  checkedInAt         DateTime?
+  checkedOutAt        DateTime?
+  resolvedAt          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model Bill {
+  id             String       @id @default(uuid())
+  patientId      String?
+  patient        Patient?     @relation(fields: [patientId], references: [id])
+  triageId       String?
+  appointmentId  String?
+  appointment    Appointment? @relation(fields: [appointmentId], references: [id])
+  items          Json
+  subtotal       Float
+  tax            Float        @default(0)
+  total          Float
+  status         String       @default("draft")
+  dueDate        DateTime?
+  paymentMethod  String?
+  paymentDetails Json?
+  receipt        String?
+  createdById    String
+  createdBy      User         @relation("CreatedBills", fields: [createdById], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Prescription {
+  id            String       @id @default(uuid())
+  appointmentId String       @unique
+  appointment   Appointment? @relation("AppointmentPrescription")
+  patientId     String
+  patient       Patient      @relation(fields: [patientId], references: [id])
+  doctorId      String
+  doctor        Doctor       @relation(fields: [doctorId], references: [id])
+  diagnosis     String
+  medicines     Json
+  tests         Json?
+  advice        String?
+  followUpDate  DateTime?
+  receipt       String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model LabReport {
+  id              String   @id @default(uuid())
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  testName        String
+  testType        String
+  reportDate      DateTime
+  doctorId        String?
+  doctor          Doctor?  @relation(fields: [doctorId], references: [id])
+  results         Json
+  conclusion      String?
+  recommendations String?
+  reportFile      String
+  uploadedById    String
+  uploadedBy      User     @relation("UploadedLabReports", fields: [uploadedById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  action        String
+  performedById String
+  performedBy   User     @relation("AuditLogsPerformed", fields: [performedById], references: [id])
+  targetUserId  String?
+  targetUser    User?    @relation("AuditLogsTarget", fields: [targetUserId], references: [id])
+  details       String
+  severity      String   @default("info")
+  ipAddress     String   @default("127.0.0.1")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model BedCapacity {
+  id              String   @id @default(uuid())
+  department      String   @unique
+  totalBeds       Int      @default(20)
+  occupiedBeds    Int      @default(10)
+  icuBeds         Int      @default(5)
+  occupiedIcuBeds Int      @default(2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  facility  String
+  role      String
+  phone     String?
+  message   String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

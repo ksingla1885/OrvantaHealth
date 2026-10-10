@@ -2,12 +2,12 @@
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue.svg)](http://makeapullrequest.com)
-[![MERN Stack](https://img.shields.io/badge/Stack-MERN-informational)](https://www.mongodb.com/mern-stack)
+[![PERN Stack](https://img.shields.io/badge/Stack-PERN-informational)](https://www.postgresql.org/)
 [![AI Powered](https://img.shields.io/badge/AI-Powered-purple.svg)](https://openrouter.ai/)
 [![React 19](https://img.shields.io/badge/React-19.0-cyan.svg)](https://react.dev/)
 [![Tailwind 4](https://img.shields.io/badge/Tailwind-4.0-blueviolet.svg)](https://tailwindcss.com/)
 
-OrvantaHealth is a production-ready, high-fidelity **Hospital Management System (HMS)** built with the **MERN stack** (MongoDB, Express, React, Node.js). It modernizes healthcare administration, streamlines clinical triage using advanced AI, monitors live hospital bed telemetry, and ensures rigorous compliance with real-time audit trails and emergency lockdown mechanisms.
+OrvantaHealth is a production-ready, high-fidelity **Hospital Management System (HMS)** built with the **PERN stack** (PostgreSQL, Express, React, Node.js). It modernizes healthcare administration, streamlines clinical triage using advanced AI, monitors live hospital bed telemetry, and ensures rigorous compliance with real-time audit trails and emergency lockdown mechanisms.
 
 ---
 
@@ -37,8 +37,8 @@ graph TD
         TriageAI[OpenRouter Triage AI]
     end
 
-    subgraph Database [Persistence Layer - MongoDB]
-        DB[(MongoDB Database)]
+    subgraph Database [Persistence Layer - PostgreSQL]
+        DB[(PostgreSQL Database)]
         Models[Schemas: User, Doctor, Patient, Triage, Bed, AuditLog]
     end
 
@@ -105,11 +105,11 @@ graph TD
 
 ### Backend Server
 - **Node.js 20+ & Express 5**: Asynchronous routing.
-- **MongoDB & Mongoose**: Object modeling with schema-level validation.
+- **PostgreSQL & Prisma**: Relational mapping and schema validation.
 - **JWT & Passport**: Secure stateless authorization.
 - **OpenRouter SDK**: Completion routing to diverse free and premium LLM resources.
 - **Razorpay**: Direct API integration for financial transactions.
-- **Cloudinary / Multer**: Digital prescription receipt archiving.
+- **Neon Storage (AWS S3) / Multer**: Digital prescription and profile image archiving.
 
 ---
 
@@ -117,7 +117,7 @@ graph TD
 
 ### Prerequisites
 - **Node.js** (v20.x or higher)
-- **MongoDB** (Local instance or Atlas Cluster)
+- **PostgreSQL** (Neon or local instance)
 - **OpenRouter API Key** (Sourced from [OpenRouter](https://openrouter.ai/))
 - **Razorpay API Key** (Available on [Razorpay Dashboard](https://dashboard.razorpay.com/))
 
@@ -138,16 +138,17 @@ cd ../frontend && npm install
 Create a `.env` file in the `backend/` directory:
 ```env
 PORT=5000
-MONGODB_URI=your_mongodb_connection_string
+DATABASE_URL=your_postgresql_connection_string
 JWT_SECRET=your_jwt_secret
 JWT_REFRESH_SECRET=your_refresh_secret
 RAZORPAY_KEY_ID=your_razorpay_id
 RAZORPAY_KEY_SECRET=your_razorpay_secret
 OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=poolside/laguna-s-2.1:free
-CLOUDINARY_CLOUD_NAME=your_cloudinary_name
-CLOUDINARY_API_KEY=your_cloudinary_key
-CLOUDINARY_API_SECRET=your_cloudinary_secret
+AWS_ENDPOINT_URL_S3=your_neon_storage_endpoint
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_REGION=ap-southeast-1
 EMAIL_SERVICE=gmail
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
@@ -162,14 +163,7 @@ To initialize the system with the default SuperAdmin credentials, run the seedin
 node seed.js
 ```
 
-### 4. Running Validation Tests
-OrvantaHealth includes E2E validation scripts to verify cross-model data aggregation and timeline generation.
-```bash
-# Execute EMR Timeline Aggregation Validation
-node backend/tests/test-history-aggregation.js
-```
-
-### 5. Running the Application
+### 4. Running the Application
 ```bash
 # Terminal 1: Backend API
 cd backend && npm run dev
@@ -185,10 +179,10 @@ cd frontend && npm run dev
 ```text
 OrvantaHealth/
 ├── backend/
-│   ├── config/          # Passport, database, and Cloudinary configurations
+│   ├── config/          # Passport, database, and AWS S3 Storage configurations
 │   ├── controllers/     # Controller logic (Auth, Triage, Analytics)
 │   ├── middleware/      # Auth (JWT/RBAC), Security lockdown, & File Uploads
-│   ├── models/          # Schemas (User, Patient, BedCapacity, AuditLog, TriageRecord)
+│   ├── prisma/          # Prisma schema and database connection logic
 │   ├── routes/          # Express Route definitions (admin, doctor, triage, patient)
 │   ├── services/        # Third-party integrations (Groq AI, Razorpay)
 │   ├── utils/           # Shared constants & helpers
