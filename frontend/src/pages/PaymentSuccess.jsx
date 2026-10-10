@@ -36,7 +36,7 @@ const PaymentSuccess = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div>
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-2">Invoice Number</span>
-                                    <p className="text-xl font-black text-slate-900 font-display">#{bill.billNumber || bill._id.slice(-6).toUpperCase()}</p>
+                                    <p className="text-xl font-black text-slate-900 font-display">#{bill.billNumber || bill.id.slice(-6).toUpperCase()}</p>
                                 </div>
                                 <div>
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-2">Transaction ID</span>

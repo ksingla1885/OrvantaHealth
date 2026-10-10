@@ -236,7 +236,7 @@ const SecurityControl = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-medium">
                 {securityData?.activeStaff?.map((s) => (
-                  <tr key={s._id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-4 px-4">
                       <div>
                         <p className="font-bold text-brand-dark">{s.profile ? `${s.profile.firstName} ${s.profile.lastName}` : s.email}</p>

@@ -39,10 +39,10 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
     const [prescriptionsLoading, setPrescriptionsLoading] = useState(false);
 
     const fetchPrescriptions = useCallback(async () => {
-        if (!patient?._id) return;
+        if (!patient?.id) return;
         try {
             setPrescriptionsLoading(true);
-            const res = await api.get(`/receptionist/patient/${patient._id}/prescriptions`);
+            const res = await api.get(`/receptionist/patient/${patient.id}/prescriptions`);
             if (res.data.success) {
                 setPrescriptions(res.data.data.prescriptions);
             }
@@ -51,7 +51,7 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
         } finally {
             setPrescriptionsLoading(false);
         }
-    }, [patient?._id]);
+    }, [patient?.id]);
 
     const fetchTriagePrescriptions = useCallback(async () => {
         if (!triageRecord?.triageId) return;
@@ -61,7 +61,7 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
             if (res.data.success) {
                 // Formatting triage prescription correctly for the sidebar
                 setPrescriptions([{
-                    _id: triageRecord._id,
+                    id: triageRecord.id,
                     doctorId: { userId: { profile: { lastName: 'Triage' } } },
                     createdAt: triageRecord.resolvedAt,
                     medicines: res.data.data.medicines || []
@@ -76,13 +76,13 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
 
     useEffect(() => {
         if (isOpen) {
-            if (patient?._id) {
+            if (patient?.id) {
                 fetchPrescriptions();
             } else if (triageRecord?.triageId) {
                 fetchTriagePrescriptions();
             }
         }
-    }, [isOpen, patient?._id, triageRecord?.triageId, fetchPrescriptions, fetchTriagePrescriptions]);
+    }, [isOpen, patient?.id, triageRecord?.triageId, fetchPrescriptions, fetchTriagePrescriptions]);
 
     const addMedicineToBill = (medicine) => {
         const newItem = { description: `Medicine: ${medicine.name}`, quantity: 1, unitPrice: 0 };
@@ -145,7 +145,7 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
 
             // 1. Create the bill entry
             const billData = {
-                patientId: patient?._id || undefined,
+                patientId: patient?.id || undefined,
                 triageId: triageRecord?.triageId || undefined,
                 items: validItems,
                 dueDate: INITIAL_DUE_DATE,
@@ -156,7 +156,7 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
             const billResponse = await api.post('/receptionist/bill', billData);
 
             if (billResponse.data.success) {
-                const billId = billResponse.data.data.bill._id;
+                const billId = billResponse.data.data.bill.id;
 
                 // 2. If a file is selected, upload it as receipt
                 if (file) {
@@ -190,7 +190,7 @@ const BillUploadModal = ({ isOpen, onClose, patient, triageRecord, onSuccess }) 
                     <div>
                         <h2 className="text-2xl font-black font-display text-white">Generate Invoice & Bill</h2>
                         <p className="text-white/60 text-xs font-bold uppercase tracking-widest mt-1">
-                            For: {patient ? `${patient.userId.profile.firstName} ${patient.userId.profile.lastName}` : (triageRecord?.patientName || 'Walk-in Patient')}
+                            For: {patient ? `${patient.user.profile.firstName} ${patient.user.profile.lastName}` : (triageRecord?.patientName || 'Walk-in Patient')}
                         </p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors">

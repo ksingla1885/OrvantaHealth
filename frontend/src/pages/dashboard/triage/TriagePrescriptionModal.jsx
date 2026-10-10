@@ -89,7 +89,7 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
 
     useEffect(() => {
         const fetchHistory = async () => {
-            const pId = record?.patientId?._id || record?.patientId;
+            const pId = record?.patientId?.id || record?.patientId;
             if (!pId) return;
 
             setHistoryLoading(true);
@@ -243,7 +243,7 @@ const TriagePrescriptionModal = ({ isOpen, onClose, record, onSuccess }) => {
                 followUpDate: formData.followUpDate || undefined
             };
 
-            const response = await api.post(`/triage/prescribe/${record._id}`, payload);
+            const response = await api.post(`/triage/prescribe/${record.id}`, payload);
 
             if (response.data.success) {
                 toast.success('Clinical intervention recorded successfully');

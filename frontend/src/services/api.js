@@ -28,9 +28,8 @@ api.interceptors.response.use(
         // Retry the original request
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, logout user
+        // Refresh failed, clear user from local storage
         localStorage.removeItem('user');
-        window.location.href = '/';
         return Promise.reject(refreshError);
       }
     }

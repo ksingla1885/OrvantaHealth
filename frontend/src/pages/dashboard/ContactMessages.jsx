@@ -38,7 +38,7 @@ const ContactMessages = () => {
 
       const { data } = await api.put(`/contact/${id}/status`, { status: newStatus });
       if (data.success) {
-        setMessages(messages.map(msg => msg._id === id ? data.data : msg));
+        setMessages(messages.map(msg => msg.id === id ? data.data : msg));
         toast.success(`Message marked as ${newStatus}`);
       }
     } catch (error) {
@@ -58,12 +58,12 @@ const ContactMessages = () => {
 
     setSubmittingReply(true);
     try {
-      const { data } = await api.post(`/contact/${selectedMessage._id}/reply`, {
+      const { data } = await api.post(`/contact/${selectedMessage.id}/reply`, {
         replyMessage: replyText
       });
       if (data.success) {
         toast.success('Reply sent successfully!');
-        setMessages(messages.map(msg => msg._id === selectedMessage._id ? data.data : msg));
+        setMessages(messages.map(msg => msg.id === selectedMessage.id ? data.data : msg));
         setReplyModalOpen(false);
         setSelectedMessage(null);
       }
@@ -126,7 +126,7 @@ const ContactMessages = () => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredMessages.map((msg) => (
-                  <tr key={msg._id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={msg.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="font-semibold text-gray-900">{msg.name}</span>
@@ -175,7 +175,7 @@ const ContactMessages = () => {
                       <div className="flex items-center justify-end gap-3">
                         {msg.status === 'new' && (
                           <button
-                            onClick={() => handleStatusChange(msg._id, 'read')}
+                            onClick={() => handleStatusChange(msg.id, 'read')}
                             className="flex items-center gap-1.5 text-xs text-blue-600 font-medium hover:text-blue-800 transition-colors"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5" />

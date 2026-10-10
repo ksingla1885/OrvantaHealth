@@ -359,7 +359,7 @@ const DoctorDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {triageReferrals.slice(1).map((referral) => (
               <div 
-                key={referral._id} 
+                key={referral.id} 
                 className="group relative bg-slate-50/70 hover:bg-white border border-slate-200/70 rounded-[2.5rem] p-7 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 space-y-5"
               >
                 <div className="flex items-center justify-between">

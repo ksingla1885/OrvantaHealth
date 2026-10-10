@@ -41,17 +41,17 @@ const DoctorAvailability = () => {
       timeSlots: doctor.availability?.timeSlots || [],
       dutyStatus: doctor.dutyStatus || 'available'
     });
-    fetchDoctorLeaves(doctor._id);
+    fetchDoctorLeaves(doctor.id);
   };
 
   const handleDutyStatusChange = async (newStatus) => {
     setFormData(prev => ({ ...prev, dutyStatus: newStatus }));
     try {
-      const res = await api.patch(`/receptionist/doctors/${selectedDoctor._id}/duty-status`, { dutyStatus: newStatus });
+      const res = await api.patch(`/receptionist/doctors/${selectedDoctor.id}/duty-status`, { dutyStatus: newStatus });
       if (res.data.success) {
         toast.success(`Duty status updated: ${newStatus.toUpperCase()}`);
         setDoctors(prev => prev.map(d => 
-          d._id === selectedDoctor._id ? { ...d, dutyStatus: newStatus, isAvailable: newStatus === 'available' } : d
+          d.id === selectedDoctor.id ? { ...d, dutyStatus: newStatus, isAvailable: newStatus === 'available' } : d
         ));
       }
     } catch (err) {
@@ -71,14 +71,14 @@ const DoctorAvailability = () => {
   const handleAddLeave = async () => {
     if (!newLeaveDate) { toast.error('Please select a date'); return; }
     try {
-      const res = await api.post(`/receptionist/doctors/${selectedDoctor._id}/leave`, { date: newLeaveDate });
+      const res = await api.post(`/receptionist/doctors/${selectedDoctor.id}/leave`, { date: newLeaveDate });
       if (res.data.success) { toast.success('Leave marked'); setLeaves(res.data.data.leaves); setNewLeaveDate(''); }
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to mark leave'); }
   };
 
   const handleRemoveLeave = async (date) => {
     try {
-      const res = await api.delete(`/receptionist/doctors/${selectedDoctor._id}/leave/${date}`);
+      const res = await api.delete(`/receptionist/doctors/${selectedDoctor.id}/leave/${date}`);
       if (res.data.success) { toast.success('Leave removed'); setLeaves(res.data.data.leaves); }
     } catch { toast.error('Failed to remove leave'); }
   };
@@ -147,7 +147,7 @@ const DoctorAvailability = () => {
     setSaving(true);
     try {
       const res = await api.patch(
-        `/receptionist/doctors/${selectedDoctor._id}/availability`,
+        `/receptionist/doctors/${selectedDoctor.id}/availability`,
         { days: formData.days, timeSlots: formData.timeSlots }
       );
       if (res.data.success) {
@@ -162,7 +162,7 @@ const DoctorAvailability = () => {
   const handleCancel = () => { setSelectedDoctor(null); setFormData({ days: [], timeSlots: [] }); };
 
   const filteredDoctors = doctors.filter(d => {
-    const name = `Dr. ${d.userId.profile.firstName} ${d.userId.profile.lastName} ${d.specialization}`.toLowerCase();
+    const name = `Dr. ${d.user.profile.firstName} ${d.user.profile.lastName} ${d.specialization}`.toLowerCase();
     return name.includes(search.toLowerCase());
   });
 
@@ -222,14 +222,14 @@ const DoctorAvailability = () => {
             {filteredDoctors.length === 0 ? (
               <div className="text-center py-10 text-slate-400 font-bold text-sm">No doctors found</div>
             ) : filteredDoctors.map(doctor => {
-              const isSelected = selectedDoctor?._id === doctor._id;
-              const initials = `${doctor.userId.profile.firstName[0]}${doctor.userId.profile.lastName[0]}`.toUpperCase();
+              const isSelected = selectedDoctor?.id === doctor.id;
+              const initials = `${doctor.user.profile.firstName[0]}${doctor.user.profile.lastName[0]}`.toUpperCase();
               const activeDays = doctor.availability?.days?.length || 0;
               const slots = doctor.availability?.timeSlots?.length || 0;
 
               return (
                 <button
-                  key={doctor._id}
+                  key={doctor.id}
                   onClick={() => handleSelectDoctor(doctor)}
                   className={`w-full p-4 rounded-2xl border-2 text-left transition-all hover:-translate-y-0.5 ${
                     isSelected
@@ -254,7 +254,7 @@ const DoctorAvailability = () => {
 
                     <div className="flex-1 min-w-0">
                       <p className={`font-black text-sm truncate ${isSelected ? 'text-white' : 'text-brand-dark'}`}>
-                        Dr. {doctor.userId.profile.firstName} {doctor.userId.profile.lastName}
+                        Dr. {doctor.user.profile.firstName} {doctor.user.profile.lastName}
                       </p>
                       <p className={`text-[10px] font-semibold truncate mt-0.5 ${isSelected ? 'text-teal-100/80' : 'text-slate-400'}`}>
                         {doctor.specialization || 'General'}
@@ -288,7 +288,7 @@ const DoctorAvailability = () => {
                   <div>
                     <p className="text-[10px] font-black text-teal-100/60 uppercase tracking-widest mb-1">Editing Schedule</p>
                     <h2 className="text-2xl font-black text-white font-display">
-                      Dr. {selectedDoctor.userId.profile.firstName} {selectedDoctor.userId.profile.lastName}
+                      Dr. {selectedDoctor.user.profile.firstName} {selectedDoctor.user.profile.lastName}
                     </h2>
                     <p className="text-sm text-teal-100/70 font-medium mt-0.5">{selectedDoctor.specialization}</p>
                   </div>

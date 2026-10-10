@@ -156,7 +156,7 @@ const LabReports = () => {
         {filteredReports.length > 0 ? (
           filteredReports.map((report, idx) => (
             <div 
-              key={report._id} 
+              key={report.id} 
               className="group bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 overflow-hidden animate-slide-up"
               style={{ animationDelay: `${idx * 50}ms` }}
             >
@@ -176,7 +176,7 @@ const LabReports = () => {
                             { (report.status || 'completed') === 'completed' ? <ShieldCheck className="h-3 w-3 mr-1" /> : <Clock className="h-3 w-3 mr-1" /> }
                             {report.status || 'Completed'}
                           </span>
-                          <span className="text-[10px] font-bold text-slate-300">ID: #{report._id?.toString().slice(-6).toUpperCase()}</span>
+                          <span className="text-[10px] font-bold text-slate-300">ID: #{report.id?.toString().slice(-6).toUpperCase()}</span>
                         </div>
                         <h3 className="text-xl sm:text-2xl font-black text-brand-dark font-display leading-tight truncate">
                           {report.testName}
@@ -186,7 +186,7 @@ const LabReports = () => {
 
                     <div className="flex flex-col items-end shrink-0">
                        <button
-                        onClick={() => handleDownload(report._id)}
+                        onClick={() => handleDownload(report.id)}
                         className="p-3 bg-brand-dark text-white rounded-2xl shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all hover:scale-110 active:scale-95"
                       >
                         <Download className="h-5 w-5" />
@@ -209,7 +209,7 @@ const LabReports = () => {
                         <span className="text-[8px] font-black uppercase tracking-widest">Referring Clinician</span>
                       </div>
                       <p className="text-xs font-black text-brand-dark truncate">
-                        {report.doctorId?.userId?.profile ? `Dr. ${report.doctorId.userId.profile.firstName || ''} ${report.doctorId.userId.profile.lastName || ''}`.trim() : 'General Referral'}
+                        {report.doctorId?.userId?.profile ? `Dr. ${report.doctorId.user.profile.firstName || ''} ${report.doctorId.user.profile.lastName || ''}`.trim() : 'General Referral'}
                       </p>
                     </div>
                   </div>
@@ -222,7 +222,7 @@ const LabReports = () => {
                         </div>
                         <div>
                           <p className="text-[8px] font-black text-white/50 uppercase tracking-widest">Assigned Patient</p>
-                          <p className="text-[10px] font-black">{report.patientId.userId.profile.firstName} {report.patientId.userId.profile.lastName}</p>
+                          <p className="text-[10px] font-black">{report.patientId.user.profile.firstName} {report.patientId.user.profile.lastName}</p>
                         </div>
                       </div>
                       <ChevronRight className="h-4 w-4 text-white/30" />

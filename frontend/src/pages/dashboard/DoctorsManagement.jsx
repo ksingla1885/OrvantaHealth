@@ -175,7 +175,7 @@ const DoctorsManagement = () => {
       const response = await api.patch('/doctor/availability', {
         days: availabilityForm.days,
         timeSlots: availabilityForm.timeSlots,
-        doctorId: selectedDoctor._id
+        doctorId: selectedDoctor.id
       });
       if (response.data.success) {
         // Correctly merge the update to maintain populated data (userId, etc.)
@@ -185,7 +185,7 @@ const DoctorsManagement = () => {
         };
 
         setSelectedDoctor(updatedDoctor);
-        setDoctors(prev => prev.map(d => d._id === updatedDoctor._id ? updatedDoctor : d));
+        setDoctors(prev => prev.map(d => d.id === updatedDoctor.id ? updatedDoctor : d));
         setIsEditingAvailability(false);
         toast.success('Availability updated successfully');
       }
@@ -219,7 +219,7 @@ const DoctorsManagement = () => {
     }
 
     try {
-      const response = await api.post(`/receptionist/doctors/${selectedDoctor._id}/leave`, { date: newLeaveDate });
+      const response = await api.post(`/receptionist/doctors/${selectedDoctor.id}/leave`, { date: newLeaveDate });
       if (response.data.success) {
         toast.success('Leave marked successfully');
         setLeaves(response.data.data.leaves);
@@ -232,7 +232,7 @@ const DoctorsManagement = () => {
 
   const handleRemoveLeave = async (date) => {
     try {
-      const response = await api.delete(`/receptionist/doctors/${selectedDoctor._id}/leave/${date}`);
+      const response = await api.delete(`/receptionist/doctors/${selectedDoctor.id}/leave/${date}`);
       if (response.data.success) {
         toast.success('Leave removed successfully');
         setLeaves(response.data.data.leaves);
@@ -244,10 +244,10 @@ const DoctorsManagement = () => {
 
   const filteredDoctors = doctors.filter(doctor => {
     // Basic null check for doctor and user data
-    if (!doctor || !doctor.userId || !doctor.userId.profile) return false;
+    if (!doctor || !doctor.userId || !doctor.user.profile) return false;
 
-    const profile = doctor.userId.profile;
-    const email = doctor.userId.email || '';
+    const profile = doctor.user.profile;
+    const email = doctor.user.email || '';
     const firstName = profile.firstName || '';
     const lastName = profile.lastName || '';
     const specialization = doctor.specialization || '';
@@ -259,7 +259,7 @@ const DoctorsManagement = () => {
       specialization.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesDepartment = filterDepartment === 'all' || doctor.department === filterDepartment;
-    const matchesTab = activeTab === 'active' ? doctor.userId.isActive : !doctor.userId.isActive;
+    const matchesTab = activeTab === 'active' ? doctor.user.isActive : !doctor.user.isActive;
     return matchesSearch && matchesDepartment && matchesTab;
   });
 
@@ -364,7 +364,7 @@ const DoctorsManagement = () => {
           </div>
         ) : (
           filteredDoctors.map((doctor) => (
-            <div key={doctor._id} className="card group hover:-translate-y-2 transition-all duration-300 relative overflow-hidden">
+            <div key={doctor.id} className="card group hover:-translate-y-2 transition-all duration-300 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-light rounded-full -mr-16 -mt-16 group-hover:bg-brand-teal/10 transition-colors"></div>
 
               <div className="relative z-10">
@@ -410,14 +410,14 @@ const DoctorsManagement = () => {
                   </div>
                     <div className="flex gap-2">
                        <button
-                        onClick={() => toggleUserStatus(doctor.userId._id, doctor.userId.isActive)}
-                        className={`p-3 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all bg-white border border-slate-100 ${doctor.userId.isActive ? 'text-rose-400 hover:text-rose-600' : 'text-emerald-400 hover:text-emerald-600'}`}
-                        title={doctor.userId.isActive ? 'Deactivate Doctor' : 'Activate Doctor'}
+                        onClick={() => toggleUserStatus(doctor.user.id, doctor.user.isActive)}
+                        className={`p-3 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all bg-white border border-slate-100 ${doctor.user.isActive ? 'text-rose-400 hover:text-rose-600' : 'text-emerald-400 hover:text-emerald-600'}`}
+                        title={doctor.user.isActive ? 'Deactivate Doctor' : 'Activate Doctor'}
                       >
-                        {doctor.userId.isActive ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
+                        {doctor.user.isActive ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
                       </button>
                       <button
-                        onClick={() => handleDeleteClick(doctor._id)}
+                        onClick={() => handleDeleteClick(doctor.id)}
                         className="p-3 bg-white rounded-xl text-rose-500 border border-slate-100 shadow-lg hover:bg-rose-50 transition-all"
                         title="Remove Credentials Permanently"
                       >
@@ -427,14 +427,14 @@ const DoctorsManagement = () => {
                         onClick={() => {
                           setSelectedDoctor(doctor);
                           setShowDoctorModal(true);
-                          fetchDoctorLeaves(doctor._id);
+                          fetchDoctorLeaves(doctor.id);
                         }}
                         className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-brand-dark hover:bg-brand-light transition-all"
                       >
                         <Eye className="h-5 w-5" />
                       </button>
                       <button
-                        onClick={() => window.location.href = `/dashboard/create-staff?edit=${doctor._id}`}
+                        onClick={() => window.location.href = `/dashboard/create-staff?edit=${doctor.id}`}
                         className="p-3 bg-brand-dark rounded-xl text-white shadow-lg hover:shadow-brand-dark/30 hover:scale-105 active:scale-95 transition-all"
                       >
                         <Edit className="h-5 w-5" />
@@ -522,12 +522,12 @@ const DoctorsManagement = () => {
 
                 <div className="p-5 bg-slate-50 hover:bg-slate-100 transition-colors rounded-2xl flex items-center gap-4 border border-slate-100">
                   <div className="h-10 w-10 shrink-0 rounded-xl bg-white shadow-sm flex items-center justify-center">
-                    {selectedDoctor.userId.isActive ? <UserCheck className="h-5 w-5 text-emerald-500" /> : <UserX className="h-5 w-5 text-rose-500" />}
+                    {selectedDoctor.user.isActive ? <UserCheck className="h-5 w-5 text-emerald-500" /> : <UserX className="h-5 w-5 text-rose-500" />}
                   </div>
                   <div className="min-w-0">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Unit Status</p>
-                    <span className={`text-sm font-black uppercase truncate block ${selectedDoctor.userId.isActive ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {selectedDoctor.userId.isActive ? 'Active' : 'Locked'}
+                    <span className={`text-sm font-black uppercase truncate block ${selectedDoctor.user.isActive ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {selectedDoctor.user.isActive ? 'Active' : 'Locked'}
                     </span>
                   </div>
                 </div>
@@ -538,7 +538,7 @@ const DoctorsManagement = () => {
                   <div className="w-8 h-8 rounded-lg bg-brand-light flex items-center justify-center text-brand-teal">
                     <Mail className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-bold tracking-tight">{selectedDoctor.userId.email?.toLowerCase()}</span>
+                  <span className="text-sm font-bold tracking-tight">{selectedDoctor.user.email?.toLowerCase()}</span>
                 </div>
                 <div className="flex items-center gap-4 text-slate-600">
                   <div className="w-8 h-8 rounded-lg bg-brand-light flex items-center justify-center text-brand-teal">

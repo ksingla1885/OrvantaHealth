@@ -59,8 +59,8 @@ const DetailedAnalytics = () => {
             const tempDate = new Date(d);
             tempDate.setDate(tempDate.getDate() - s);
             const tempKey = tempDate.toISOString().split('T')[0];
-            const tEntry = trends.find(t => t._id === tempKey);
-            const rEntry = revenue.find(r => r._id === tempKey);
+            const tEntry = trends.find(t => t.id === tempKey);
+            const rEntry = revenue.find(r => r.id === tempKey);
             appointmentsCount += tEntry?.count || 0;
             revenueTotal += rEntry?.total || 0;
           }
@@ -82,7 +82,7 @@ const DetailedAnalytics = () => {
         const deptStats = deptRes.data.data.departmentStats || [];
         const colors = ['#0F3A3A', '#1E5E5E', '#00CCB4', '#a5cece', '#296767'];
         const formattedDeptData = deptStats.map((dept, index) => ({
-          name: dept._id || 'General',
+          name: dept.id || 'General',
           value: dept.count,
           color: colors[index % colors.length]
         }));
@@ -97,11 +97,11 @@ const DetailedAnalytics = () => {
   };
 
   const appointmentStatusData = analytics?.appointmentStats?.map(stat => ({
-    name: stat._id,
+    name: stat.id,
     value: stat.count,
-    color: stat._id === 'completed' ? '#00CCB4' :
-      stat._id === 'pending' ? '#a5cece' :
-        stat._id === 'cancelled' ? '#ef4444' : '#1E5E5E'
+    color: stat.id === 'completed' ? '#00CCB4' :
+      stat.id === 'pending' ? '#a5cece' :
+        stat.id === 'cancelled' ? '#ef4444' : '#1E5E5E'
   })) || [];
 
   const handleExport = async (e) => {
@@ -475,10 +475,10 @@ const DetailedAnalytics = () => {
                 <div className="space-y-6">
                   <div className="flex items-center gap-6">
                     <div className="h-20 w-20 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 text-3xl font-black text-[#00CCB4]">
-                      {analytics.mostConsultedDoctor.userId.profile.firstName?.charAt(0)}
+                      {analytics.mostConsultedDoctor.user.profile.firstName?.charAt(0)}
                     </div>
                     <div>
-                      <h4 className="text-2xl font-black font-display">Dr. {analytics.mostConsultedDoctor.userId.profile.firstName} {analytics.mostConsultedDoctor.userId.profile.lastName}</h4>
+                      <h4 className="text-2xl font-black font-display">Dr. {analytics.mostConsultedDoctor.user.profile.firstName} {analytics.mostConsultedDoctor.user.profile.lastName}</h4>
                       <p className="text-[11px] font-bold text-[#a5cece] uppercase tracking-widest">{analytics.mostConsultedDoctor.specialization}</p>
                     </div>
                   </div>

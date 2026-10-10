@@ -122,7 +122,7 @@ const DoctorCompletedPatients = () => {
         {filteredPatients.length > 0 ? (
           filteredPatients.map((p, idx) => (
             <div 
-              key={p._id} 
+              key={p.id} 
               className="bg-white rounded-[2.5rem] border border-slate-100 shadow-premium hover:shadow-xl transition-all duration-300 overflow-hidden animate-slide-up"
               style={{ animationDelay: `${idx * 50}ms` }}
             >

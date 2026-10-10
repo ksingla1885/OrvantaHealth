@@ -354,10 +354,10 @@ const BedTelemetry = ({ standalone = false }) => {
           {beds.map((b) => {
             const wardPercent = calculateOccupancyRatio(b.occupiedBeds, b.totalBeds);
             const icuPercent = calculateOccupancyRatio(b.occupiedIcuBeds, b.icuBeds);
-            const isEditing = editingDept?._id === b._id;
+            const isEditing = editingDept?.id === b.id;
 
             return (
-              <div key={b._id} className="relative group bg-slate-50/70 hover:bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-sm transition-all hover:shadow-lg">
+              <div key={b.id} className="relative group bg-slate-50/70 hover:bg-white p-6 rounded-[2rem] border border-slate-200/60 shadow-sm transition-all hover:shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm font-black text-brand-dark font-display">{b.department}</span>
                   <div className="flex items-center gap-1">
@@ -369,7 +369,7 @@ const BedTelemetry = ({ standalone = false }) => {
                       {isEditing ? <X className="h-3.5 w-3.5" /> : <Edit3 className="h-3.5 w-3.5" />}
                     </button>
                     <button
-                      onClick={() => handleDeleteBedClick(b._id, b.department)}
+                      onClick={() => handleDeleteBedClick(b.id, b.department)}
                       className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-rose-600 transition-colors"
                       title="Delete record"
                     >
@@ -423,7 +423,7 @@ const BedTelemetry = ({ standalone = false }) => {
                       </div>
                     </div>
                     <button
-                      onClick={() => handleSave(b._id)}
+                      onClick={() => handleSave(b.id)}
                       className="w-full py-2.5 bg-brand-teal text-white rounded-xl font-black text-xs uppercase flex items-center justify-center gap-2 hover:bg-brand-dark transition-colors"
                     >
                       <Save className="h-3.5 w-3.5" /> Save Changes

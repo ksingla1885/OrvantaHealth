@@ -144,7 +144,7 @@ const PatientIntake = () => {
                     })
                     .map(p => (
                       <button
-                        key={p._id}
+                        key={p.id}
                         type="button"
                         onClick={() => {
                           const fullName = `${p.userId?.profile?.firstName || ''} ${p.userId?.profile?.lastName || ''}`.trim();
@@ -168,7 +168,7 @@ const PatientIntake = () => {
                             contactNumber: p.userId?.profile?.phone || ''
                           }));
                           setSearchQuery(fullName);
-                          setSelectedPatientId(p._id);
+                          setSelectedPatientId(p.id);
                           setShowDropdown(false);
                           toast.success(`Selected: ${fullName}`);
                         }}

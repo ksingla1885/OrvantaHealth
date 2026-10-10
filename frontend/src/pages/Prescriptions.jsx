@@ -168,7 +168,7 @@ const Prescriptions = () => {
       <div className="space-y-6">
         {filteredPrescriptions.length > 0 ? (
           filteredPrescriptions.map((p, idx) => (
-            <div key={p._id} className="group bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden animate-slide-up" style={{ animationDelay: `${idx * 50}ms` }}>
+            <div key={p.id} className="group bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden animate-slide-up" style={{ animationDelay: `${idx * 50}ms` }}>
               {/* Top Accent Bar */}
               <div className="h-1.5 w-full bg-gradient-to-r from-brand-dark via-brand-teal to-brand-light" />
               
@@ -228,7 +228,7 @@ const Prescriptions = () => {
 
                     <div className="pt-2">
                       <button
-                        onClick={() => handleDownload(p._id)}
+                        onClick={() => handleDownload(p.id)}
                         className="w-full flex items-center justify-center gap-2 py-3 bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg active:scale-95"
                       >
                         <Download className="h-3.5 w-3.5" /> Official Copy

@@ -34,7 +34,7 @@ const Doctors = () => {
   const specializations = ['all', ...new Set(doctors.map(d => d.specialization))];
 
   const filteredDoctors = doctors.filter(doctor => {
-    const fullName = `${doctor.userId.profile.firstName} ${doctor.userId.profile.lastName}`.toLowerCase();
+    const fullName = `${doctor.user.profile.firstName} ${doctor.user.profile.lastName}`.toLowerCase();
     const matchesSearch = fullName.includes(searchTerm.toLowerCase()) ||
       doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSpecialization = specialization === 'all' || doctor.specialization === specialization;
@@ -115,7 +115,7 @@ const Doctors = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredDoctors.map((doctor) => (
-            <div key={doctor._id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden flex flex-col">
+            <div key={doctor.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden flex flex-col">
               <div className="p-6 flex-1">
                 <div className="flex items-center space-x-4 mb-6">
                   <div className="h-16 w-16 rounded-2xl bg-primary-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
@@ -123,7 +123,7 @@ const Doctors = () => {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors">
-                      Dr. {doctor.userId.profile.firstName} {doctor.userId.profile.lastName}
+                      Dr. {doctor.user.profile.firstName} {doctor.user.profile.lastName}
                     </h3>
                     <p className="text-primary-600 font-medium text-sm">{doctor.specialization}</p>
                   </div>

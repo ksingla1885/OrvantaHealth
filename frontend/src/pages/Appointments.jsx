@@ -123,7 +123,7 @@ const Appointments = () => {
   const handleUpdateStatus = async (status) => {
     if (!selectedAppointment) return;
     try {
-      const res = await api.patch(`/appointments/${selectedAppointment._id}/status`, { status });
+      const res = await api.patch(`/appointments/${selectedAppointment.id}/status`, { status });
       if (res.data.success) {
         toast.success(`Status updated to ${status}`);
         setShowStatusModal(false);
@@ -146,7 +146,7 @@ const Appointments = () => {
     const amount = appt.doctorId?.consultationFee || 0;
     setMarkPaidDialog({ open: false, appt: null, amount: '' });
     try {
-      const res = await api.patch(`/payments/mark-paid/${appt._id}`, { amount });
+      const res = await api.patch(`/payments/mark-paid/${appt.id}`, { amount });
       if (res.data.success) {
         toast.success(`₹${Number(amount).toLocaleString('en-IN')} collected — payment recorded ✓`);
         fetchAppointments();
@@ -160,7 +160,7 @@ const Appointments = () => {
   // Inline direct update (doctor check-in/out)
   const handleUpdateStatusDirect = async (appointment, status) => {
     try {
-      const res = await api.patch(`/appointments/${appointment._id}/status`, { status });
+      const res = await api.patch(`/appointments/${appointment.id}/status`, { status });
       if (res.data.success) {
         toast.success(status === 'checked_in' ? 'Patient checked in ✓' : 'Patient checked out ✓');
         fetchAppointments();
@@ -265,7 +265,7 @@ const Appointments = () => {
 
             return (
               <div
-                key={appt._id}
+                key={appt.id}
                 style={{
                   background: '#fff',
                   border: '1px solid #e2e8f0',
@@ -315,7 +315,7 @@ const Appointments = () => {
                     )}
                     {!isPatient && appt.patientId?.userId?.profile?.email && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#94a3b8' }}>
-                        <User size={12} /> {appt.patientId.userId.profile.email}
+                        <User size={12} /> {appt.patientId.user.profile.email}
                       </span>
                     )}
                   </div>
@@ -332,7 +332,7 @@ const Appointments = () => {
                   {/* Patient: Cancel */}
                   {isPatient && ['pending', 'confirmed'].includes(appt.status) && (
                     <SmallBtn
-                      onClick={() => handleCancel(appt._id)}
+                      onClick={() => handleCancel(appt.id)}
                       color="#dc2626" bg="#fee2e2" hoverBg="#fecaca"
                       icon={<XCircle size={13} />}
                     >
@@ -412,7 +412,7 @@ const Appointments = () => {
             // Inline status update without modal (receptionist only)
             async function handleUpdateStatus_inline(appt, status) {
               try {
-                const res = await api.patch(`/appointments/${appt._id}/status`, { status });
+                const res = await api.patch(`/appointments/${appt.id}/status`, { status });
                 if (res.data.success) {
                   toast.success(status === 'confirmed' ? '✓ Appointment confirmed' : 'Appointment cancelled');
                   fetchAppointments();

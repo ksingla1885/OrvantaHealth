@@ -34,7 +34,7 @@ const LabReportUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
         try {
             setLoading(true);
             const data = new FormData();
-            data.append('patientId', patient._id);
+            data.append('patientId', patient.id);
             data.append('testName', formData.testName);
             data.append('testType', formData.testType);
             data.append('reportDate', formData.reportDate);
@@ -70,7 +70,7 @@ const LabReportUploadModal = ({ isOpen, onClose, patient, onSuccess }) => {
                     <div>
                         <h2 className="text-2xl font-black font-display text-white">Upload Lab Report</h2>
                         <p className="text-white/60 text-xs font-bold uppercase tracking-widest mt-1">
-                            For Patient: {patient.userId.profile.firstName} {patient.userId.profile.lastName}
+                            For Patient: {patient.user.profile.firstName} {patient.user.profile.lastName}
                         </p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors">

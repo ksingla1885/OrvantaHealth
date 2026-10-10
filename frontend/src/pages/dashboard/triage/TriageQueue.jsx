@@ -428,7 +428,7 @@ const TriageQueue = () => {
 
             return (
               <div 
-                key={item._id} 
+                key={item.id} 
                 className="group relative bg-white rounded-[2.5rem] p-7 md:p-8 border border-slate-200/80 shadow-premium hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden flex flex-col justify-between"
               >
                 {/* Top Urgency Color Stripe */}
@@ -573,7 +573,7 @@ const TriageQueue = () => {
                     <div className="flex gap-2">
                       {item.status === 'referred' && (
                         <button 
-                          onClick={() => handleCheckIn(item._id)}
+                          onClick={() => handleCheckIn(item.id)}
                           className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl bg-gradient-to-r from-brand-teal to-teal-600 text-white hover:from-teal-600 hover:to-brand-dark hover:-translate-y-0.5 active:scale-95"
                         >
                           <Play className="h-4 w-4" />
@@ -585,7 +585,7 @@ const TriageQueue = () => {
                         <>
                           {item.status === 'in-consultation' ? (
                             <button 
-                              onClick={() => handleCheckOut(item._id)}
+                              onClick={() => handleCheckOut(item.id)}
                               className="px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md bg-amber-500 text-white hover:bg-amber-600 active:scale-95"
                               title="Complete Consultation Session"
                             >

@@ -60,12 +60,12 @@ const LiveQueueKanban = () => {
 
   useEffect(() => {
     if (doctors.length > 0 && !walkinForm.doctor) {
-      setWalkinForm(prev => ({ ...prev, doctor: doctors[0].userId?._id || '' }));
+      setWalkinForm(prev => ({ ...prev, doctor: doctors[0].userId?.id || '' }));
     }
   }, [doctors, walkinForm.doctor]);
 
   const cabins = doctors.map((doc, idx) => {
-    const activePatient = dbQueue.find(p => p.status === 'in-consultation' && p.doctorReferred?._id === doc.userId?._id);
+    const activePatient = dbQueue.find(p => p.status === 'in-consultation' && p.doctorReferred?.id === doc.userId?.id);
     const doctorName = `Dr. ${doc.userId?.profile?.firstName || ''} ${doc.userId?.profile?.lastName || ''}`.trim();
     let status = 'available';
     let patient = 'None';
@@ -85,7 +85,7 @@ const LiveQueueKanban = () => {
     }
 
     return {
-      id: doc.userId?._id,
+      id: doc.userId?.id,
       name: `Cabin ${idx + 1} - ${doc.specialization || doc.department || 'General'}`,
       doctor: doctorName,
       status: status,
@@ -99,7 +99,7 @@ const LiveQueueKanban = () => {
     const doctorName = p.doctorReferred?.profile
       ? `Dr. ${p.doctorReferred.profile.firstName || ''} ${p.doctorReferred.profile.lastName || ''}`.trim()
       : 'Not Referred';
-    const docIndex = doctors.findIndex(doc => doc.userId?._id === p.doctorReferred?._id);
+    const docIndex = doctors.findIndex(doc => doc.userId?.id === p.doctorReferred?.id);
     const cabinName = docIndex !== -1 ? `Cabin ${docIndex + 1}` : 'General Lobby';
     
     let stage = 'checkin';
@@ -108,7 +108,7 @@ const LiveQueueKanban = () => {
     else if (p.status === 'completed') stage = 'completed';
 
     return {
-      _id: p._id,
+      id: p.id,
       id: p.triageId,
       name: p.patientName,
       age: p.age,
@@ -148,7 +148,7 @@ const LiveQueueKanban = () => {
 
   const handleSelectClinician = async (doctorId) => {
     try {
-      const res = await api.post(`/triage/refer/${referralTarget._id}`, { doctorId });
+      const res = await api.post(`/triage/refer/${referralTarget.id}`, { doctorId });
       if (res.data.success) {
         toast.success(`Patient referred to clinical staff`);
         setReferralTarget(null);
@@ -163,9 +163,9 @@ const LiveQueueKanban = () => {
     if (patient.stage === 'checkin') {
       setReferralTarget(patient.rawRecord);
     } else if (patient.stage === 'waiting') {
-      handleCheckIn(patient._id);
+      handleCheckIn(patient.id);
     } else if (patient.stage === 'incabin') {
-      handleCheckOut(patient._id);
+      handleCheckOut(patient.id);
     }
   };
 
@@ -192,20 +192,20 @@ const LiveQueueKanban = () => {
       if (res.data.success) {
         const newRecord = res.data.data.triage;
         if (walkinForm.doctor) {
-          await api.post(`/triage/refer/${newRecord._id}`, { doctorId: walkinForm.doctor });
+          await api.post(`/triage/refer/${newRecord.id}`, { doctorId: walkinForm.doctor });
         }
         toast.success(`Walk-in Token ${newRecord.triageId} issued for ${newRecord.patientName}!`);
         setShowWalkinModal(false);
-        const docObj = doctors.find(d => d.userId?._id === walkinForm.doctor);
+        const docObj = doctors.find(d => d.userId?.id === walkinForm.doctor);
         const printPatientInfo = {
           id: newRecord.triageId,
           name: newRecord.patientName,
-          doctor: docObj ? `Dr. ${docObj.userId.profile.firstName} ${docObj.userId.profile.lastName}` : 'Not Assigned',
+          doctor: docObj ? `Dr. ${docObj.user.profile.firstName} ${docObj.user.profile.lastName}` : 'Not Assigned',
           cabin: docObj ? `Cabin ${doctors.indexOf(docObj) + 1}` : 'General Lobby',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         setShowPrintModal(printPatientInfo);
-        setWalkinForm({ name: '', phone: '', age: '', gender: 'Male', doctor: doctors[0]?.userId?._id || '', priority: 'Standard' });
+        setWalkinForm({ name: '', phone: '', age: '', gender: 'Male', doctor: doctors[0]?.userId?.id || '', priority: 'Standard' });
         fetchData();
       }
     } catch (err) {
@@ -307,7 +307,7 @@ const LiveQueueKanban = () => {
               <div className="space-y-3 flex-1 overflow-y-auto pr-1">
                 {colPatients.length > 0 ? (
                   colPatients.map(patient => (
-                    <div key={patient._id} className="bg-white p-5 rounded-[2rem] border border-slate-200/80 shadow-sm hover:shadow-md transition-all space-y-3 group relative">
+                    <div key={patient.id} className="bg-white p-5 rounded-[2rem] border border-slate-200/80 shadow-sm hover:shadow-md transition-all space-y-3 group relative">
                       
                       <div className="flex items-center justify-between">
                         <span className="px-2.5 py-1 bg-brand-light text-brand-teal font-mono text-[10px] font-black rounded-lg">
@@ -442,7 +442,7 @@ const LiveQueueKanban = () => {
                     <option value="">No available clinicians</option>
                   ) : (
                     doctors.map((doc, idx) => (
-                      <option key={doc._id} value={doc.userId?._id}>
+                      <option key={doc.id} value={doc.userId?.id}>
                         Dr. {doc.userId?.profile?.firstName} {doc.userId?.profile?.lastName} ({doc.specialization || doc.department} - Cabin {idx + 1})
                       </option>
                     ))
@@ -503,7 +503,7 @@ const LiveQueueKanban = () => {
                   onChange={async (e) => {
                     const newStatus = e.target.value;
                     try {
-                      const res = await api.patch(`/receptionist/doctors/${editingDoctorStatus._id}/duty-status`, { dutyStatus: newStatus });
+                      const res = await api.patch(`/receptionist/doctors/${editingDoctorStatus.id}/duty-status`, { dutyStatus: newStatus });
                       if (res.data.success) {
                         toast.success('Duty status updated successfully');
                         setEditingDoctorStatus(null);
@@ -543,8 +543,8 @@ const LiveQueueKanban = () => {
               <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                 {doctors.map((doc, idx) => (
                   <button
-                    key={doc._id}
-                    onClick={() => handleSelectClinician(doc.userId?._id)}
+                    key={doc.id}
+                    onClick={() => handleSelectClinician(doc.userId?.id)}
                     className="w-full text-left p-4 rounded-2xl border border-slate-200 hover:border-brand-teal/30 hover:bg-slate-50 transition-all flex items-center justify-between font-bold text-xs"
                   >
                     <div>

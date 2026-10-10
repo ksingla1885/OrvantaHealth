@@ -104,7 +104,7 @@ const Bills = () => {
 
   const handlePayNow = async (bill) => {
     try {
-      const orderResponse = await api.post('/payments/create-bill-order', { billId: bill._id });
+      const orderResponse = await api.post('/payments/create-bill-order', { billId: bill.id });
       if (!orderResponse.data.success) { toast.error(orderResponse.data.message); return; }
       const { orderId, amount, currency, keyId } = orderResponse.data.data;
       if (orderResponse.data.isMock) {
@@ -117,15 +117,15 @@ const Bills = () => {
       const options = {
         key: keyId, amount, currency,
         name: 'OrvantaHealth',
-        description: `Payment for Invoice #${bill.billNumber || bill._id.slice(-6).toUpperCase()}`,
-        order_id: orderId,
+        description: `Payment for Invoice #${bill.billNumber || bill.id.slice(-6).toUpperCase()}`,
+        orderid: orderId,
         handler: async (response) => {
           try {
             const verifyRes = await api.post('/payments/verify-bill', {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_orderid: response.razorpay_order_id,
+              razorpay_paymentid: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              billId: bill._id
+              billId: bill.id
             });
             if (verifyRes.data.success) {
               toast.success('Payment successful!');
@@ -152,10 +152,10 @@ const Bills = () => {
     try {
       await new Promise(r => setTimeout(r, 2000));
       const verifyRes = await api.post('/payments/verify-bill', {
-        razorpay_order_id: selectedBill.mockOrder.orderId,
-        razorpay_payment_id: `pay_mock_${Date.now()}`,
+        razorpay_orderid: selectedBill.mockOrder.orderId,
+        razorpay_paymentid: `pay_mock_${Date.now()}`,
         razorpay_signature: 'mock_signature',
-        billId: selectedBill._id
+        billId: selectedBill.id
       });
       if (verifyRes.data.success) {
         toast.success('Payment successful (Demo Mode)!');
@@ -174,7 +174,7 @@ const Bills = () => {
   /* Filters */
   const STATUSES = ['all', ...Object.keys(STATUS_CONFIG)];
   const filteredBills = bills.filter(b => {
-    const name = `${b.patientId?.userId?.profile?.firstName || ''} ${b.patientId?.userId?.profile?.lastName || ''} ${b.billNumber || b._id}`.toLowerCase();
+    const name = `${b.patientId?.userId?.profile?.firstName || ''} ${b.patientId?.userId?.profile?.lastName || ''} ${b.billNumber || b.id}`.toLowerCase();
     const matchSearch = name.includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || b.status === statusFilter;
     return matchSearch && matchStatus;
@@ -261,15 +261,15 @@ const Bills = () => {
         {filteredBills.length > 0 ? filteredBills.map((bill) => {
           const cfg = getStatusCfg(bill.status);
           const patientName = bill.patientId?.userId?.profile
-            ? `${bill.patientId.userId.profile.firstName} ${bill.patientId.userId.profile.lastName}`
+            ? `${bill.patientId.user.profile.firstName} ${bill.patientId.user.profile.lastName}`
             : null;
 
           const doctor = bill.appointmentId?.doctorId;
-          const drName = doctor?.userId?.profile ? `Dr. ${doctor.userId.profile.firstName} ${doctor.userId.profile.lastName}` : null;
+          const drName = doctor?.userId?.profile ? `Dr. ${doctor.user.profile.firstName} ${doctor.user.profile.lastName}` : null;
           const drDept = doctor?.department;
 
           return (
-            <div key={bill._id}
+            <div key={bill.id}
               className="bg-white rounded-[2rem] border border-slate-100 shadow-sm transition-all duration-500 overflow-hidden relative"
             >
               {/* Premium Glow & Accent */}
@@ -293,7 +293,7 @@ const Bills = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-3 mb-2.5">
                     <h3 className="text-xl font-black text-brand-dark font-display tracking-tight transition-colors">
-                      Invoice #{bill.billNumber || bill._id.slice(-6).toUpperCase()}
+                      Invoice #{bill.billNumber || bill.id.slice(-6).toUpperCase()}
                     </h3>
                     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${cfg.badge} shadow-sm`}>
                       {cfg.icon}
@@ -375,7 +375,7 @@ const Bills = () => {
 
                     {!['paid', 'refunded'].includes(bill.status) && isReceptionist && (
                       <button
-                        onClick={() => handleMarkAsPaid(bill._id)}
+                        onClick={() => handleMarkAsPaid(bill.id)}
                         className="flex items-center gap-2.5 px-6 py-2.5 bg-brand-dark text-white text-[10px] font-black uppercase tracking-[0.15em] rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 hover:-translate-y-1 active:scale-95"
                       >
                         <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
@@ -384,7 +384,7 @@ const Bills = () => {
                     )}
 
                     <button
-                      onClick={() => handleDownload(bill._id)}
+                      onClick={() => handleDownload(bill.id)}
                       className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:text-brand-teal hover:border-brand-teal/30 hover:bg-white hover:shadow-lg transition-all active:scale-90"
                       title="Download PDF Receipt"
                     >
@@ -462,7 +462,7 @@ const Bills = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Reference</span>
-                  <span className="text-sm font-black text-brand-dark font-display">#{selectedBill.billNumber || selectedBill._id.slice(-6).toUpperCase()}</span>
+                  <span className="text-sm font-black text-brand-dark font-display">#{selectedBill.billNumber || selectedBill.id.slice(-6).toUpperCase()}</span>
                 </div>
                 <div className="flex justify-between items-end">
                   <div>

@@ -17,7 +17,7 @@ const RecentPrescriptionsSidebar = ({ prescriptions, prescriptionsLoading, onAdd
             ) : prescriptions.length > 0 ? (
                 <div className="space-y-6">
                     {prescriptions.map((p) => (
-                        <div key={p._id} className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 animate-fade-in group hover:border-brand-teal/30 transition-all">
+                        <div key={p.id} className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 animate-fade-in group hover:border-brand-teal/30 transition-all">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
                                     <div className="h-8 w-8 rounded-xl bg-brand-teal/10 flex items-center justify-center text-brand-teal font-black text-xs">

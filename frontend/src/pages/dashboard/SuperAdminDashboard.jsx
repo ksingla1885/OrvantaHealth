@@ -106,12 +106,12 @@ const SuperAdminDashboard = () => {
   // Map real database revenue and appointment totals onto date timeline
   const dbRevenueMap = {};
   (systemOverview?.revenueTrends || []).forEach(r => {
-    dbRevenueMap[r._id] = r.total || 0;
+    dbRevenueMap[r.id] = r.total || 0;
   });
 
   const dbAptMap = {};
   (systemOverview?.appointmentTrends || []).forEach(a => {
-    dbAptMap[a._id] = a.count || 0;
+    dbAptMap[a.id] = a.count || 0;
   });
 
   const displayChartData = dateList.map(({ dateStr, label }) => ({
@@ -136,8 +136,8 @@ const SuperAdminDashboard = () => {
 
   // Extract list of unique departments with color mapping from real DB doctor records
   const departmentSeries = deptStats.map((d, index) => ({
-    name: (d._id || 'Unassigned').charAt(0).toUpperCase() + (d._id || 'Unassigned').slice(1),
-    key: d._id || 'Unassigned',
+    name: (d.id || 'Unassigned').charAt(0).toUpperCase() + (d.id || 'Unassigned').slice(1),
+    key: d.id || 'Unassigned',
     count: d.count || 0,
     color: DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length]
   })).filter(d => d.count > 0);
@@ -606,7 +606,7 @@ const SuperAdminDashboard = () => {
                   <p className="text-xs text-slate-400 italic">No recent audit logs available.</p>
                 ) : (
                   recentLogs.map((log, i) => (
-                    <div key={log._id || i} className="flex gap-4 group relative">
+                    <div key={log.id || i} className="flex gap-4 group relative">
                       {i !== recentLogs.length - 1 && <div className="absolute left-5 top-10 bottom-[-1.5rem] w-px bg-slate-100"></div>}
                       <div className={`h-10 w-10 rounded-2xl flex-shrink-0 flex items-center justify-center font-bold text-[10px] ${
                         log.severity === 'critical' ? 'bg-rose-50 text-rose-600' :

@@ -133,7 +133,7 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
     const fetchPrescription = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`/doctor/prescription/appointment/${appointment._id}`);
+            const response = await api.get(`/doctor/prescription/appointment/${appointment.id}`);
             if (response.data.success) {
                 const p = response.data.data.prescription;
                 const initialMeds = (p.medicines?.length > 0 ? p.medicines : [{ name: '', dosageValue: '', dosageUnit: 'mg', frequency: '', durationValue: '', durationUnit: 'Days', instructions: '' }]).map(m => {
@@ -253,7 +253,7 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
         try {
             setLoading(true);
             const payload = {
-                appointmentId: appointment._id,
+                appointmentId: appointment.id,
                 diagnosis: formData.diagnosis,
                 medicines: validMedicines,
                 tests: formData.tests.filter(t => t.name.trim()),
@@ -263,7 +263,7 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
 
             let response;
             if (isEditing) {
-                const pId = typeof appointment.prescription === 'object' ? appointment.prescription._id : appointment.prescription;
+                const pId = typeof appointment.prescription === 'object' ? appointment.prescription.id : appointment.prescription;
                 response = await api.patch(`/doctor/prescription/${pId}`, payload);
             } else {
                 response = await api.post('/doctor/prescription', payload);
@@ -329,7 +329,7 @@ const PrescriptionModal = ({ isOpen, onClose, appointment, onSuccess }) => {
                                         </span>
                                     ) : (
                                         <span className="text-white/20 text-[9px] font-black uppercase tracking-widest">
-                                            ID: {appointment._id.slice(-8).toUpperCase()}
+                                            ID: {appointment.id.slice(-8).toUpperCase()}
                                         </span>
                                     )}
                                 </div>

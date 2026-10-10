@@ -62,7 +62,7 @@ const BookAppointment = () => {
 
   const fetchAvailability = async () => {
     try {
-      const response = await api.get(`/patient/doctor/${selectedDoctor._id}/availability`);
+      const response = await api.get(`/patient/doctor/${selectedDoctor.id}/availability`);
       if (response.data.success) {
         const data = response.data.data;
         setAvailableDays(data.availability?.days || []);
@@ -96,7 +96,7 @@ const BookAppointment = () => {
       setLoading(true);
       // 1. Create Appointment
       const response = await api.post('/appointments/book', {
-        doctorId: selectedDoctor._id,
+        doctorId: selectedDoctor.id,
         date: selectedDate,
         timeSlot: selectedSlot,
         symptoms,
@@ -106,7 +106,7 @@ const BookAppointment = () => {
       });
 
       if (response.data.success) {
-        const appointmentId = response.data.data.appointment._id;
+        const appointmentId = response.data.data.appointment.id;
 
         // ── At-reception: no payment gateway needed ──
         if (paymentMode === 'at_reception') {
@@ -125,8 +125,8 @@ const BookAppointment = () => {
             // Mock / demo mode
             try {
               const verifyResponse = await api.post('/payments/verify', {
-                razorpay_order_id: orderId,
-                razorpay_payment_id: 'mock_payment_' + Date.now(),
+                razorpay_orderid: orderId,
+                razorpay_paymentid: 'mock_payment_' + Date.now(),
                 razorpay_signature: 'mock_signature',
                 appointmentId
               });
@@ -159,13 +159,13 @@ const BookAppointment = () => {
             amount,
             currency,
             name: 'OrvantaHealth',
-            description: `Consultation with Dr. ${selectedDoctor.userId.profile.firstName} ${selectedDoctor.userId.profile.lastName}`,
-            order_id: orderId,
+            description: `Consultation with Dr. ${selectedDoctor.user.profile.firstName} ${selectedDoctor.user.profile.lastName}`,
+            orderid: orderId,
             handler: async (response) => {
               try {
                 const verifyResponse = await api.post('/payments/verify', {
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_orderid: response.razorpay_order_id,
+                  razorpay_paymentid: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
                   appointmentId
                 });
@@ -302,9 +302,9 @@ const BookAppointment = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {doctors.map((doctor) => (
               <div
-                key={doctor._id}
+                key={doctor.id}
                 onClick={() => handleDoctorSelect(doctor)}
-                className={`card p-4 cursor-pointer hover:border-primary-500 border-2 transition-all ${selectedDoctor?._id === doctor._id ? 'border-primary-500 bg-primary-50' : 'border-transparent'
+                className={`card p-4 cursor-pointer hover:border-primary-500 border-2 transition-all ${selectedDoctor?.id === doctor.id ? 'border-primary-500 bg-primary-50' : 'border-transparent'
                   }`}
               >
                 <div className="flex items-center space-x-4">
@@ -312,7 +312,7 @@ const BookAppointment = () => {
                     <User className="h-6 w-6 text-primary-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Dr. {doctor.userId.profile.firstName} {doctor.userId.profile.lastName}</h3>
+                    <h3 className="font-semibold text-gray-900">Dr. {doctor.user.profile.firstName} {doctor.user.profile.lastName}</h3>
                     <p className="text-sm text-gray-600">{doctor.specialization}</p>
                     <p className="mt-2 text-sm font-bold text-brand-teal">
                       Fee: ₹{doctor.consultationFee || '500'}
@@ -445,7 +445,7 @@ const BookAppointment = () => {
                 <div className="space-y-2 text-sm">
                   <p className="flex justify-between">
                     <span className="text-gray-500">Doctor:</span>
-                    <span className="font-medium">Dr. {selectedDoctor?.userId.profile.firstName} {selectedDoctor?.userId.profile.lastName}</span>
+                    <span className="font-medium">Dr. {selectedDoctor?.user.profile.firstName} {selectedDoctor?.user.profile.lastName}</span>
                   </p>
                   <p className="flex justify-between">
                     <span className="text-gray-500">Date:</span>

@@ -24,11 +24,11 @@ const getPatientMRN = (data) => {
   if (data.medicalRecordNumber) return data.medicalRecordNumber;
   
   // 2. If MRN is missing but we have a name, show Name + Temp ID
-  const name = data.userId?.profile ? `${data.userId.profile.firstName} ${data.userId.profile.lastName}` : '';
+  const name = data.userId?.profile ? `${data.user.profile.firstName} ${data.user.profile.lastName}` : '';
   if (name) return `${name} (MRN-N/A)`;
 
   // 3. Last resort: derive from ID
-  if (data._id) return `MRN-TEMP-${data._id.slice(-6).toUpperCase()}`;
+  if (data.id) return `MRN-TEMP-${data.id.slice(-6).toUpperCase()}`;
   if (typeof data === 'string') return `MRN-ID-${data.slice(-6).toUpperCase()}`;
 
   return 'MRN-UNAVAILABLE';
@@ -100,11 +100,11 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-6">
               <div className="h-20 w-20 rounded-[2rem] bg-brand-teal flex items-center justify-center text-white text-3xl font-black shadow-2xl">
-                {doctor.userId.profile.firstName[0]}
+                {doctor.user.profile.firstName[0]}
               </div>
               <div>
                 <h2 className="text-3xl font-black font-display tracking-tight">
-                  Dr. {doctor.userId.profile.firstName} {doctor.userId.profile.lastName}
+                  Dr. {doctor.user.profile.firstName} {doctor.user.profile.lastName}
                 </h2>
                 <div className="flex items-center gap-4 mt-1">
                   <span className="text-teal-400 font-black text-[10px] uppercase tracking-widest">{doctor.specialization} • {doctor.department}</span>
@@ -143,7 +143,7 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-slate-400">Contact Email</span>
-                    <span className="text-brand-dark font-bold lowercase">{doctor.userId.email}</span>
+                    <span className="text-brand-dark font-bold lowercase">{doctor.user.email}</span>
                   </div>
                 </div>
               </div>
@@ -281,7 +281,7 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                             <User className="h-3 w-3" />
                             MRN Verified: {getPatientMRN(pre.patientId)}
                           </span>
-                          <span>Audit ID: {pre._id.slice(-8).toUpperCase()}</span>
+                          <span>Audit ID: {pre.id.slice(-8).toUpperCase()}</span>
                         </div>
                       </div>
                     </div>
@@ -314,20 +314,20 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                       <div className="w-0.5 h-12 bg-brand-teal/30" />
                       <div>
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Account Establishment</p>
-                        <p className="text-sm font-bold">{safeFormat(doctor.userId.createdAt, 'PPP p', 'Creation Date N/A')}</p>
+                        <p className="text-sm font-bold">{safeFormat(doctor.user.createdAt, 'PPP p', 'Creation Date N/A')}</p>
                         <p className="text-[9px] font-medium text-slate-500 mt-0.5">Initial credential issuance date.</p>
                       </div>
                     </div>
-                    {doctor.userId.isOffboarded && (
+                    {doctor.user.isOffboarded && (
                       <div className="flex items-start gap-4">
                         <div className="w-0.5 h-12 bg-rose-500/30" />
                         <div>
                           <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Institutional Offboarding</p>
                           <p className="text-sm font-bold text-rose-100">
-                            {safeFormat(doctor.userId.offboardedAt, 'PPP p', 'Archived via Legacy Migration')}
+                            {safeFormat(doctor.user.offboardedAt, 'PPP p', 'Archived via Legacy Migration')}
                           </p>
                           <p className="text-[9px] font-medium text-slate-500 mt-0.5">
-                            Authorized By: {doctor.userId.offboardedBy?.profile ? `${doctor.userId.offboardedBy.profile.firstName} ${doctor.userId.offboardedBy.profile.lastName}` : 'System Root'}
+                            Authorized By: {doctor.user.offboardedBy?.profile ? `${doctor.user.offboardedBy.profile.firstName} ${doctor.user.offboardedBy.profile.lastName}` : 'System Root'}
                           </p>
                         </div>
                       </div>
@@ -351,7 +351,7 @@ const DoctorAuditDossier = ({ doctorId, onClose }) => {
                 <div className="mt-10 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6">
                   <div className="flex items-center gap-2 text-[9px] font-black text-slate-500 uppercase tracking-widest">
                     <Clock className="h-3.5 w-3.5" />
-                    System Hash: {doctor._id.toUpperCase()}
+                    System Hash: {doctor.id.toUpperCase()}
                   </div>
                   <button 
                     onClick={() => {
@@ -433,7 +433,7 @@ const ArchivedRecords = () => {
       archivedStaff: archivedStaff.map(s => {
         const profile = s.userId?.profile || {};
         return {
-          id: s._id,
+          id: s.id,
           name: `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'N/A',
           role: s.role,
           department: s.department || 'Front Desk',
@@ -444,7 +444,7 @@ const ArchivedRecords = () => {
         };
       }),
       clinicalRecords: clinicalHistory.map(c => ({
-        id: c._id,
+        id: c.id,
         patientName: c.patientName,
         age: c.age,
         gender: c.gender,
@@ -583,7 +583,7 @@ const ArchivedRecords = () => {
                   {staff.type === 'Doctor' && (
                     <button 
                       onClick={() => {
-                        setSelectedDoctorId(staff.userId._id);
+                        setSelectedDoctorId(staff.user.id);
                         setShowDossier(true);
                       }}
                       className="w-full mt-6 py-3 bg-slate-50 hover:bg-brand-teal hover:text-white text-slate-400 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 group/btn"

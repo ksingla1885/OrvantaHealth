@@ -43,15 +43,15 @@ const PatientManagement = () => {
 
   const filteredPatients = patients.filter(p => {
     const q = searchTerm.toLowerCase();
-    const nameMatch = `${p.userId.profile.firstName} ${p.userId.profile.lastName} ${p.userId.email} ${p.medicalRecordNumber || ''}`.toLowerCase().includes(q);
-    const statusMatch = statusFilter === 'all' || (statusFilter === 'active' ? p.userId.isActive : !p.userId.isActive);
+    const nameMatch = `${p.user.profile.firstName} ${p.user.profile.lastName} ${p.user.email} ${p.medicalRecordNumber || ''}`.toLowerCase().includes(q);
+    const statusMatch = statusFilter === 'all' || (statusFilter === 'active' ? p.user.isActive : !p.user.isActive);
     return nameMatch && statusMatch;
   });
 
   const stats = {
     total: patients.length,
-    active: patients.filter(p => p.userId.isActive).length,
-    inactive: patients.filter(p => !p.userId.isActive).length,
+    active: patients.filter(p => p.user.isActive).length,
+    inactive: patients.filter(p => !p.user.isActive).length,
   };
 
   if (loading) return (
@@ -160,26 +160,26 @@ const PatientManagement = () => {
         /* ── CARD GRID VIEW ── */
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredPatients.map(patient => (
-            <button key={patient._id}
+            <button key={patient.id}
               onClick={() => { setSelectedPatient(patient); setShowPatientModal(true); }}
               className="group bg-white rounded-[1.75rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-left overflow-hidden"
             >
               {/* Card accent bar */}
-              <div className={`h-1 w-full bg-gradient-to-r ${patient.userId.isActive ? 'from-brand-teal to-teal-500' : 'from-slate-300 to-slate-400'}`} />
+              <div className={`h-1 w-full bg-gradient-to-r ${patient.user.isActive ? 'from-brand-teal to-teal-500' : 'from-slate-300 to-slate-400'}`} />
 
               <div className="p-5">
                 <div className="flex items-start gap-4 mb-4">
                   {/* Avatar */}
                   <div className="h-12 w-12 rounded-xl bg-brand-dark flex items-center justify-center text-white font-black text-sm shrink-0 group-hover:scale-105 transition-transform">
-                    {patient.userId.profile.firstName[0]}{patient.userId.profile.lastName[0]}
+                    {patient.user.profile.firstName[0]}{patient.user.profile.lastName[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-black text-brand-dark text-sm leading-tight truncate">
-                      {patient.userId.profile.firstName} {patient.userId.profile.lastName}
+                      {patient.user.profile.firstName} {patient.user.profile.lastName}
                     </h3>
-                    <p className="text-[10px] text-slate-400 font-semibold truncate mt-0.5">{patient.userId.email}</p>
+                    <p className="text-[10px] text-slate-400 font-semibold truncate mt-0.5">{patient.user.email}</p>
                   </div>
-                  <div className={`h-2 w-2 rounded-full shrink-0 mt-1.5 ${patient.userId.isActive ? 'bg-emerald-500' : 'bg-rose-400'}`} />
+                  <div className={`h-2 w-2 rounded-full shrink-0 mt-1.5 ${patient.user.isActive ? 'bg-emerald-500' : 'bg-rose-400'}`} />
                 </div>
 
                 {/* Info pills */}
@@ -190,14 +190,14 @@ const PatientManagement = () => {
                     </span>
                   )}
                   <span className="text-[9px] font-bold px-2 py-1 rounded-lg bg-slate-50 text-slate-500 capitalize">
-                    {getAge(patient.userId.profile.dateOfBirth)}y · {patient.userId.profile.gender || '—'}
+                    {getAge(patient.user.profile.dateOfBirth)}y · {patient.user.profile.gender || '—'}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
                     <Phone className="h-3 w-3" />
-                    {patient.userId.profile.phone || 'No phone'}
+                    {patient.user.profile.phone || 'No phone'}
                   </p>
                   <div className="flex items-center gap-1 text-brand-teal transition-all">
                     <span className="text-[10px] font-black uppercase tracking-widest">View</span>
@@ -224,18 +224,18 @@ const PatientManagement = () => {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filteredPatients.map(patient => (
-                  <tr key={patient._id} className="group hover:bg-brand-light/50 transition-colors">
+                  <tr key={patient.id} className="group hover:bg-brand-light/50 transition-colors">
                     {/* Identity */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="h-11 w-11 rounded-xl bg-brand-dark flex items-center justify-center text-white font-black text-xs shadow-sm group-hover:scale-105 transition-transform shrink-0">
-                          {patient.userId.profile.firstName[0]}{patient.userId.profile.lastName[0]}
+                          {patient.user.profile.firstName[0]}{patient.user.profile.lastName[0]}
                         </div>
                         <div>
                           <p className="text-sm font-black text-brand-dark leading-tight">
-                            {patient.userId.profile.firstName} {patient.userId.profile.lastName}
+                            {patient.user.profile.firstName} {patient.user.profile.lastName}
                           </p>
-                          <p className="text-[10px] font-medium text-slate-400 mt-0.5">{patient.userId.email}</p>
+                          <p className="text-[10px] font-medium text-slate-400 mt-0.5">{patient.user.email}</p>
                         </div>
                       </div>
                     </td>
@@ -247,21 +247,21 @@ const PatientManagement = () => {
                     </td>
                     {/* Contact */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <p className="text-xs font-bold text-slate-600">{patient.userId.profile.phone || '—'}</p>
+                      <p className="text-xs font-bold text-slate-600">{patient.user.profile.phone || '—'}</p>
                     </td>
                     {/* Profile */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <p className="text-xs font-bold text-slate-600 capitalize">
-                        {getAge(patient.userId.profile.dateOfBirth)}y · {patient.userId.profile.gender || '—'}
+                        {getAge(patient.user.profile.dateOfBirth)}y · {patient.user.profile.gender || '—'}
                       </p>
                     </td>
 
                     {/* Status */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
-                        <div className={`h-1.5 w-1.5 rounded-full ${patient.userId.isActive ? 'bg-emerald-500' : 'bg-rose-400'}`} />
-                        <span className={`text-[9px] font-black uppercase tracking-widest ${patient.userId.isActive ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          {patient.userId.isActive ? 'Active' : 'Inactive'}
+                        <div className={`h-1.5 w-1.5 rounded-full ${patient.user.isActive ? 'bg-emerald-500' : 'bg-rose-400'}`} />
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${patient.user.isActive ? 'text-emerald-600' : 'text-rose-500'}`}>
+                          {patient.user.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </div>
                     </td>
@@ -297,17 +297,17 @@ const PatientManagement = () => {
 
               <div className="flex flex-col items-center text-center mt-2">
                 <div className="h-20 w-20 rounded-full bg-slate-50 border border-slate-100 text-slate-600 flex items-center justify-center text-2xl font-light tracking-tight mb-4 shadow-sm">
-                  {selectedPatient.userId.profile.firstName[0]}{selectedPatient.userId.profile.lastName[0]}
+                  {selectedPatient.user.profile.firstName[0]}{selectedPatient.user.profile.lastName[0]}
                 </div>
                 <h2 className="text-2xl font-semibold text-slate-800 tracking-tight mb-1">
-                  {selectedPatient.userId.profile.firstName} {selectedPatient.userId.profile.lastName}
+                  {selectedPatient.user.profile.firstName} {selectedPatient.user.profile.lastName}
                 </h2>
                 <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
                   <span>#{selectedPatient.medicalRecordNumber || 'Unassigned'}</span>
                   <span className="text-slate-300">•</span>
                   <div className="flex items-center gap-1.5">
-                    <div className={`h-1.5 w-1.5 rounded-full ${selectedPatient.userId.isActive ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-                    <span>{selectedPatient.userId.isActive ? 'Active' : 'Inactive'}</span>
+                    <div className={`h-1.5 w-1.5 rounded-full ${selectedPatient.user.isActive ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                    <span>{selectedPatient.user.isActive ? 'Active' : 'Inactive'}</span>
                   </div>
                 </div>
               </div>
@@ -319,24 +319,24 @@ const PatientManagement = () => {
               <div className="grid grid-cols-2 gap-y-6 gap-x-4 p-6 bg-slate-50/50 rounded-2xl border border-slate-100/50">
                 <div>
                   <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Age</p>
-                  <p className="text-sm font-medium text-slate-700">{getAge(selectedPatient.userId.profile.dateOfBirth)} years</p>
+                  <p className="text-sm font-medium text-slate-700">{getAge(selectedPatient.user.profile.dateOfBirth)} years</p>
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Gender</p>
-                  <p className="text-sm font-medium text-slate-700 capitalize">{selectedPatient.userId.profile.gender || '—'}</p>
+                  <p className="text-sm font-medium text-slate-700 capitalize">{selectedPatient.user.profile.gender || '—'}</p>
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Phone</p>
-                  <p className="text-sm font-medium text-slate-700">{selectedPatient.userId.profile.phone || '—'}</p>
+                  <p className="text-sm font-medium text-slate-700">{selectedPatient.user.profile.phone || '—'}</p>
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Email</p>
-                  <p className="text-sm font-medium text-slate-700 break-all" title={selectedPatient.userId.email}>{selectedPatient.userId.email || '—'}</p>
+                  <p className="text-sm font-medium text-slate-700 break-all" title={selectedPatient.user.email}>{selectedPatient.user.email || '—'}</p>
                 </div>
                 <div className="col-span-2 pt-2 border-t border-slate-100/80">
                   <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Residential Address</p>
                   <p className="text-sm font-medium text-slate-700 leading-relaxed">
-                    {selectedPatient.userId.profile.address || 'No address on file'}
+                    {selectedPatient.user.profile.address || 'No address on file'}
                   </p>
                 </div>
               </div>

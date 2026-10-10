@@ -181,7 +181,7 @@ const AuditLogs = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-700">
                 {filteredLogs.map((log) => (
-                  <tr key={log._id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-4 px-4 text-slate-500 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5 text-slate-400" />

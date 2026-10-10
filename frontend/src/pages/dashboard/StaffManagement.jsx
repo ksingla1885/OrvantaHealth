@@ -155,7 +155,7 @@ const StaffManagement = () => {
           </div>
         ) : (
           filteredStaff.map((member) => (
-            <div key={member._id} className="card group hover:-translate-y-2 transition-all duration-300 relative overflow-hidden">
+            <div key={member.id} className="card group hover:-translate-y-2 transition-all duration-300 relative overflow-hidden">
               {/* Decorative background element */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-light rounded-full -mr-16 -mt-16 group-hover:bg-brand-teal/10 transition-colors"></div>
 
@@ -209,14 +209,14 @@ const StaffManagement = () => {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => toggleUserStatus(member._id, member.isActive)}
+                      onClick={() => toggleUserStatus(member.id, member.isActive)}
                       className={`p-3 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all bg-white border border-slate-100 ${member.isActive ? 'text-rose-400 hover:text-rose-600' : 'text-emerald-400 hover:text-emerald-600'}`}
                       title={member.isActive ? 'Deactivate User' : 'Activate User'}
                     >
                       {member.isActive ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
                     </button>
                     <button
-                      onClick={() => handleDeleteClick(member._id)}
+                      onClick={() => handleDeleteClick(member.id)}
                       className="p-3 bg-white rounded-xl text-rose-500 border border-slate-100 shadow-lg hover:bg-rose-50 transition-all"
                       title="Remove Credentials Permanently"
                     >
@@ -233,7 +233,7 @@ const StaffManagement = () => {
                       <Eye className="h-5 w-5" />
                     </button>
                     <button
-                      onClick={() => window.location.href = `/dashboard/create-staff?edit=${member._id}`}
+                      onClick={() => window.location.href = `/dashboard/create-staff?edit=${member.id}`}
                       className="p-3 bg-brand-dark rounded-xl text-white shadow-lg hover:shadow-brand-dark/30 hover:scale-105 active:scale-95 transition-all"
                       title="Edit Staff"
                     >
