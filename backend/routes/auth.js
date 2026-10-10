@@ -9,6 +9,22 @@ const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
 const { profilePicStorage } = require('../config/cloudinary');
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'none'
+};
+
+const accessCookieOptions = {
+  ...cookieOptions,
+  maxAge: 15 * 60 * 1000 // 15 minutes
+};
+
+const refreshCookieOptions = {
+  ...cookieOptions,
+  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+};
+
 const upload = multer({
   storage: profilePicStorage,
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
@@ -136,12 +152,14 @@ router.post('/register', [
       user.refreshToken = tokens.refreshToken;
       await user.save();
 
+      res.cookie('accessToken', tokens.accessToken, accessCookieOptions);
+      res.cookie('refreshToken', tokens.refreshToken, refreshCookieOptions);
+
       res.status(201).json({
         success: true,
         message: 'Patient registered successfully',
         data: {
-          user,
-          tokens
+          user
         }
       });
     } catch (saveError) {
@@ -164,8 +182,17 @@ router.post('/register', [
   }
 });
 
+const rateLimit = require('express-rate-limit');
+
+// Strict rate limiter for login
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts
+  message: { success: false, message: 'Too many login attempts, please try again after 15 minutes' }
+});
+
 // Login
-router.post('/login', [
+router.post('/login', loginLimiter, [
   body('email').isEmail().normalizeEmail(),
   body('password').notEmpty()
 ], async (req, res) => {
@@ -219,12 +246,14 @@ router.post('/login', [
     user.refreshToken = tokens.refreshToken;
     await user.save();
 
+    res.cookie('accessToken', tokens.accessToken, accessCookieOptions);
+    res.cookie('refreshToken', tokens.refreshToken, refreshCookieOptions);
+
     res.json({
       success: true,
       message: 'Login successful',
       data: {
-        user,
-        tokens
+        user
       }
     });
   } catch (error) {
@@ -239,7 +268,7 @@ router.post('/login', [
 // Refresh token
 router.post('/refresh', async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -267,10 +296,12 @@ router.post('/refresh', async (req, res) => {
     user.refreshToken = tokens.refreshToken;
     await user.save();
 
+    res.cookie('accessToken', tokens.accessToken, accessCookieOptions);
+    res.cookie('refreshToken', tokens.refreshToken, refreshCookieOptions);
+
     res.json({
       success: true,
-      message: 'Token refreshed successfully',
-      data: { tokens }
+      message: 'Token refreshed successfully'
     });
   } catch (error) {
     console.error('Token refresh error:', error);
@@ -286,6 +317,9 @@ router.post('/logout', authenticateToken, async (req, res) => {
   try {
     // Remove refresh token from user
     await User.findByIdAndUpdate(req.user._id, { $unset: { refreshToken: 1 } });
+
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
 
     res.json({
       success: true,

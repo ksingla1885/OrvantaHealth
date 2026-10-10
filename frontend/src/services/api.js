@@ -4,24 +4,13 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
   timeout: 10000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const tokens = JSON.parse(localStorage.getItem('tokens'));
-    if (tokens && tokens.accessToken) {
-      config.headers.Authorization = `Bearer ${tokens.accessToken}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// No need for request interceptor to inject Authorization header since we use HTTP-only cookies now.
 
 // Response interceptor to handle token refresh
 api.interceptors.response.use(
@@ -34,22 +23,12 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const tokens = JSON.parse(localStorage.getItem('tokens'));
-        if (tokens && tokens.refreshToken) {
-          const response = await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/refresh`, {
-            refreshToken: tokens.refreshToken,
-          });
-
-          const { tokens: newTokens } = response.data.data;
-          localStorage.setItem('tokens', JSON.stringify(newTokens));
-
-          // Retry the original request with new token
-          originalRequest.headers.Authorization = `Bearer ${newTokens.accessToken}`;
-          return api(originalRequest);
-        }
+        await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/refresh`, {}, { withCredentials: true });
+        
+        // Retry the original request
+        return api(originalRequest);
       } catch (refreshError) {
         // Refresh failed, logout user
-        localStorage.removeItem('tokens');
         localStorage.removeItem('user');
         window.location.href = '/';
         return Promise.reject(refreshError);

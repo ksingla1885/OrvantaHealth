@@ -59,19 +59,34 @@ export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
-    const tokens = localStorage.getItem('tokens');
-    if (tokens) {
-      const parsedTokens = JSON.parse(tokens);
+    const fetchUser = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        if (response.data.success) {
+          const user = response.data.data.user;
+          localStorage.setItem('user', JSON.stringify(user));
+          dispatch({
+            type: 'LOGIN_SUCCESS',
+            payload: { user },
+          });
+        } else {
+          dispatch({ type: 'SET_LOADING', payload: false });
+        }
+      } catch (error) {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    };
+    
+    // We check if there's a user in local storage to prevent flashing unauthenticated state if possible,
+    // but we still verify with the server to ensure cookies are valid.
+    if (localStorage.getItem('user')) {
       dispatch({
         type: 'LOGIN_SUCCESS',
-        payload: {
-          user: JSON.parse(localStorage.getItem('user')),
-          tokens: parsedTokens,
-        },
+        payload: { user: JSON.parse(localStorage.getItem('user')) },
       });
-    } else {
-      dispatch({ type: 'SET_LOADING', payload: false });
     }
+    
+    fetchUser();
   }, []);
 
   const login = async (email, password) => {
@@ -80,14 +95,13 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/login', { email, password });
 
       if (response.data.success) {
-        const { user, tokens } = response.data.data;
+        const { user } = response.data.data;
 
-        localStorage.setItem('tokens', JSON.stringify(tokens));
         localStorage.setItem('user', JSON.stringify(user));
 
         dispatch({
           type: 'LOGIN_SUCCESS',
-          payload: { user, tokens },
+          payload: { user },
         });
 
         return { success: true };
@@ -109,14 +123,13 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/register', userData);
 
       if (response.data.success) {
-        const { user, tokens } = response.data.data;
+        const { user } = response.data.data;
 
-        localStorage.setItem('tokens', JSON.stringify(tokens));
         localStorage.setItem('user', JSON.stringify(user));
 
         dispatch({
           type: 'LOGIN_SUCCESS',
-          payload: { user, tokens },
+          payload: { user },
         });
 
         return { success: true };
@@ -151,7 +164,6 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', error);
     }
 
-    localStorage.removeItem('tokens');
     localStorage.removeItem('user');
     dispatch({ type: 'LOGOUT' });
   };

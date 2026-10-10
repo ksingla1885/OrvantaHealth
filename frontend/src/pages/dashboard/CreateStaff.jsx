@@ -111,6 +111,15 @@ const CreateStaff = () => {
     const role = watch('role');
     const deptValue = watch('department');
     const qualValue = watch('qualifications');
+    const firstName = watch('firstName');
+
+    // Auto-generate email based on first name
+    useEffect(() => {
+        if (!isEditMode && role === 'doctor' && firstName) {
+            const cleanName = firstName.toLowerCase().replace(/[^a-z0-9]/g, '');
+            setValue('email', `${cleanName}@orvanta.com`, { shouldValidate: true });
+        }
+    }, [firstName, role, isEditMode, setValue]);
 
     useEffect(() => {
         setIsOtherDept(deptValue === 'others');

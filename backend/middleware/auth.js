@@ -1,11 +1,30 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3004',
+  'http://localhost:3010',
+  'http://localhost:5173',
+  'https://orvanta-health.vercel.app',
+  process.env.FRONTEND_URL
+].filter(Boolean).map(origin => origin.replace(/\/$/, ''));
+
 // Verify JWT token
 const authenticateToken = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
+    // CSRF Protection: Verify origin for mutating requests
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      const origin = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : null);
+      if (origin && !allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+        return res.status(403).json({
+          success: false,
+          message: 'CSRF validation failed: Invalid Origin'
+        });
+      }
+    }
+
+    const token = req.cookies.accessToken;
 
     if (!token) {
       return res.status(401).json({

@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
@@ -28,8 +31,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
 
     const normalizedOrigin = origin.replace(/\/$/, '');
-    const isAllowed = allowedOrigins.includes(normalizedOrigin) || 
-                     normalizedOrigin.endsWith('.vercel.app'); // Allow all Vercel deployments
+    const isAllowed = allowedOrigins.includes(normalizedOrigin); // Removed Vercel wildcard
     
     if (isAllowed) {
       callback(null, true);
@@ -48,8 +50,28 @@ app.use(cors({
 // Security middleware - configured for cross-origin use
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginPropertyPolicy: { policy: "cross-origin" }
+  crossOriginPropertyPolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      connectSrc: ["'self'", "https://api.razorpay.com"],
+    },
+  },
 }));
+
+// Data sanitization against NoSQL query injection (in-place for Express 5 compatibility)
+app.use((req, res, next) => {
+  if (req.body) mongoSanitize.sanitize(req.body);
+  if (req.params) mongoSanitize.sanitize(req.params);
+  if (req.query) mongoSanitize.sanitize(req.query);
+  next();
+});
+
+// Data sanitization against XSS (Handled primarily by Helmet CSP and React's built-in escaping)
+// app.use(xss());
 
 
 // Enable trust proxy for rate limiting behind proxies
@@ -83,6 +105,7 @@ if (NODE_ENV === 'production') {
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
 // Static files for uploads
 app.use('/uploads', express.static('uploads'));
