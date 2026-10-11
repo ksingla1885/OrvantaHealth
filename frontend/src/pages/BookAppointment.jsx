@@ -159,7 +159,7 @@ const BookAppointment = () => {
             amount,
             currency,
             name: 'OrvantaHealth',
-            description: `Consultation with Dr. ${selectedDoctor.user.profile.firstName} ${selectedDoctor.user.profile.lastName}`,
+            description: `Consultation with Dr. ${(selectedDoctor?.user?.profile || selectedDoctor?.userId?.profile)?.firstName || ''} ${(selectedDoctor?.user?.profile || selectedDoctor?.userId?.profile)?.lastName || ''}`.trim(),
             orderid: orderId,
             handler: async (response) => {
               try {
@@ -312,7 +312,7 @@ const BookAppointment = () => {
                     <User className="h-6 w-6 text-primary-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Dr. {doctor.user.profile.firstName} {doctor.user.profile.lastName}</h3>
+                    <h3 className="font-semibold text-gray-900">Dr. {(doctor.user?.profile || doctor.userId?.profile)?.firstName || ''} {(doctor.user?.profile || doctor.userId?.profile)?.lastName || ''}</h3>
                     <p className="text-sm text-gray-600">{doctor.specialization}</p>
                     <p className="mt-2 text-sm font-bold text-brand-teal">
                       Fee: ₹{doctor.consultationFee || '500'}
@@ -342,7 +342,7 @@ const BookAppointment = () => {
                 <Calendar className="h-5 w-5 mr-2 text-primary-600" /> Choose Date
               </h3>
               <p className="text-xs text-gray-400 mb-4">
-                Only Dr. {selectedDoctor?.userId?.profile?.firstName}'s working days are selectable.
+                Only Dr. {(selectedDoctor?.user?.profile || selectedDoctor?.userId?.profile)?.firstName || 'our doctor'}'s working days are selectable.
               </p>
               <div className="grid grid-cols-4 gap-2">
                 {[...Array(28)].map((_, i) => {
@@ -445,7 +445,7 @@ const BookAppointment = () => {
                 <div className="space-y-2 text-sm">
                   <p className="flex justify-between">
                     <span className="text-gray-500">Doctor:</span>
-                    <span className="font-medium">Dr. {selectedDoctor?.user.profile.firstName} {selectedDoctor?.user.profile.lastName}</span>
+                    <span className="font-medium">Dr. {(selectedDoctor?.user?.profile || selectedDoctor?.userId?.profile)?.firstName || ''} {(selectedDoctor?.user?.profile || selectedDoctor?.userId?.profile)?.lastName || ''}</span>
                   </p>
                   <p className="flex justify-between">
                     <span className="text-gray-500">Date:</span>

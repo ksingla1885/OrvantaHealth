@@ -279,36 +279,36 @@ const DoctorAvailability = () => {
         {/* ── EDITOR PANEL ── */}
         <div className="lg:col-span-3">
           {selectedDoctor ? (
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-premium overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
 
               {/* Editor header */}
-              <div className="relative bg-brand-dark px-8 py-6 overflow-hidden">
+              <div className="relative bg-slate-900 px-6 sm:px-8 py-5 sm:py-6 overflow-hidden">
                 <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-brand-teal opacity-20 blur-2xl" />
                 <div className="relative flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-black text-teal-100/60 uppercase tracking-widest mb-1">Editing Schedule</p>
-                    <h2 className="text-2xl font-black text-white font-display">
+                    <p className="text-[10px] font-bold text-teal-300/80 uppercase tracking-widest mb-1">Editing Schedule</p>
+                    <h2 className="text-xl sm:text-2xl font-bold text-white font-display">
                       Dr. {selectedDoctor.user.profile.firstName} {selectedDoctor.user.profile.lastName}
                     </h2>
-                    <p className="text-sm text-teal-100/70 font-medium mt-0.5">{selectedDoctor.specialization}</p>
+                    <p className="text-xs text-teal-100/70 font-medium mt-0.5">{selectedDoctor.specialization}</p>
                   </div>
                   <button onClick={handleCancel}
-                    className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all">
+                    className="h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10 flex items-center justify-center text-white/70 hover:text-white transition-all">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
 
-              <div className="px-8 py-8 space-y-8">
+              <div className="px-6 sm:px-8 py-6 space-y-6">
 
                 {/* ── SHIFT DUTY STATUS ── */}
-                <div className="p-6 bg-slate-50/75 border border-slate-200/60 rounded-[1.75rem] space-y-4">
+                <div className="p-5 bg-slate-50/80 border border-slate-200/80 rounded-xl space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest font-display">Shift Duty Status</p>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1.5 ${
-                      formData.dutyStatus === 'available' ? 'bg-emerald-500/10 text-emerald-600' :
-                      formData.dutyStatus === 'rounds' ? 'bg-amber-500/10 text-amber-600' :
-                      'bg-rose-500/10 text-rose-600'
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-display">Shift Duty Status</p>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase flex items-center gap-1.5 ${
+                      formData.dutyStatus === 'available' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                      formData.dutyStatus === 'rounds' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                      'bg-rose-50 text-rose-700 border border-rose-200'
                     }`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${
                         formData.dutyStatus === 'available' ? 'bg-emerald-500' :
@@ -323,7 +323,7 @@ const DoctorAvailability = () => {
                     <select
                       value={formData.dutyStatus}
                       onChange={(e) => handleDutyStatusChange(e.target.value)}
-                      className="w-full bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[1.25rem] h-[54px] px-5 font-bold text-slate-800 focus:border-brand-teal focus:ring-4 focus:ring-brand-teal/10 outline-none transition-all shadow-sm text-sm"
+                      className="w-full bg-white border border-slate-200 hover:border-slate-300 rounded-xl h-[48px] px-4 font-semibold text-slate-800 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/10 outline-none transition-all shadow-sm text-sm"
                     >
                       <option value="available">🟢 Available for Consults</option>
                       <option value="rounds">🟡 On Ward Rounds / Surgery</option>
@@ -508,13 +508,13 @@ const DoctorAvailability = () => {
             </div>
           ) : (
             /* ── EMPTY EDITOR STATE ── */
-            <div className="h-full min-h-[400px] bg-white rounded-[2rem] border border-dashed border-slate-200 flex flex-col items-center justify-center gap-4 p-12">
-              <div className="h-16 w-16 rounded-2xl bg-brand-light flex items-center justify-center">
-                <Stethoscope className="h-8 w-8 text-brand-teal/50" />
+            <div className="h-full min-h-[400px] bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center gap-4 p-12">
+              <div className="h-14 w-14 rounded-xl bg-teal-50 flex items-center justify-center">
+                <Stethoscope className="h-7 w-7 text-brand-teal/60" />
               </div>
               <div className="text-center">
-                <h3 className="text-base font-black text-brand-dark mb-1">No Doctor Selected</h3>
-                <p className="text-sm text-slate-400 font-medium">Pick a doctor from the list to configure their schedule</p>
+                <h3 className="text-base font-bold text-slate-800 mb-1">No Doctor Selected</h3>
+                <p className="text-xs text-slate-400 font-medium">Pick a doctor from the list to configure their schedule</p>
               </div>
               <div className="flex flex-wrap gap-2 justify-center mt-2">
                 {['Working Days', 'Time Slots', 'Leave Dates'].map(tag => (

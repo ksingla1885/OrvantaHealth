@@ -166,7 +166,21 @@ router.get('/appointments', async (req, res) => {
       orderBy: [{ date: 'desc' }] // we can't easily order by JSON timeSlot.start, but date is fine
     });
 
-    res.json({ success: true, data: { appointments } });
+    const formattedAppointments = appointments.map(appt => {
+      const patientObj = appt.patient ? {
+        ...appt.patient,
+        user: appt.patient.user,
+        userId: appt.patient.user ? { ...appt.patient.user, id: appt.patient.userId } : appt.patient.userId
+      } : null;
+
+      return {
+        ...appt,
+        patient: patientObj,
+        patientId: patientObj || appt.patientId
+      };
+    });
+
+    res.json({ success: true, data: { appointments: formattedAppointments } });
   } catch (error) {
     console.error('Get appointments error:', error);
     res.status(500).json({ success: false, message: 'Server error fetching appointments' });
@@ -485,11 +499,29 @@ router.get('/prescriptions', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    const mappedPrescriptions = prescriptions.map(p => ({
-      ...p,
-      medications: p.medicines,
-      instructions: p.advice
-    }));
+    const mappedPrescriptions = prescriptions.map(p => {
+      const doctorObj = p.doctor ? {
+        ...p.doctor,
+        user: p.doctor.user,
+        userId: p.doctor.user ? { ...p.doctor.user, id: p.doctor.userId } : p.doctor.userId
+      } : null;
+
+      const patientObj = p.patient ? {
+        ...p.patient,
+        user: p.patient.user,
+        userId: p.patient.user ? { ...p.patient.user, id: p.patient.userId } : p.patient.userId
+      } : null;
+
+      return {
+        ...p,
+        medications: p.medicines,
+        instructions: p.advice,
+        doctor: doctorObj,
+        doctorId: doctorObj || p.doctorId,
+        patient: patientObj,
+        patientId: patientObj || p.patientId
+      };
+    });
 
     res.json({ success: true, data: { prescriptions: mappedPrescriptions } });
   } catch (error) {

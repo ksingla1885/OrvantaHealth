@@ -171,9 +171,31 @@ router.get('/', authenticateToken, async (req, res) => {
       orderBy: [{ date: 'desc' }]
     });
 
+    const formattedAppointments = appointments.map(appt => {
+      const doctorObj = appt.doctor ? {
+        ...appt.doctor,
+        user: appt.doctor.user,
+        userId: appt.doctor.user ? { ...appt.doctor.user, id: appt.doctor.userId } : appt.doctor.userId
+      } : null;
+
+      const patientObj = appt.patient ? {
+        ...appt.patient,
+        user: appt.patient.user,
+        userId: appt.patient.user ? { ...appt.patient.user, id: appt.patient.userId } : appt.patient.userId
+      } : null;
+
+      return {
+        ...appt,
+        doctor: doctorObj,
+        doctorId: doctorObj || appt.doctorId,
+        patient: patientObj,
+        patientId: patientObj || appt.patientId
+      };
+    });
+
     res.json({
       success: true,
-      data: { appointments }
+      data: { appointments: formattedAppointments }
     });
   } catch (error) {
     console.error('Get appointments error:', error);

@@ -118,16 +118,16 @@ const DoctorCompletedPatients = () => {
       </div>
 
       {/* Main content grid */}
-      <div className="space-y-6">
+      <div className="space-y-5">
         {filteredPatients.length > 0 ? (
           filteredPatients.map((p, idx) => (
             <div 
               key={p.id} 
-              className="bg-white rounded-[2.5rem] border border-slate-100 shadow-premium hover:shadow-xl transition-all duration-300 overflow-hidden animate-slide-up"
+              className="bg-white rounded-xl border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all overflow-hidden animate-slide-up"
               style={{ animationDelay: `${idx * 50}ms` }}
             >
-              <div className="h-1.5 w-full bg-gradient-to-r from-brand-dark via-brand-teal to-emerald-400" />
-              <div className="p-6 md:p-8 space-y-6">
+              <div className="h-1 w-full bg-gradient-to-r from-teal-800 via-teal-600 to-emerald-500" />
+              <div className="p-5 md:p-6 space-y-5">
                 
                 {/* Header row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -241,9 +241,9 @@ const DoctorCompletedPatients = () => {
             </div>
           ))
         ) : (
-          <div className="text-center py-20 bg-white rounded-[2.5rem] border border-dashed border-slate-200 space-y-4">
-            <ClipboardCheck className="h-12 w-12 text-slate-300 mx-auto" />
-            <p className="text-base font-black text-slate-700">No Examined Patients Found</p>
+          <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-200 p-8 space-y-3">
+            <ClipboardCheck className="h-10 w-10 text-slate-300 mx-auto" />
+            <p className="text-sm font-bold text-slate-800">No Examined Patients Found</p>
             <p className="text-xs text-slate-400 max-w-xs mx-auto">
               Any patients you check-in, diagnose, and sign will be securely logged and shown here.
             </p>

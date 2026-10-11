@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import {
@@ -254,12 +255,25 @@ const Appointments = () => {
       {appointments.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {appointments.map((appt) => {
+            const drUser = appt.doctor?.user || (typeof appt.doctor?.userId === 'object' ? appt.doctor.userId : null) || appt.doctorId?.user || (typeof appt.doctorId?.userId === 'object' ? appt.doctorId.userId : null) || {};
+            const ptUser = appt.patient?.user || (typeof appt.patient?.userId === 'object' ? appt.patient.userId : null) || appt.patientId?.user || (typeof appt.patientId?.userId === 'object' ? appt.patientId.userId : null) || {};
+
+            const drFirstName = drUser.profile?.firstName || '';
+            const drLastName  = drUser.profile?.lastName  || '';
+            const ptFirstName = ptUser.profile?.firstName || appt.patientId?.name || appt.patient?.name || '';
+            const ptLastName  = ptUser.profile?.lastName  || '';
+
             const primaryName = isPatient
-              ? `Dr. ${appt.doctorId?.userId?.profile?.firstName || ''} ${appt.doctorId?.userId?.profile?.lastName || 'Unknown'}`
-              : `${appt.patientId?.userId?.profile?.firstName || ''} ${appt.patientId?.userId?.profile?.lastName || 'Unknown Patient'}`;
+              ? `Dr. ${drFirstName} ${drLastName || 'Specialist'}`.trim()
+              : `${ptFirstName} ${ptLastName || 'Patient'}`.trim();
 
             const availableStatuses = getAvailableStatuses(appt);
-            const dateStr = appt.date ? format(new Date(appt.date), 'dd MMM yyyy') : '—';
+            let dateStr = '—';
+            try {
+              dateStr = appt.date ? format(new Date(appt.date), 'dd MMM yyyy') : '—';
+            } catch {
+              dateStr = appt.date ? new Date(appt.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+            }
             const timeStr = appt.timeSlot ? `${appt.timeSlot.start} – ${appt.timeSlot.end}` : '—';
             const type    = appt.consultationType || 'In-person';
 
@@ -313,9 +327,9 @@ const Appointments = () => {
                         # {appt.patientId.medicalRecordNumber}
                       </span>
                     )}
-                    {!isPatient && appt.patientId?.userId?.profile?.email && (
+                    {!isPatient && (ptUser.profile?.email || ptUser.email) && (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#94a3b8' }}>
-                        <User size={12} /> {appt.patientId.user.profile.email}
+                        <User size={12} /> {ptUser.profile?.email || ptUser.email}
                       </span>
                     )}
                   </div>
@@ -466,7 +480,7 @@ const Appointments = () => {
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>Update Status</h2>
             <div style={{ padding: '12px 14px', background: '#f8fafc', borderRadius: 10, marginBottom: 16 }}>
               <p style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
-                {selectedAppointment.patientId?.userId?.profile?.firstName} {selectedAppointment.patientId?.userId?.profile?.lastName}
+                {(selectedAppointment.patient?.user || selectedAppointment.patientId?.user || selectedAppointment.patientId?.userId)?.profile?.firstName || 'Patient'} {(selectedAppointment.patient?.user || selectedAppointment.patientId?.user || selectedAppointment.patientId?.userId)?.profile?.lastName || ''}
               </p>
               <StatusBadge status={selectedAppointment.status} />
             </div>
@@ -528,12 +542,15 @@ const Appointments = () => {
       {/* ── Mark Paid Dialog ── */}
       {markPaidDialog.open && markPaidDialog.appt && (() => {
         const a = markPaidDialog.appt;
-        const drFirst = a.doctorId?.userId?.profile?.firstName || '';
-        const drLast  = a.doctorId?.userId?.profile?.lastName  || '';
-        const ptFirst = a.patientId?.userId?.profile?.firstName || a.patientId?.name || 'Patient';
-        const ptLast  = a.patientId?.userId?.profile?.lastName  || '';
-        const fee     = a.doctorId?.consultationFee || 0;
-        const dept    = a.doctorId?.department || '';
+        const dUser = a.doctor?.user || (typeof a.doctor?.userId === 'object' ? a.doctor.userId : null) || a.doctorId?.user || (typeof a.doctorId?.userId === 'object' ? a.doctorId.userId : null) || {};
+        const pUser = a.patient?.user || (typeof a.patient?.userId === 'object' ? a.patient.userId : null) || a.patientId?.user || (typeof a.patientId?.userId === 'object' ? a.patientId.userId : null) || {};
+
+        const drFirst = dUser.profile?.firstName || '';
+        const drLast  = dUser.profile?.lastName  || '';
+        const ptFirst = pUser.profile?.firstName || a.patientId?.name || 'Patient';
+        const ptLast  = pUser.profile?.lastName  || '';
+        const fee     = a.doctor?.consultationFee || a.doctorId?.consultationFee || 0;
+        const dept    = a.doctor?.department || a.doctorId?.department || '';
         const date    = a.date ? new Date(a.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
         return (
           <div style={{

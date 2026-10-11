@@ -106,12 +106,14 @@ const SuperAdminDashboard = () => {
   // Map real database revenue and appointment totals onto date timeline
   const dbRevenueMap = {};
   (systemOverview?.revenueTrends || []).forEach(r => {
-    dbRevenueMap[r.id] = r.total || 0;
+    const k = r.id || r._id || r.date;
+    if (k) dbRevenueMap[k] = r.total || 0;
   });
 
   const dbAptMap = {};
   (systemOverview?.appointmentTrends || []).forEach(a => {
-    dbAptMap[a.id] = a.count || 0;
+    const k = a.id || a._id || a.date;
+    if (k) dbAptMap[k] = a.count || 0;
   });
 
   const displayChartData = dateList.map(({ dateStr, label }) => ({
@@ -135,12 +137,15 @@ const SuperAdminDashboard = () => {
   const DEPARTMENT_COLORS = ['#0d9488', '#8b5cf6', '#e11d48', '#2563eb', '#d97706', '#4f46e5', '#10b981'];
 
   // Extract list of unique departments with color mapping from real DB doctor records
-  const departmentSeries = deptStats.map((d, index) => ({
-    name: (d.id || 'Unassigned').charAt(0).toUpperCase() + (d.id || 'Unassigned').slice(1),
-    key: d.id || 'Unassigned',
-    count: d.count || 0,
-    color: DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length]
-  })).filter(d => d.count > 0);
+  const departmentSeries = deptStats.map((d, index) => {
+    const rawName = d.name || d.id || d._id || 'Unassigned';
+    return {
+      name: rawName.charAt(0).toUpperCase() + rawName.slice(1),
+      key: d.id || d._id || rawName,
+      count: d.count || 0,
+      color: DEPARTMENT_COLORS[index % DEPARTMENT_COLORS.length]
+    };
+  }).filter(d => d.count > 0);
 
   // Build multi-line dataset mapping each department across date timeline
   const departmentLineData = dateList.map(({ label }) => {

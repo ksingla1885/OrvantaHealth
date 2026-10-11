@@ -222,7 +222,7 @@ const TriageQueue = () => {
       </div>
 
       {/* ── MAIN HEADER & WORKFLOW CONTROL BAR ── */}
-      <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 relative overflow-hidden">
+      <div className="bg-white rounded-2xl p-6 md:p-7 border border-slate-200/90 shadow-sm space-y-6 relative overflow-hidden">
         
         {/* Glow decorative background pill */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-teal/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
@@ -376,35 +376,35 @@ const TriageQueue = () => {
 
       {/* ── QUEUE DISPLAY ── */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="bg-white rounded-[2.5rem] p-8 border border-slate-200/80 shadow-premium animate-pulse space-y-6">
+            <div key={n} className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm animate-pulse space-y-5">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <div className="h-14 w-14 rounded-2xl bg-slate-200" />
+                  <div className="h-12 w-12 rounded-xl bg-slate-200" />
                   <div className="space-y-2">
                     <div className="h-4 w-32 bg-slate-200 rounded" />
                     <div className="h-3 w-20 bg-slate-200 rounded" />
                   </div>
                 </div>
-                <div className="h-6 w-24 bg-slate-200 rounded-xl" />
+                <div className="h-6 w-24 bg-slate-200 rounded-lg" />
               </div>
-              <div className="h-20 bg-slate-100 rounded-2xl" />
-              <div className="grid grid-cols-2 gap-4">
-                <div className="h-20 bg-slate-200 rounded-2xl" />
-                <div className="h-20 bg-slate-200 rounded-2xl" />
+              <div className="h-16 bg-slate-100 rounded-xl" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-16 bg-slate-200 rounded-xl" />
+                <div className="h-16 bg-slate-200 rounded-xl" />
               </div>
-              <div className="h-12 bg-slate-200 rounded-2xl" />
+              <div className="h-10 bg-slate-200 rounded-xl" />
             </div>
           ))}
         </div>
       ) : filteredQueue.length === 0 ? (
-        <div className="py-24 bg-white/80 backdrop-blur-xl rounded-[3rem] border-2 border-dashed border-slate-200/80 flex flex-col items-center justify-center text-slate-400 gap-5 shadow-premium">
-          <div className="p-6 bg-slate-50 rounded-3xl shadow-inner">
-            <Activity className="h-12 w-12 text-brand-teal/40 animate-pulse stroke-[1.5]" />
+        <div className="py-20 bg-white rounded-2xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 gap-4 shadow-sm">
+          <div className="p-5 bg-teal-50 rounded-2xl">
+            <Activity className="h-10 w-10 text-brand-teal/60 animate-pulse stroke-[1.5]" />
           </div>
           <div className="text-center space-y-1">
-            <p className="text-2xl font-black font-display text-slate-800">Lobby Clear</p>
+            <p className="text-xl font-bold font-display text-slate-800">Lobby Clear</p>
             <p className="text-xs font-semibold text-slate-400 max-w-sm">
               No triage assessments match your selected filter criteria ({filter} queue, {urgencyFilter} urgency).
             </p>
@@ -412,7 +412,7 @@ const TriageQueue = () => {
           {isReceptionist && (
             <button 
               onClick={() => navigate('/receptionist/triage/intake')}
-              className="mt-2 px-8 py-4 bg-gradient-to-r from-brand-teal to-teal-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:from-teal-600 hover:to-brand-dark transition-all shadow-xl shadow-brand-teal/20 hover:scale-105 active:scale-95 flex items-center gap-2"
+              className="mt-2 px-6 py-3 bg-brand-teal text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-teal-700 transition-all shadow-sm flex items-center gap-2"
             >
               <UserPlus className="h-4 w-4" />
               + Start New Patient Intake
@@ -420,7 +420,7 @@ const TriageQueue = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredQueue.map((item) => {
             const urgency = getUrgencyBadge(item.aiAnalysis?.urgencyLevel);
             const isFever = parseFloat(item.vitals?.temperature) >= 100;
@@ -429,7 +429,7 @@ const TriageQueue = () => {
             return (
               <div 
                 key={item.id} 
-                className="group relative bg-white rounded-[2.5rem] p-7 md:p-8 border border-slate-200/80 shadow-premium hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-hidden flex flex-col justify-between"
+                className="group relative bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col justify-between"
               >
                 {/* Top Urgency Color Stripe */}
                 <div className={`absolute top-0 left-0 right-0 h-2.5 ${urgency.stripe}`} />

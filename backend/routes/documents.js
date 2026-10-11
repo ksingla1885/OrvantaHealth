@@ -209,6 +209,87 @@ const generatePrescriptionPDF = (prescription, res, filename) => {
     doc.end();
 };
 
+// Helper: generate a PDF for a lab report
+const generateLabReportPDF = (labReport, res, filename) => {
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    doc.pipe(res);
+
+    doc.rect(0, 0, doc.page.width, 90).fill('#0d9488');
+    doc.fillColor('white').fontSize(24).font('Helvetica-Bold').text('OrvantaHealth', 50, 28);
+    doc.fontSize(10).font('Helvetica').text('DIAGNOSTIC & PATHOLOGY SERVICES', 50, 58);
+    doc.fillColor('#0d9488').fontSize(16).font('Helvetica-Bold').text('OFFICIAL REPORT', 0, 28, { align: 'right', width: doc.page.width - 50 });
+    doc.moveDown(4);
+
+    const reportDate = labReport.reportDate ? new Date(labReport.reportDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+    
+    const metaY = doc.y;
+    doc.fillColor('#374151').fontSize(9).font('Helvetica-Bold').text('Patient Information:', 50, metaY);
+    const patientName = labReport.patient?.user?.profile
+        ? `${labReport.patient.user.profile.firstName || ''} ${labReport.patient.user.profile.lastName || ''}`.trim()
+        : 'Patient';
+    const mrn = labReport.patient?.medicalRecordNumber || 'N/A';
+    doc.fillColor('#111827').fontSize(11).font('Helvetica-Bold').text(patientName, 50, metaY + 16);
+    doc.fillColor('#6B7280').fontSize(9).font('Helvetica').text(`MRN: ${mrn}`, 50, metaY + 30);
+
+    doc.fillColor('#374151').fontSize(9).font('Helvetica-Bold').text('Clinical Details:', 350, metaY);
+    const docName = labReport.doctor?.user?.profile
+        ? `Dr. ${labReport.doctor.user.profile.firstName || ''} ${labReport.doctor.user.profile.lastName || ''}`.trim()
+        : 'Attending Physician';
+    const dept = labReport.doctor?.department || 'Diagnostic Medicine';
+    doc.fillColor('#111827').fontSize(11).font('Helvetica-Bold').text(docName, 350, metaY + 16);
+    doc.fillColor('#6B7280').fontSize(9).font('Helvetica').text(`Department: ${dept}`, 350, metaY + 30);
+    doc.text(`Report Date: ${reportDate}`, 350, metaY + 44);
+    doc.moveDown(4);
+
+    doc.rect(50, doc.y, doc.page.width - 100, 26).fill('#F0FDFA');
+    doc.fillColor('#0F766E').fontSize(11).font('Helvetica-Bold').text(`TEST: ${labReport.testName.toUpperCase()} (${labReport.testType})`, 55, doc.y + 7);
+    doc.moveDown(2.5);
+
+    const tableTop = doc.y;
+    doc.rect(50, tableTop, doc.page.width - 100, 22).fill('#0d9488');
+    doc.fillColor('white').fontSize(9).font('Helvetica-Bold')
+        .text('Parameter / Marker', 55, tableTop + 6)
+        .text('Observed Value', 240, tableTop + 6)
+        .text('Reference Range', 360, tableTop + 6)
+        .text('Evaluation', 470, tableTop + 6);
+
+    let rowY = tableTop + 26;
+    const results = Array.isArray(labReport.results) ? labReport.results : [];
+    results.forEach((item, idx) => {
+        const bg = idx % 2 === 0 ? '#F9FAFB' : '#FFFFFF';
+        doc.rect(50, rowY - 4, doc.page.width - 100, 22).fill(bg);
+        doc.fillColor('#111827').fontSize(9).font('Helvetica')
+            .text(item.parameter || '-', 55, rowY, { width: 180 })
+            .text(`${item.value || '-'} ${item.unit && item.unit !== '-' ? item.unit : ''}`.trim(), 240, rowY, { width: 110 })
+            .text(item.referenceRange || '-', 360, rowY, { width: 100 })
+            .text(item.status || 'Normal', 470, rowY, { width: 60 });
+        rowY += 24;
+    });
+
+    if (rowY > doc.page.height - 180) { doc.addPage(); rowY = 50; }
+
+    if (labReport.conclusion) {
+        rowY += 15;
+        doc.fillColor('#0d9488').fontSize(10).font('Helvetica-Bold').text('CLINICAL IMPRESSION & CONCLUSION', 50, rowY);
+        rowY += 16;
+        doc.fillColor('#374151').fontSize(9).font('Helvetica').text(labReport.conclusion, 50, rowY, { width: 490 });
+        rowY += 30;
+    }
+
+    if (labReport.recommendations) {
+        doc.fillColor('#0d9488').fontSize(10).font('Helvetica-Bold').text('RECOMMENDATIONS', 50, rowY);
+        rowY += 16;
+        doc.fillColor('#4B5563').fontSize(9).font('Helvetica').text(labReport.recommendations, 50, rowY, { width: 490 });
+    }
+
+    doc.fillColor('#9CA3AF').fontSize(8).font('Helvetica')
+        .text('Electronic Diagnostic Record verified by OrvantaHealth Laboratory. Valid without physical signature.', 50, doc.page.height - 50, { align: 'center', width: doc.page.width - 100 });
+    doc.end();
+};
+
 // Download document
 router.get('/download/:type/:id', async (req, res) => {
     const { type, id } = req.params;
@@ -261,7 +342,13 @@ router.get('/download/:type/:id', async (req, res) => {
                 break;
 
             case 'lab-report':
-                const labReport = await prisma.labReport.findUnique({ where: { id } });
+                const labReport = await prisma.labReport.findUnique({
+                    where: { id },
+                    include: {
+                        patient: { include: { user: { select: { profile: true } } } },
+                        doctor: { include: { user: { select: { profile: true } } } }
+                    }
+                });
                 if (!labReport) return res.status(404).json({ success: false, message: 'Lab report record not found' });
 
                 if (role === 'patient') {
@@ -270,9 +357,9 @@ router.get('/download/:type/:id', async (req, res) => {
                         return res.status(403).json({ success: false, message: 'Access denied: You are not authorized to view this lab report' });
                     }
                 }
-                filePath = labReport.reportFile;
-                filename = `lab_report_${id}.pdf`;
-                break;
+
+                // If local file exists or is generated, generate official high-res PDF
+                return generateLabReportPDF(labReport, res, `lab_report_${id}.pdf`);
 
             default:
                 return res.status(400).json({ success: false, message: 'Invalid document type requested' });

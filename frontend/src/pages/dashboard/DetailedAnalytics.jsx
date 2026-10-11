@@ -59,8 +59,8 @@ const DetailedAnalytics = () => {
             const tempDate = new Date(d);
             tempDate.setDate(tempDate.getDate() - s);
             const tempKey = tempDate.toISOString().split('T')[0];
-            const tEntry = trends.find(t => t.id === tempKey);
-            const rEntry = revenue.find(r => r.id === tempKey);
+            const tEntry = trends.find(t => (t.id === tempKey || t._id === tempKey || t.date === tempKey));
+            const rEntry = revenue.find(r => (r.id === tempKey || r._id === tempKey || r.date === tempKey));
             appointmentsCount += tEntry?.count || 0;
             revenueTotal += rEntry?.total || 0;
           }
@@ -80,12 +80,19 @@ const DetailedAnalytics = () => {
 
       if (deptRes.data.success) {
         const deptStats = deptRes.data.data.departmentStats || [];
-        const colors = ['#0F3A3A', '#1E5E5E', '#00CCB4', '#a5cece', '#296767'];
-        const formattedDeptData = deptStats.map((dept, index) => ({
-          name: dept.id || 'General',
-          value: dept.count,
-          color: colors[index % colors.length]
-        }));
+        const colors = [
+          '#0F3A3A', '#00CCB4', '#1E5E5E', '#d97706', '#2563eb', 
+          '#8b5cf6', '#e11d48', '#059669', '#d946ef', '#64748b'
+        ];
+        const formattedDeptData = deptStats.map((dept, index) => {
+          const rawName = dept.name || dept.id || dept._id || 'General';
+          const capitalizedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+          return {
+            name: capitalizedName,
+            value: dept.count,
+            color: colors[index % colors.length]
+          };
+        });
         setDepartmentData(formattedDeptData);
       }
     } catch (error) {
@@ -96,13 +103,32 @@ const DetailedAnalytics = () => {
     }
   };
 
-  const appointmentStatusData = analytics?.appointmentStats?.map(stat => ({
-    name: stat.id,
-    value: stat.count,
-    color: stat.id === 'completed' ? '#00CCB4' :
-      stat.id === 'pending' ? '#a5cece' :
-        stat.id === 'cancelled' ? '#ef4444' : '#1E5E5E'
-  })) || [];
+  const STATUS_LABEL_MAP = {
+    completed: 'Completed',
+    confirmed: 'Confirmed',
+    pending: 'Pending',
+    checked_in: 'Checked In',
+    cancelled: 'Cancelled'
+  };
+
+  const STATUS_COLOR_MAP = {
+    completed: '#00CCB4',
+    confirmed: '#0F3A3A',
+    pending: '#a5cece',
+    checked_in: '#d97706',
+    cancelled: '#ef4444'
+  };
+
+  const appointmentStatusData = analytics?.appointmentStats?.map(stat => {
+    const rawKey = stat.name || stat.id || stat._id || stat.status || 'other';
+    const cleanKey = String(rawKey).toLowerCase().replace(' ', '_');
+    const displayName = STATUS_LABEL_MAP[cleanKey] || (rawKey.charAt(0).toUpperCase() + rawKey.slice(1));
+    return {
+      name: displayName,
+      value: stat.count,
+      color: STATUS_COLOR_MAP[cleanKey] || '#1E5E5E'
+    };
+  }) || [];
 
   const handleExport = async (e) => {
     e.preventDefault();
@@ -471,37 +497,41 @@ const DetailedAnalytics = () => {
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a5cece]">Clinician of the Term</span>
               </div>
               
-              {analytics?.mostConsultedDoctor?.userId?.profile ? (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-6">
-                    <div className="h-20 w-20 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 text-3xl font-black text-[#00CCB4]">
-                      {analytics.mostConsultedDoctor.user.profile.firstName?.charAt(0)}
-                    </div>
-                    <div>
-                      <h4 className="text-2xl font-black font-display">Dr. {analytics.mostConsultedDoctor.user.profile.firstName} {analytics.mostConsultedDoctor.user.profile.lastName}</h4>
-                      <p className="text-[11px] font-bold text-[#a5cece] uppercase tracking-widest">{analytics.mostConsultedDoctor.specialization}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 mt-8">
-                    <div className="p-5 rounded-[2rem] bg-white/5 border border-white/5">
-                      <p className="text-[9px] font-black text-[#a5cece] uppercase tracking-widest mb-1">Consults</p>
-                      <p className="text-2xl font-black leading-none">{analytics.mostConsultedDoctor.consultationFee || 0}</p>
-                    </div>
-                    <div className="p-5 rounded-[2rem] bg-white/5 border border-white/5">
-                      <p className="text-[9px] font-black text-[#a5cece] uppercase tracking-widest mb-1">Ward Unit</p>
-                      <div className="flex items-end gap-1">
-                        <p className="text-xl font-black leading-none capitalize">{analytics.mostConsultedDoctor.department}</p>
+              {(() => {
+                const docUser = (analytics?.mostConsultedDoctor?.user || analytics?.mostConsultedDoctor?.userId);
+                return docUser?.profile ? (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-6">
+                      <div className="h-20 w-20 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 text-3xl font-black text-[#00CCB4]">
+                        {docUser.profile.firstName?.charAt(0) || 'D'}
+                      </div>
+                      <div>
+                        <h4 className="text-2xl font-black font-display">Dr. {docUser.profile.firstName} {docUser.profile.lastName}</h4>
+                        <p className="text-[11px] font-bold text-[#a5cece] uppercase tracking-widest">{analytics.mostConsultedDoctor.specialization}</p>
                       </div>
                     </div>
-                  </div>
+                  
+                    <div className="grid grid-cols-2 gap-4 mt-8">
+                      <div className="p-5 rounded-[2rem] bg-white/5 border border-white/5">
+                        <p className="text-[9px] font-black text-[#a5cece] uppercase tracking-widest mb-1">Consults Completed</p>
+                        <p className="text-2xl font-black leading-none">{analytics.mostConsultedDoctor.consultationsCount ?? analytics.mostConsultedDoctor.consultsCount ?? 1}</p>
+                      </div>
+                      <div className="p-5 rounded-[2rem] bg-white/5 border border-white/5">
+                        <p className="text-[9px] font-black text-[#a5cece] uppercase tracking-widest mb-1">Unit & Fee</p>
+                        <div className="flex flex-col">
+                          <p className="text-lg font-black leading-none capitalize">{analytics.mostConsultedDoctor.department}</p>
+                          <span className="text-[10px] font-bold text-[#00CCB4] mt-1">₹{analytics.mostConsultedDoctor.consultationFee}</span>
+                        </div>
+                      </div>
+                    </div>
                 </div>
               ) : (
                 <div className="py-12 border border-dashed border-white/10 rounded-[2.5rem] flex flex-col items-center justify-center bg-white/5">
                   <Activity className="h-10 w-10 text-white/20 mb-4" />
                   <p className="text-sm text-white/40 font-medium">Accumulating Peer Data...</p>
                 </div>
-              )}
+                );
+              })()}
             </div>
             
             <button className="mt-12 w-full py-5 bg-white text-[#0F3A3A] rounded-[2rem] font-black text-xs tracking-widest shadow-xl hover:bg-[#00CCB4] hover:text-white transition-all transform hover:-translate-y-1">

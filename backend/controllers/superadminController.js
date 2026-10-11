@@ -19,29 +19,53 @@ const getSystemOverview = async (req, res) => {
       prisma.user.count({ where: { isActive: true } }),
       prisma.user.count({ where: { createdAt: { gte: timeLimit } } }),
       prisma.appointment.findMany({
-        where: { createdAt: { gte: timeLimit } },
-        select: { createdAt: true }
+        where: {
+          OR: [
+            { createdAt: { gte: timeLimit } },
+            { date: { gte: timeLimit } }
+          ]
+        },
+        select: { createdAt: true, date: true }
       }),
       prisma.bill.findMany({
-        where: { status: 'paid', createdAt: { gte: timeLimit } },
-        select: { createdAt: true, total: true }
+        where: {
+          status: 'paid',
+          OR: [
+            { createdAt: { gte: timeLimit } },
+            { updatedAt: { gte: timeLimit } }
+          ]
+        },
+        select: { createdAt: true, updatedAt: true, total: true }
       })
     ]);
 
     const appointmentTrendsObj = {};
     recentAppointments.forEach(apt => {
-      const d = apt.createdAt.toISOString().split('T')[0];
+      const dObj = apt.date || apt.createdAt;
+      const d = (dObj instanceof Date ? dObj : new Date(dObj)).toISOString().split('T')[0];
       appointmentTrendsObj[d] = (appointmentTrendsObj[d] || 0) + 1;
     });
 
     const revenueTrendsObj = {};
     recentBills.forEach(bill => {
-      const d = bill.createdAt.toISOString().split('T')[0];
+      const dObj = bill.createdAt || bill.updatedAt;
+      const d = (dObj instanceof Date ? dObj : new Date(dObj)).toISOString().split('T')[0];
       revenueTrendsObj[d] = (revenueTrendsObj[d] || 0) + bill.total;
     });
 
-    const appointmentTrends = Object.keys(appointmentTrendsObj).map(k => ({ _id: k, count: appointmentTrendsObj[k] })).sort((a, b) => b._id.localeCompare(a._id)).slice(0, rangeInDays);
-    const revenueTrends = Object.keys(revenueTrendsObj).map(k => ({ _id: k, total: revenueTrendsObj[k] })).sort((a, b) => b._id.localeCompare(a._id)).slice(0, rangeInDays);
+    const appointmentTrends = Object.keys(appointmentTrendsObj).map(k => ({
+      id: k,
+      _id: k,
+      date: k,
+      count: appointmentTrendsObj[k]
+    })).sort((a, b) => b.id.localeCompare(a.id)).slice(0, rangeInDays);
+
+    const revenueTrends = Object.keys(revenueTrendsObj).map(k => ({
+      id: k,
+      _id: k,
+      date: k,
+      total: revenueTrendsObj[k]
+    })).sort((a, b) => b.id.localeCompare(a.id)).slice(0, rangeInDays);
 
     res.json({
       success: true,
@@ -130,7 +154,9 @@ const getDepartmentStats = async (req, res) => {
     });
 
     const departmentStats = Object.keys(deptObj).map(dept => ({
+      id: dept,
       _id: dept,
+      name: dept.charAt(0).toUpperCase() + dept.slice(1),
       count: deptObj[dept].count,
       doctors: deptObj[dept].doctors,
       appointments: deptObj[dept].appointments

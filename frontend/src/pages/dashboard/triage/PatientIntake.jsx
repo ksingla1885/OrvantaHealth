@@ -95,12 +95,12 @@ const PatientIntake = () => {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
         
         {/* Column 1: Personal Identity */}
-        <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200/80 shadow-sm relative overflow-hidden flex flex-col h-full">
-          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <User className="h-5 w-5 text-brand-teal" /> Personal Identity
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm relative overflow-hidden flex flex-col h-full">
+          <h3 className="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
+            <User className="h-4 w-4 text-brand-teal" /> Personal Identity
           </h3>
 
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* Auto-suggest dropdown to search existing patients */}
             <div className="relative z-30">
               <label className="text-xs font-medium text-slate-500 block mb-1.5">Search Registered Patients</label>
@@ -251,9 +251,9 @@ const PatientIntake = () => {
         </div>
 
         {/* Column 2: Symptoms */}
-        <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-200/80 shadow-sm relative overflow-hidden flex flex-col h-full">
-          <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <Activity className="h-5 w-5 text-rose-500" /> Sensation & Symptoms
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm relative overflow-hidden flex flex-col h-full">
+          <h3 className="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-rose-500" /> Sensation & Symptoms
           </h3>
           
           <div className="flex-1 flex flex-col gap-4">
@@ -261,16 +261,16 @@ const PatientIntake = () => {
               name="symptoms"
               value={formData.symptoms}
               onChange={handleChange}
-              className="w-full flex-1 min-h-[250px] bg-slate-50 border border-slate-200 rounded-xl p-5 text-sm text-slate-800 focus:bg-white focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none transition-all shadow-sm resize-none"
+              className="w-full flex-1 min-h-[250px] bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-800 focus:bg-white focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none transition-all shadow-sm resize-none"
               placeholder="Describe current medical complaints and symptoms in detail for AI analysis..."
               required
             />
             
-            <div className="p-5 bg-blue-50/50 rounded-xl border border-blue-100 border-dashed">
-              <h4 className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+            <div className="p-4 bg-teal-50/60 rounded-xl border border-teal-100">
+              <h4 className="text-xs font-bold text-brand-teal uppercase tracking-wider mb-1 flex items-center gap-1.5">
                 <Zap className="h-3.5 w-3.5" /> Intelligence Note
               </h4>
-              <p className="text-xs text-slate-500 leading-relaxed italic">
+              <p className="text-xs text-slate-500 leading-relaxed">
                 System processes symptoms using Large Biological Models to calculate risk scores and urgency levels automatically.
               </p>
             </div>
@@ -278,7 +278,7 @@ const PatientIntake = () => {
         </div>
 
         {/* Column 3: Vitals & Action */}
-        <div className="bg-slate-900 rounded-[2rem] p-6 md:p-8 text-white shadow-lg relative overflow-hidden flex flex-col h-full">
+        <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col h-full">
           <div className="absolute top-0 right-0 w-32 h-32 bg-brand-teal/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
           
           <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2 relative z-10">

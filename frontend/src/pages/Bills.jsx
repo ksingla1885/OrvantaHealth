@@ -174,7 +174,8 @@ const Bills = () => {
   /* Filters */
   const STATUSES = ['all', ...Object.keys(STATUS_CONFIG)];
   const filteredBills = bills.filter(b => {
-    const name = `${b.patientId?.userId?.profile?.firstName || ''} ${b.patientId?.userId?.profile?.lastName || ''} ${b.billNumber || b.id}`.toLowerCase();
+    const ptProfile = (b.patient?.user || b.patient?.userId || b.patientId?.user || b.patientId?.userId)?.profile || {};
+    const name = `${ptProfile.firstName || ''} ${ptProfile.lastName || ''} ${b.billNumber || b.id}`.toLowerCase();
     const matchSearch = name.includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || b.status === statusFilter;
     return matchSearch && matchStatus;
@@ -260,31 +261,33 @@ const Bills = () => {
       <div className="space-y-4">
         {filteredBills.length > 0 ? filteredBills.map((bill) => {
           const cfg = getStatusCfg(bill.status);
-          const patientName = bill.patientId?.userId?.profile
-            ? `${bill.patientId.user.profile.firstName} ${bill.patientId.user.profile.lastName}`
+          const patientUser = (bill.patient?.user || bill.patient?.userId || bill.patientId?.user || bill.patientId?.userId);
+          const patientName = patientUser?.profile
+            ? `${patientUser.profile.firstName} ${patientUser.profile.lastName}`.trim()
             : null;
 
-          const doctor = bill.appointmentId?.doctorId;
-          const drName = doctor?.userId?.profile ? `Dr. ${doctor.user.profile.firstName} ${doctor.user.profile.lastName}` : null;
+          const doctor = bill.appointment?.doctor || bill.appointmentId?.doctor || bill.appointmentId?.doctorId;
+          const docUser = (doctor?.user || doctor?.userId);
+          const drName = docUser?.profile ? `Dr. ${docUser.profile.firstName} ${docUser.profile.lastName}`.trim() : null;
           const drDept = doctor?.department;
 
           return (
             <div key={bill.id}
-              className="bg-white rounded-[2rem] border border-slate-100 shadow-sm transition-all duration-500 overflow-hidden relative"
+              className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden relative"
             >
-              {/* Premium Glow & Accent */}
+              {/* Premium Accent */}
               <div className={`absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b ${cfg.bar}`} />
               <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${cfg.bar} opacity-20`} />
 
-              <div className="p-7 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div className="p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center gap-5">
                 {/* Icon Wrapper */}
                 <div className="relative shrink-0">
-                  <div className={`h-16 w-16 rounded-[1.25rem] bg-gradient-to-br ${cfg.bar} flex items-center justify-center text-white shadow-xl ${cfg.glow} transition-transform duration-500`}>
-                    <IndianRupee className="h-7 w-7" />
+                  <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${cfg.bar} flex items-center justify-center text-white shadow-md ${cfg.glow}`}>
+                    <IndianRupee className="h-6 w-6" />
                   </div>
                   {bill.status === 'paid' && (
-                    <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
-                      <CheckCircle className="h-3 w-3 text-white" />
+                    <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                      <CheckCircle className="h-2.5 w-2.5 text-white" />
                     </div>
                   )}
                 </div>
@@ -397,12 +400,12 @@ const Bills = () => {
           );
         }) : (
           /* ── EMPTY STATE ── */
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border border-dashed border-slate-200">
-            <div className="h-16 w-16 rounded-2xl bg-brand-light flex items-center justify-center mb-4">
-              <ReceiptText className="h-8 w-8 text-brand-teal/50" />
+          <div className="flex flex-col items-center justify-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+            <div className="h-14 w-14 rounded-xl bg-teal-50 flex items-center justify-center mb-3">
+              <ReceiptText className="h-7 w-7 text-brand-teal/60" />
             </div>
-            <h3 className="text-lg font-black text-brand-dark mb-2">No Bills Found</h3>
-            <p className="text-sm text-slate-400 font-medium text-center max-w-xs">
+            <h3 className="text-base font-bold text-slate-800 mb-1">No Bills Found</h3>
+            <p className="text-xs text-slate-400 font-medium text-center max-w-xs">
               {search || statusFilter !== 'all'
                 ? 'Try adjusting your search or filter criteria.'
                 : isReceptionist
@@ -411,7 +414,7 @@ const Bills = () => {
             </p>
             {(search || statusFilter !== 'all') && (
               <button onClick={() => { setSearch(''); setStatusFilter('all'); }}
-                className="mt-4 px-5 py-2 rounded-xl bg-brand-light text-brand-teal text-xs font-black uppercase tracking-widest hover:bg-brand-teal hover:text-white transition-all">
+                className="mt-4 px-4 py-2 rounded-xl bg-teal-50 text-brand-teal text-xs font-bold uppercase tracking-wider hover:bg-brand-teal hover:text-white transition-all">
                 Clear Filters
               </button>
             )}
@@ -420,23 +423,23 @@ const Bills = () => {
       </div>
 
       {/* ── INFO BANNER ── */}
-      <div className="flex items-start gap-4 p-5 bg-brand-light rounded-2xl border border-brand-teal/10">
-        <div className="h-9 w-9 rounded-xl bg-brand-teal/10 flex items-center justify-center shrink-0">
+      <div className="flex items-start gap-4 p-5 bg-teal-50/60 rounded-xl border border-teal-100">
+        <div className="h-9 w-9 rounded-lg bg-teal-100 flex items-center justify-center shrink-0">
           <ShieldCheck className="h-4 w-4 text-brand-teal" />
         </div>
         <div>
-          <p className="text-sm font-black text-brand-dark">Secure Billing Environment</p>
-          <p className="text-xs font-medium text-slate-500 mt-1 leading-relaxed">
+          <p className="text-sm font-bold text-slate-900">Secure Billing Environment</p>
+          <p className="text-xs font-medium text-slate-500 mt-0.5 leading-relaxed">
             All transactions are encrypted and secure. For billing queries, contact the hospital billing department at{' '}
-            <span className="font-bold text-brand-dark">+91 98765 43210</span>.
+            <span className="font-bold text-slate-800">+91 98765 43210</span>.
           </p>
         </div>
       </div>
 
       {/* ── MOCK PAYMENT MODAL ── */}
       {showMockModal && selectedBill && (
-        <div className="fixed inset-0 bg-brand-dark/60 backdrop-blur-lg flex items-center justify-center z-[200] p-4" onClick={() => setShowMockModal(false)}>
-          <div className="bg-white rounded-[2rem] shadow-2xl max-w-md w-full overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={() => setShowMockModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
 
             {/* Modal Header */}
             <div className="relative px-8 py-8 bg-brand-teal text-white overflow-hidden">

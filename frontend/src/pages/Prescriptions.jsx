@@ -81,8 +81,11 @@ const Prescriptions = () => {
 
   const filteredPrescriptions = prescriptionsToSource.filter(p => {
     const search = searchTerm.toLowerCase();
-    const doctorName = `${p.doctorId?.userId?.profile?.firstName || ''} ${p.doctorId?.userId?.profile?.lastName || ''}`.toLowerCase();
-    const patientName = `${p.patientId?.userId?.profile?.firstName || ''} ${p.patientId?.userId?.profile?.lastName || ''}`.toLowerCase();
+    const drUser = p.doctor?.user || (typeof p.doctor?.userId === 'object' ? p.doctor.userId : null) || p.doctorId?.user || (typeof p.doctorId?.userId === 'object' ? p.doctorId.userId : null) || {};
+    const ptUser = p.patient?.user || (typeof p.patient?.userId === 'object' ? p.patient.userId : null) || p.patientId?.user || (typeof p.patientId?.userId === 'object' ? p.patientId.userId : null) || {};
+
+    const doctorName = `${drUser.profile?.firstName || ''} ${drUser.profile?.lastName || ''}`.toLowerCase();
+    const patientName = `${ptUser.profile?.firstName || ''} ${ptUser.profile?.lastName || ''}`.toLowerCase();
     const diagnosis = p.diagnosis?.toLowerCase() || '';
     const matchSearch = doctorName.includes(search) || patientName.includes(search) || diagnosis.includes(search);
     
@@ -168,9 +171,9 @@ const Prescriptions = () => {
       <div className="space-y-6">
         {filteredPrescriptions.length > 0 ? (
           filteredPrescriptions.map((p, idx) => (
-            <div key={p.id} className="group bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden animate-slide-up" style={{ animationDelay: `${idx * 50}ms` }}>
+            <div key={p.id} className="group bg-white rounded-xl border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all overflow-hidden animate-slide-up" style={{ animationDelay: `${idx * 50}ms` }}>
               {/* Top Accent Bar */}
-              <div className="h-1.5 w-full bg-gradient-to-r from-brand-dark via-brand-teal to-brand-light" />
+              <div className="h-1 w-full bg-gradient-to-r from-teal-800 via-teal-600 to-emerald-500" />
               
               <div className="p-6 md:p-8">
                 <div className="flex flex-col lg:flex-row gap-8">
@@ -184,8 +187,8 @@ const Prescriptions = () => {
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Attending Physician</p>
                         <h3 className="font-black text-brand-dark font-display leading-tight text-lg">
                           {currentUser.role === 'patient'
-                            ? `Dr. ${p.doctorId?.userId?.profile?.firstName || ''} ${p.doctorId?.userId?.profile?.lastName || 'Expert'}`
-                            : `${p.patientId?.userId?.profile?.firstName || ''} ${p.patientId?.userId?.profile?.lastName || 'Unknown'}`}
+                            ? `Dr. ${(p.doctor?.user || p.doctor?.userId || p.doctorId?.user || p.doctorId?.userId)?.profile?.firstName || ''} ${(p.doctor?.user || p.doctor?.userId || p.doctorId?.user || p.doctorId?.userId)?.profile?.lastName || 'Physician'}`.trim()
+                            : `${(p.patient?.user || p.patient?.userId || p.patientId?.user || p.patientId?.userId)?.profile?.firstName || ''} ${(p.patient?.user || p.patient?.userId || p.patientId?.user || p.patientId?.userId)?.profile?.lastName || 'Patient'}`.trim()}
                         </h3>
                         {currentUser.role !== 'patient' && p.patientId?.medicalRecordNumber && (
                           <span className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full bg-teal-50 border border-teal-100 text-[9px] font-black text-teal-700 uppercase tracking-widest">
@@ -326,18 +329,18 @@ const Prescriptions = () => {
             </div>
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[2.5rem] border border-dashed border-slate-200">
-            <div className="h-20 w-20 rounded-3xl bg-brand-light flex items-center justify-center mb-6">
-              <ClipboardList className="h-10 w-10 text-brand-teal/40" />
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-slate-200">
+            <div className="h-16 w-16 rounded-2xl bg-teal-50 flex items-center justify-center mb-4 text-teal-700">
+              <ClipboardList className="h-8 w-8" />
             </div>
-            <h3 className="text-xl font-black text-brand-dark mb-2 font-display">No Clinical Records</h3>
-            <p className="text-sm text-slate-400 font-medium text-center max-w-xs mb-8">
+            <h3 className="text-lg font-bold text-slate-900 mb-1">No Clinical Records Found</h3>
+            <p className="text-xs text-slate-400 font-medium text-center max-w-xs mb-6">
               {searchTerm ? "No results matched your clinical search criteria." : "You don't have any prescriptions registered in the system yet."}
             </p>
             {searchTerm && (
               <button 
                 onClick={() => setSearchTerm('')}
-                className="px-8 py-3 bg-brand-dark text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+                className="px-6 py-2 bg-slate-900 text-white text-xs font-semibold rounded-lg hover:bg-slate-800 transition-all shadow-xs"
               >
                 Reset Search
               </button>
@@ -347,15 +350,14 @@ const Prescriptions = () => {
       </div>
 
       {/* ── FOOTER NOTICE ── */}
-      <div className="p-6 bg-brand-dark rounded-[2rem] text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-teal opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="flex items-start gap-4 relative z-10">
-          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-            <Bookmark className="h-5 w-5 text-brand-teal" />
+      <div className="p-5 bg-slate-900 rounded-xl text-white relative overflow-hidden border border-slate-800">
+        <div className="flex items-start gap-3 relative z-10">
+          <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0 text-teal-400">
+            <Bookmark className="h-4 w-4" />
           </div>
-          <div className="space-y-1">
-            <p className="text-sm font-black uppercase tracking-widest">Usage Information</p>
-            <p className="text-xs text-white/60 leading-relaxed max-w-2xl">
+          <div className="space-y-0.5">
+            <p className="text-xs font-bold uppercase tracking-wider">Usage & Clinical Verification</p>
+            <p className="text-xs text-slate-400 leading-relaxed max-w-2xl">
               These prescriptions are official clinical documents issued by registered medical professionals at OrvantaHealth. 
               Always consult with your doctor before altering any prescribed medication regimen.
             </p>

@@ -15,9 +15,13 @@ router.get('/doctors', async (req, res) => {
       }
     });
 
-    const activeDoctors = doctors.filter(doc => 
-      doc.user && doc.user.isActive && !doc.user.isOffboarded
-    );
+    const activeDoctors = doctors
+      .filter(doc => doc.user && doc.user.isActive && !doc.user.isOffboarded)
+      .map(doc => ({
+        ...doc,
+        user: doc.user,
+        userId: doc.user ? { ...doc.user, id: doc.userId } : doc.userId
+      }));
 
     res.json({
       success: true,
@@ -188,9 +192,22 @@ router.get('/appointments', async (req, res) => {
       orderBy: { date: 'desc' }
     });
 
+    const formattedAppointments = appointments.map(appt => {
+      const doctorObj = appt.doctor ? {
+        ...appt.doctor,
+        user: appt.doctor.user,
+        userId: appt.doctor.user ? { ...appt.doctor.user, id: appt.doctor.userId } : appt.doctor.userId
+      } : null;
+      return {
+        ...appt,
+        doctor: doctorObj,
+        doctorId: doctorObj || appt.doctorId
+      };
+    });
+
     res.json({
       success: true,
-      data: { appointments }
+      data: { appointments: formattedAppointments }
     });
   } catch (error) {
     console.error('Get appointments error:', error);
@@ -219,9 +236,29 @@ router.get('/bills', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    const formattedBills = bills.map(bill => {
+      const doctorObj = bill.appointment?.doctor ? {
+        ...bill.appointment.doctor,
+        user: bill.appointment.doctor.user,
+        userId: bill.appointment.doctor.user ? { ...bill.appointment.doctor.user, id: bill.appointment.doctor.userId } : bill.appointment.doctor.userId
+      } : null;
+
+      const appointmentObj = bill.appointment ? {
+        ...bill.appointment,
+        doctor: doctorObj,
+        doctorId: doctorObj || bill.appointment.doctorId
+      } : null;
+
+      return {
+        ...bill,
+        appointment: appointmentObj,
+        appointmentId: appointmentObj || bill.appointmentId
+      };
+    });
+
     res.json({
       success: true,
-      data: { bills }
+      data: { bills: formattedBills }
     });
   } catch (error) {
     console.error('Get bills error:', error);
@@ -249,10 +286,18 @@ router.get('/prescriptions', async (req, res) => {
 
     // Map fields to match frontend expectations
     const mappedPrescriptions = prescriptions.map(p => {
+      const doctorObj = p.doctor ? {
+        ...p.doctor,
+        user: p.doctor.user,
+        userId: p.doctor.user ? { ...p.doctor.user, id: p.doctor.userId } : p.doctor.userId
+      } : null;
+
       return {
         ...p,
         medications: p.medicines, // map medicines to medications
-        instructions: p.advice   // map advice to instructions
+        instructions: p.advice,   // map advice to instructions
+        doctor: doctorObj,
+        doctorId: doctorObj || p.doctorId
       };
     });
 

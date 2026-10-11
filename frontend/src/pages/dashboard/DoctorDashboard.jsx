@@ -9,6 +9,7 @@ import {
 import api from '../../services/api';
 import { formatDistanceToNow, format } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
+
 const DoctorDashboard = () => {
   const [data, setData] = useState(null);
   const [triageReferrals, setTriageReferrals] = useState([]);
@@ -24,8 +25,6 @@ const DoctorDashboard = () => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-
 
   const fetchStats = async () => {
     try {
@@ -54,29 +53,27 @@ const DoctorDashboard = () => {
     }
   };
 
-
-
   const getDutyBadgeStyles = () => {
     switch (dutyStatus) {
       case 'rounds':
-        return { bg: 'bg-amber-50 border-amber-100 text-amber-700', dot: 'bg-amber-500', label: 'On Rounds / Surgery' };
+        return { bg: 'bg-amber-50 border-amber-200 text-amber-800', dot: 'bg-amber-500', label: 'On Rounds / Surgery' };
       case 'busy':
-        return { bg: 'bg-rose-50 border-rose-100 text-rose-700', dot: 'bg-rose-500', label: 'Emergency / DND' };
+        return { bg: 'bg-rose-50 border-rose-200 text-rose-800', dot: 'bg-rose-500', label: 'Emergency / DND' };
       default:
-        return { bg: 'bg-emerald-50 border-emerald-100 text-emerald-700', dot: 'bg-emerald-500', label: 'Available for Consults' };
+        return { bg: 'bg-emerald-50 border-emerald-200 text-emerald-800', dot: 'bg-emerald-500', label: 'Available for Consults' };
     }
   };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-5">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-4">
         <div className="relative">
-          <div className="w-16 h-16 border-4 border-brand-teal/20 border-t-brand-teal rounded-full animate-spin"></div>
-          <Activity className="absolute inset-0 m-auto h-6 w-6 text-brand-teal animate-pulse" />
+          <div className="w-12 h-12 border-3 border-teal-500/20 border-t-teal-600 rounded-full animate-spin"></div>
+          <Activity className="absolute inset-0 m-auto h-5 w-5 text-teal-600 animate-pulse" />
         </div>
         <div className="text-center space-y-1">
-          <p className="text-sm font-black text-brand-dark uppercase tracking-[0.2em] font-display">Initializing Medical Command Center</p>
-          <p className="text-xs text-slate-400 font-medium">Synchronizing encrypted triage channels & patient telemetry...</p>
+          <p className="text-xs font-bold text-slate-800 uppercase tracking-widest">Initializing Clinical Workstation</p>
+          <p className="text-xs text-slate-400">Loading patient queues and clinical telemetry...</p>
         </div>
       </div>
     );
@@ -84,19 +81,19 @@ const DoctorDashboard = () => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-[3rem] p-12 border border-rose-100 shadow-2xl text-center max-w-xl mx-auto space-y-6 my-12 animate-scale-in">
-        <div className="w-20 h-20 bg-rose-50 rounded-[2rem] flex items-center justify-center mx-auto text-rose-500 shadow-inner">
-          <AlertCircle className="h-10 w-10 stroke-[2]" />
+      <div className="bg-white rounded-2xl p-8 border border-rose-200 shadow-sm text-center max-w-lg mx-auto space-y-4 my-12 animate-scale-in">
+        <div className="w-14 h-14 bg-rose-50 rounded-xl flex items-center justify-center mx-auto text-rose-500">
+          <AlertCircle className="h-7 w-7" />
         </div>
-        <div className="space-y-2">
-          <h3 className="text-2xl font-black text-slate-900 font-display">{error}</h3>
-          <p className="text-sm text-slate-500 font-medium leading-relaxed">
+        <div className="space-y-1.5">
+          <h3 className="text-lg font-bold text-slate-900">{error}</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
             Connection to central hospital database failed. Please verify network credentials or retry.
           </p>
         </div>
         <button 
           onClick={fetchStats}
-          className="px-8 py-4 bg-brand-teal text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-brand-dark transition-all shadow-lg hover:scale-105 active:scale-95"
+          className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-lg font-bold text-xs uppercase tracking-wider transition-all shadow-sm active:scale-95"
         >
           Retry Connection
         </button>
@@ -110,146 +107,143 @@ const DoctorDashboard = () => {
     : (user?.profile?.lastName || 'Practitioner');
 
   return (
-    <div className="space-y-10 animate-fade-in pb-16">
+    <div className="space-y-8 animate-fade-in pb-16 font-sans">
       
       {/* ── CLINICIAN HERO COMMAND BANNER ── */}
-      <div className="relative bg-white rounded-[2rem] p-8 md:p-10 border border-slate-100 shadow-sm overflow-hidden flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+      <div className="relative bg-white rounded-2xl p-6 md:p-8 border border-slate-200/90 shadow-xs overflow-hidden flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         
         {/* Subtle background accent */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-teal/5 rounded-full blur-[80px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/3" />
         
         {/* Left Column: Doctor Profile & Greeting */}
-        <div className="relative z-10 space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-100 text-slate-500">
-              <Sparkles className="h-3 w-3 text-brand-teal" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Clinical Decision Suite</span>
+        <div className="relative z-10 space-y-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-teal-50 border border-teal-200/60 text-teal-800">
+              <Sparkles className="h-3 w-3 text-teal-600" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Clinical Decision Suite</span>
             </div>
             <span className="text-xs text-slate-400 font-medium">
               {format(currentTime, 'EEEE, MMM dd • hh:mm a')}
             </span>
           </div>
 
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight leading-tight">
-              Welcome back, <span className="text-brand-teal">Dr. {doctorName}</span>
+          <div className="space-y-1.5">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
+              Welcome back, <span className="text-teal-700">Dr. {doctorName}</span>
             </h1>
-            <div className="flex items-center gap-3 text-xs text-slate-500 font-medium flex-wrap pt-1">
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-600">
-                <Stethoscope className="h-3.5 w-3.5 text-brand-teal" />
-                {user?.doctorProfile?.specialization || 'Cardiology & Internal Medicine'}
+            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium flex-wrap pt-0.5">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 font-medium">
+                <Stethoscope className="h-3.5 w-3.5 text-teal-600" />
+                {user?.doctorProfile?.specialization || 'General & Internal Medicine'}
               </span>
-              <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 text-[11px] font-medium tracking-wide">
-                Wing: {user?.doctorProfile?.department || 'Main Clinical Operations'}
+              <span className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 text-[11px]">
+                Department: {user?.doctorProfile?.department || 'Outpatient Consultations'}
               </span>
-              <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 text-[11px] font-medium tracking-wide">
-                Lic. #{user?.doctorProfile?.licenseNumber || 'MD-84920'}
+              <span className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 text-[11px]">
+                Lic: #{user?.doctorProfile?.licenseNumber || 'MD-84920'}
               </span>
             </div>
           </div>
         </div>
 
         {/* Right Column: Duty Switcher & Live Controls */}
-        <div className="relative z-10 flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-4 shrink-0">
+        <div className="relative z-10 flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-3 shrink-0">
           
           {/* Shift Duty Status Badge */}
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${getDutyBadgeStyles().bg} transition-all`}>
-            <div className={`w-2.5 h-2.5 rounded-full ${getDutyBadgeStyles().dot} shadow-sm`} />
+          <div className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${getDutyBadgeStyles().bg} transition-all`}>
+            <div className={`w-2 h-2 rounded-full ${getDutyBadgeStyles().dot}`} />
             <div className="flex flex-col">
-              <span className="text-[9px] font-bold uppercase tracking-widest opacity-70">Shift Status</span>
-              <span className="text-xs font-bold">
+              <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">Shift Status</span>
+              <span className="text-xs font-bold leading-tight">
                 {getDutyBadgeStyles().label}
               </span>
             </div>
           </div>
 
           {/* Quick Action Buttons */}
-          <div className="flex gap-3 w-full sm:w-auto">
+          <div className="flex gap-2 w-full sm:w-auto">
             <button
               onClick={fetchStats}
-              className="p-3.5 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 rounded-xl border border-slate-200 transition-colors shadow-sm"
-              title="Refresh Clinical Telemetry"
+              className="p-2.5 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-800 rounded-lg border border-slate-200 transition-colors shadow-xs"
+              title="Refresh Workspace Data"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
             <button
               onClick={() => window.location.href = '/receptionist/triage/queue'}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium text-sm rounded-xl transition-colors shadow-sm"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg transition-colors shadow-xs"
             >
-              <Zap className="h-4 w-4 text-brand-teal" /> Open Triage Lobby
+              <Zap className="h-3.5 w-3.5 text-teal-400" /> Open Triage Lobby
             </button>
           </div>
         </div>
       </div>
 
-
-
       {/* ── FEATURED NEXT-UP PATIENT HIGHLIGHT CARD ── */}
       {triageReferrals.length > 0 && (
-        <div className="relative group bg-gradient-to-r from-teal-950 via-slate-900 to-slate-950 rounded-[3rem] p-8 md:p-10 text-white shadow-2xl overflow-hidden border-2 border-teal-500/30 animate-slide-up">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-brand-teal/20 rounded-full blur-3xl pointer-events-none group-hover:scale-125 transition-transform duration-700" />
+        <div className="relative bg-gradient-to-r from-slate-900 via-slate-800 to-teal-950 rounded-2xl p-6 md:p-8 text-white shadow-md overflow-hidden border border-slate-700/80 animate-slide-up">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
           
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-            <div className="space-y-4 flex-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="px-3.5 py-1.5 bg-amber-400 text-slate-950 font-black text-[10px] uppercase tracking-widest rounded-full animate-bounce flex items-center gap-1.5 shadow-md">
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-3 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-1 bg-amber-400 text-slate-950 font-bold text-[10px] uppercase tracking-wider rounded-md flex items-center gap-1 shadow-xs">
                   ⚡ PRIORITY PATIENT IN QUEUE
                 </span>
-                <span className="text-teal-200/70 font-mono text-xs bg-white/10 px-3 py-1 rounded-full border border-white/10">
-                  MRN / Triage ID: #{triageReferrals[0].triageId}
+                <span className="text-teal-200/80 font-mono text-xs bg-white/10 px-2.5 py-0.5 rounded-md border border-white/10">
+                  MRN #{triageReferrals[0].triageId}
                 </span>
               </div>
 
               <div className="space-y-1">
-                <h2 className="text-3xl md:text-4xl font-black font-display tracking-tight">
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight">
                   {triageReferrals[0].patientName}
-                  <span className="text-lg font-medium text-teal-200/60 ml-3">
+                  <span className="text-sm font-normal text-teal-200/70 ml-2">
                     ({triageReferrals[0].age}Y • {triageReferrals[0].gender})
                   </span>
                 </h2>
-                <p className="text-base text-teal-100/80 italic font-medium max-w-2xl leading-relaxed">
+                <p className="text-sm text-teal-100/90 italic font-medium max-w-2xl leading-relaxed">
                   "{triageReferrals[0].symptoms}"
                 </p>
               </div>
 
               {/* Patient Vitals & Clinical AI Badges */}
-              <div className="flex items-center gap-3 flex-wrap pt-2">
-                {/* Fever warning badge */}
-                <div className={`px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border ${
+              <div className="flex items-center gap-2.5 flex-wrap pt-1">
+                <div className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border ${
                   parseFloat(triageReferrals[0].vitals?.temperature) >= 100
-                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-lg shadow-rose-900/30'
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
                     : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                 }`}>
-                  <Thermometer className="h-4 w-4" />
+                  <Thermometer className="h-3.5 w-3.5" />
                   <span>Temp: {triageReferrals[0].vitals?.temperature || '--'}°F</span>
                   {parseFloat(triageReferrals[0].vitals?.temperature) >= 100 && (
-                    <span className="px-1.5 py-0.5 bg-rose-500 text-white rounded text-[8px] font-black animate-pulse">HIGH FEVER</span>
+                    <span className="px-1.5 py-0.2 bg-rose-500 text-white rounded text-[8px] font-bold animate-pulse">FEVER</span>
                   )}
                 </div>
 
-                <div className="px-4 py-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
+                <div className="px-3 py-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
                   <span>Risk Level: {triageReferrals[0].aiAnalysis?.riskScore || '7.5'}/10</span>
                 </div>
 
-                <div className="px-4 py-2 bg-brand-teal/30 text-teal-200 border border-brand-teal/40 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2">
-                  <Activity className="h-4 w-4" />
+                <div className="px-3 py-1.5 bg-teal-500/20 text-teal-200 border border-teal-500/30 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <Activity className="h-3.5 w-3.5" />
                   <span>AI: {triageReferrals[0].aiAnalysis?.possibleConditions?.[0] || 'Triage Assessment'}</span>
                 </div>
               </div>
             </div>
 
             {/* Action Callout */}
-            <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end gap-3 shrink-0">
+            <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end gap-2 shrink-0">
               <button
                 onClick={() => window.location.href = '/receptionist/triage/queue'}
-                className="px-10 py-5 bg-gradient-to-r from-teal-400 to-brand-teal text-slate-950 font-black text-xs uppercase tracking-widest rounded-2xl shadow-2xl shadow-teal-500/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
+                className="px-6 py-3 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
               >
-                <Stethoscope className="h-5 w-5 stroke-[2.5]" />
-                TREAT PATIENT NOW
+                <Stethoscope className="h-4 w-4 stroke-[2.5]" />
+                Treat Patient Now
               </button>
-              <p className="text-[10px] font-black text-teal-200/50 uppercase tracking-widest text-center lg:text-right">
-                Referred directly by triage staff
+              <p className="text-[10px] text-teal-200/60 uppercase tracking-wider text-center lg:text-right font-medium">
+                Referred by triage intake
               </p>
             </div>
           </div>
@@ -257,79 +251,55 @@ const DoctorDashboard = () => {
       )}
 
       {/* ── CLINICAL METRICS ROW ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Metric 1 */}
-        <div className="relative group bg-white rounded-[2.75rem] p-8 border border-slate-100 shadow-premium transition-all duration-500 hover:shadow-2xl hover:-translate-y-1.5 overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-teal/5 rounded-bl-[5rem] transition-all group-hover:scale-110" />
-          
-          <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity">
-            <svg className="w-40 h-40 transform -rotate-90">
-              <circle cx="80" cy="80" r="55" stroke="currentColor" strokeWidth="12" className="text-brand-teal" fill="transparent" strokeDasharray="345" strokeDashoffset="70" />
-            </svg>
-          </div>
-
-          <div className="relative z-10 flex items-center justify-between h-full">
-            <div className="space-y-2">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Today's Schedule</p>
-              <p className="text-5xl font-black text-brand-dark font-display tracking-tight">{stats.todayPatients}</p>
-              <div className="flex items-center gap-2 pt-1">
-                <span className="w-2 h-2 rounded-full bg-brand-teal animate-pulse" />
-                <span className="text-[10px] font-black text-brand-teal uppercase tracking-widest">Patients Awaiting Consult</span>
-              </div>
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Today's Schedule</span>
+            <div className="p-2.5 bg-teal-50 rounded-xl text-teal-700">
+              <Calendar className="h-5 w-5" />
             </div>
-            <div className="p-5 bg-brand-light rounded-[2.25rem] text-brand-teal group-hover:bg-brand-teal group-hover:text-white transition-all shadow-inner">
-              <Calendar className="h-9 w-9 stroke-[2.5]" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl font-bold text-slate-900 tracking-tight">{stats.todayPatients}</p>
+            <div className="flex items-center gap-1.5 pt-1">
+              <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+              <span className="text-xs font-semibold text-teal-700">Patients Awaiting Consult</span>
             </div>
           </div>
         </div>
 
         {/* Metric 2 */}
-        <div className="relative group bg-white rounded-[2.75rem] p-8 border border-slate-100 shadow-premium transition-all duration-500 hover:shadow-2xl hover:-translate-y-1.5 overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-bl-[5rem] transition-all group-hover:scale-110" />
-
-          <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity">
-            <svg className="w-40 h-40 transform -rotate-90">
-              <circle cx="80" cy="80" r="55" stroke="currentColor" strokeWidth="12" className="text-blue-500" fill="transparent" strokeDasharray="345" strokeDashoffset="95" />
-            </svg>
-          </div>
-
-          <div className="relative z-10 flex items-center justify-between h-full">
-            <div className="space-y-2">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Patient Network</p>
-              <p className="text-5xl font-black text-brand-dark font-display tracking-tight">{stats.totalNetwork}</p>
-              <div className="flex items-center gap-2 pt-1">
-                <span className="w-2 h-2 rounded-full bg-blue-500" />
-                <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Active Biometric Profiles</span>
-              </div>
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Patient Network</span>
+            <div className="p-2.5 bg-blue-50 rounded-xl text-blue-700">
+              <Users className="h-5 w-5" />
             </div>
-            <div className="p-5 bg-blue-50 rounded-[2.25rem] text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
-              <Users className="h-9 w-9 stroke-[2.5]" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl font-bold text-slate-900 tracking-tight">{stats.totalNetwork}</p>
+            <div className="flex items-center gap-1.5 pt-1">
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="text-xs font-semibold text-blue-700">Registered Patient Profiles</span>
             </div>
           </div>
         </div>
 
         {/* Metric 3 */}
-        <div className="relative group bg-white rounded-[2.75rem] p-8 border border-slate-100 shadow-premium transition-all duration-500 hover:shadow-2xl hover:-translate-y-1.5 overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-bl-[5rem] transition-all group-hover:scale-110" />
-
-          <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity">
-            <svg className="w-40 h-40 transform -rotate-90">
-              <circle cx="80" cy="80" r="55" stroke="currentColor" strokeWidth="12" className="text-violet-500" fill="transparent" strokeDasharray="345" strokeDashoffset="45" />
-            </svg>
-          </div>
-
-          <div className="relative z-10 flex items-center justify-between h-full">
-            <div className="space-y-2">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Clinical Assets</p>
-              <p className="text-5xl font-black text-brand-dark font-display tracking-tight">{stats.activeScripts}</p>
-              <div className="flex items-center gap-2 pt-1">
-                <span className="w-2 h-2 rounded-full bg-violet-500" />
-                <span className="text-[10px] font-black text-violet-500 uppercase tracking-widest">Scripts Authorized</span>
-              </div>
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clinical Assets</span>
+            <div className="p-2.5 bg-violet-50 rounded-xl text-violet-700">
+              <FileText className="h-5 w-5" />
             </div>
-            <div className="p-5 bg-violet-50 rounded-[2.25rem] text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition-all shadow-inner">
-              <FileText className="h-9 w-9 stroke-[2.5]" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-3xl font-bold text-slate-900 tracking-tight">{stats.activeScripts}</p>
+            <div className="flex items-center gap-1.5 pt-1">
+              <span className="w-2 h-2 rounded-full bg-violet-500" />
+              <span className="text-xs font-semibold text-violet-700">Issued Prescriptions</span>
             </div>
           </div>
         </div>
@@ -337,62 +307,62 @@ const DoctorDashboard = () => {
 
       {/* ── ALL REFERRED TRIAGE TRANSFERS ── */}
       {triageReferrals.length > 1 && (
-        <div className="bg-white rounded-[3rem] p-8 md:p-10 border border-slate-100 shadow-premium space-y-8">
+        <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/90 shadow-xs space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-brand-dark text-white rounded-2xl shadow-md">
-                <AlertCircle className="h-6 w-6 stroke-[2.5]" />
+              <div className="p-2.5 bg-slate-900 text-white rounded-xl shadow-xs">
+                <AlertCircle className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-brand-dark font-display">Triage Referrals Waiting Room</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">({triageReferrals.length}) Patients awaiting clinical response</p>
+                <h2 className="text-lg font-bold text-slate-900">Triage Referrals Waiting Room</h2>
+                <p className="text-xs text-slate-500">({triageReferrals.length}) Patients awaiting clinical response</p>
               </div>
             </div>
             <button
               onClick={() => window.location.href = '/receptionist/triage/queue'}
-              className="hidden sm:flex items-center gap-2 text-xs font-black text-brand-teal hover:text-brand-dark transition-colors uppercase tracking-widest"
+              className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-900 transition-colors uppercase tracking-wider"
             >
               View Full Lobby <ArrowUpRight className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {triageReferrals.slice(1).map((referral) => (
               <div 
                 key={referral.id} 
-                className="group relative bg-slate-50/70 hover:bg-white border border-slate-200/70 rounded-[2.5rem] p-7 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 space-y-5"
+                className="bg-slate-50/70 hover:bg-white border border-slate-200 rounded-xl p-5 transition-all hover:shadow-sm space-y-4"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-2xl bg-brand-light text-brand-teal font-black flex items-center justify-center text-base shadow-inner">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-lg bg-teal-50 text-teal-700 font-bold flex items-center justify-center text-sm border border-teal-100">
                       {referral.patientName[0]}
                     </div>
                     <div>
-                      <p className="font-black text-brand-dark text-base">{referral.patientName}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{referral.age}y • {referral.gender}</p>
+                      <p className="font-bold text-slate-900 text-sm">{referral.patientName}</p>
+                      <p className="text-[11px] text-slate-400">{referral.age}y • {referral.gender}</p>
                     </div>
                   </div>
-                  <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider ${
+                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
                     referral.aiAnalysis?.urgencyLevel === 'Emergency' ? 'bg-rose-500 text-white' : 
-                    referral.aiAnalysis?.urgencyLevel === 'Urgent' ? 'bg-amber-500 text-white' : 'bg-brand-teal text-white'
+                    referral.aiAnalysis?.urgencyLevel === 'Urgent' ? 'bg-amber-500 text-white' : 'bg-teal-600 text-white'
                   }`}>
                     {referral.aiAnalysis?.urgencyLevel || 'Standard'}
                   </span>
                 </div>
 
-                <div className="p-4 bg-white rounded-2xl border border-slate-100 space-y-1.5 shadow-sm">
-                  <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    <span className="flex items-center gap-1 text-brand-teal"><Activity className="h-3 w-3" /> AI Scan</span>
-                    <span className="text-rose-500">Risk: {referral.aiAnalysis?.riskScore}/10</span>
+                <div className="p-3 bg-white rounded-lg border border-slate-200/80 space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase">
+                    <span className="flex items-center gap-1 text-teal-700"><Activity className="h-3 w-3" /> AI Scan</span>
+                    <span className="text-rose-600">Risk: {referral.aiAnalysis?.riskScore}/10</span>
                   </div>
                   <p className="text-xs text-slate-600 font-medium line-clamp-2 italic">"{referral.symptoms}"</p>
                 </div>
 
                 <button
                   onClick={() => window.location.href = '/receptionist/triage/queue'}
-                  className="w-full py-3.5 bg-brand-dark hover:bg-brand-teal text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 group-hover:scale-[1.02]"
+                  className="w-full py-2 bg-slate-900 hover:bg-teal-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-xs flex items-center justify-center gap-2"
                 >
-                  <Stethoscope className="h-4 w-4" /> Start Consultation
+                  <Stethoscope className="h-3.5 w-3.5" /> Start Consultation
                 </button>
               </div>
             ))}
@@ -401,50 +371,45 @@ const DoctorDashboard = () => {
       )}
 
       {/* ── MAIN WORKSPACE AREA ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Interaction Log / Clinical Timeline */}
-        <div className="lg:col-span-2 bg-white rounded-[3rem] p-8 md:p-10 border border-slate-100 shadow-premium overflow-hidden relative space-y-8">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-teal to-brand-dark opacity-50" />
-          
-          <div className="flex items-center justify-between">
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 md:p-8 border border-slate-200/90 shadow-xs space-y-6">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
-              <h2 className="text-2xl font-black text-brand-dark font-display">Recent Clinical Timeline</h2>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Verified patient interaction logs</p>
+              <h2 className="text-lg font-bold text-slate-900">Recent Clinical Timeline</h2>
+              <p className="text-xs text-slate-500">Verified patient interaction logs</p>
             </div>
             <button 
               onClick={() => window.location.href = '/doctor/completed'}
-              className="flex items-center gap-2 px-5 py-2.5 bg-slate-50 hover:bg-brand-dark hover:text-white rounded-full text-[10px] font-black transition-all group border border-slate-100"
+              className="flex items-center gap-1 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg text-xs font-semibold text-slate-700 transition-colors border border-slate-200"
             >
-              EXAMINED PATIENTS
-              <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              Examined Patients
+              <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {recentInteractions.length > 0 ? (
               recentInteractions.map((interaction) => (
-                <div key={interaction.id} className="flex items-center gap-6 p-6 rounded-[2.25rem] bg-slate-50/60 hover:bg-slate-50 border border-slate-100/70 hover:border-brand-teal/20 transition-all group relative">
-                  <div className="h-14 w-14 rounded-2xl bg-brand-teal/10 text-brand-teal flex-shrink-0 flex items-center justify-center group-hover:bg-brand-teal group-hover:text-white transition-all shadow-inner font-black">
-                    <Stethoscope className="h-7 w-7" />
+                <div key={interaction.id} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50/70 hover:bg-slate-50 border border-slate-200/80 transition-all">
+                  <div className="h-10 w-10 rounded-lg bg-teal-50 text-teal-700 shrink-0 flex items-center justify-center border border-teal-100">
+                    <Stethoscope className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3">
-                      <p className="text-base font-black text-brand-dark">Patient Recovery Encounter</p>
-                      <span className="px-3 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-100 text-[9px] font-black uppercase rounded-full tracking-widest">Verified</span>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-slate-900">{interaction.patientName}</p>
+                      <span className="px-2 py-0.2 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold rounded-full">Verified</span>
                     </div>
-                    <p className="text-xs text-slate-500 font-medium mt-1 truncate">
-                      Patient: <span className="text-brand-dark font-bold font-display">{interaction.patientName}</span>
-                    </p>
-                    <div className="flex items-center gap-4 mt-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest flex-wrap">
-                      <span className="flex items-center gap-1 text-brand-teal"><Activity className="h-3 w-3" /> {interaction.procedure}</span>
+                    <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-500 flex-wrap">
+                      <span className="flex items-center gap-1 text-teal-700 font-medium"><Activity className="h-3 w-3" /> {interaction.procedure}</span>
                       <span>•</span>
-                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {formatDistanceToNow(new Date(interaction.time))} ago</span>
+                      <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-slate-400" /> {formatDistanceToNow(new Date(interaction.time))} ago</span>
                     </div>
                   </div>
                   <button 
                     onClick={() => window.location.href = '/doctor/appointments'}
-                    className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-200 text-slate-400 group-hover:text-brand-teal group-hover:border-brand-teal/30 transition-all hover:scale-110"
+                    className="p-2 bg-white rounded-lg border border-slate-200 text-slate-500 hover:text-teal-700 hover:border-teal-300 transition-colors shadow-xs"
                     title="View Encounters"
                   >
                     <Clipboard className="h-4 w-4" />
@@ -452,9 +417,9 @@ const DoctorDashboard = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-16 bg-slate-50/50 rounded-[3rem] border border-dashed border-slate-200 space-y-3">
-                <Activity className="h-10 w-10 text-slate-300 mx-auto" />
-                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No recent clinical logs detected</p>
+              <div className="text-center py-12 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 space-y-2">
+                <Activity className="h-8 w-8 text-slate-300 mx-auto" />
+                <p className="text-xs font-semibold text-slate-500">No recent clinical encounters recorded today</p>
               </div>
             )}
           </div>
@@ -462,80 +427,74 @@ const DoctorDashboard = () => {
 
         {/* ── QUICK LAUNCHPAD SIDEBAR ── */}
         <div className="space-y-6 flex flex-col">
-          <div className="bg-gradient-to-br from-brand-dark to-slate-900 rounded-[3rem] p-8 md:p-10 text-white shadow-2xl relative overflow-hidden flex-1 group border border-white/5 space-y-8">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-brand-teal/10 rounded-full blur-3xl -mr-24 -mt-24 transition-transform duration-1000 group-hover:scale-150" />
-            
-            <div className="relative z-10 flex flex-col h-full justify-between space-y-6">
-              <div>
-                <h3 className="text-2xl font-black font-display mb-6">Clinician Actions</h3>
-                
-                <div className="space-y-3">
-                  <button 
-                    onClick={() => window.location.href = '/doctor/appointments'}
-                    className="w-full flex items-center justify-between p-5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[1.75rem] transition-all group/btn"
-                  >
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-3 bg-brand-teal rounded-xl shadow-md">
-                        <Calendar className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-white text-sm">Access Schedule</p>
-                        <p className="text-[9px] text-teal-100/40 uppercase tracking-widest font-black">View Queue & Slots</p>
-                      </div>
+          <div className="bg-slate-900 rounded-2xl p-6 md:p-8 text-white shadow-md relative overflow-hidden flex-1 border border-slate-800 space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-base font-bold text-white">Clinician Actions</h3>
+              
+              <div className="space-y-2.5">
+                <button 
+                  onClick={() => window.location.href = '/doctor/appointments'}
+                  className="w-full flex items-center justify-between p-3.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 rounded-xl transition-all"
+                >
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="p-2 bg-teal-500/20 text-teal-400 rounded-lg">
+                      <Calendar className="h-4 w-4" />
                     </div>
-                    <ArrowRight className="h-5 w-5 text-white/30 group-hover/btn:text-white group-hover/btn:translate-x-1 transition-all" />
-                  </button>
+                    <div>
+                      <p className="font-semibold text-white text-xs">Access Schedule</p>
+                      <p className="text-[10px] text-slate-400">View Appointments & Queue</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-400" />
+                </button>
 
-                  <button 
-                    onClick={() => window.location.href = '/doctor/prescriptions'}
-                    className="w-full flex items-center justify-between p-5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[1.75rem] transition-all group/btn"
-                  >
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-3 bg-blue-500 rounded-xl shadow-md">
-                        <Clipboard className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-white text-sm">Write Prescription</p>
-                        <p className="text-[9px] text-teal-100/40 uppercase tracking-widest font-black">New Clinical Script</p>
-                      </div>
+                <button 
+                  onClick={() => window.location.href = '/doctor/prescriptions'}
+                  className="w-full flex items-center justify-between p-3.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 rounded-xl transition-all"
+                >
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg">
+                      <Clipboard className="h-4 w-4" />
                     </div>
-                    <ArrowRight className="h-5 w-5 text-white/30 group-hover/btn:text-white group-hover/btn:translate-x-1 transition-all" />
-                  </button>
+                    <div>
+                      <p className="font-semibold text-white text-xs">Prescription Pad</p>
+                      <p className="text-[10px] text-slate-400">Issued Clinical Prescriptions</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-400" />
+                </button>
 
-                  <button 
-                    onClick={() => window.location.href = '/dashboard/patients'}
-                    className="w-full flex items-center justify-between p-5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-[1.75rem] transition-all group/btn"
-                  >
-                    <div className="flex items-center gap-4 text-left">
-                      <div className="p-3 bg-emerald-500 rounded-xl shadow-md">
-                        <Users className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-white text-sm">Patient Directory</p>
-                        <p className="text-[9px] text-teal-100/40 uppercase tracking-widest font-black">Encrypted Search</p>
-                      </div>
+                <button 
+                  onClick={() => window.location.href = '/dashboard/patients'}
+                  className="w-full flex items-center justify-between p-3.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 rounded-xl transition-all"
+                >
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg">
+                      <Users className="h-4 w-4" />
                     </div>
-                    <ArrowRight className="h-5 w-5 text-white/30 group-hover/btn:text-white group-hover/btn:translate-x-1 transition-all" />
-                  </button>
-                </div>
+                    <div>
+                      <p className="font-semibold text-white text-xs">Patient Directory</p>
+                      <p className="text-[10px] text-slate-400">EMR Health Records</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-slate-400" />
+                </button>
               </div>
+            </div>
 
-              <div className="p-6 bg-white/5 rounded-[2.25rem] border border-white/5 space-y-2">
-                <div className="flex items-center gap-2 text-teal-300">
-                  <ShieldCheck className="h-4 w-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Medical Compliance</span>
-                </div>
-                <p className="text-xs text-teal-100/60 leading-relaxed font-medium italic">
-                  "All prescriptions authored within this portal undergo real-time cryptographic audit logging for HIPAA compliance."
-                </p>
+            <div className="p-4 bg-slate-800/60 rounded-xl border border-slate-700/80 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-teal-400">
+                <ShieldCheck className="h-4 w-4" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Clinical Standards</span>
               </div>
-
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                All prescriptions and medical records authored within this suite are cryptographically logged for audit compliance.
+              </p>
             </div>
           </div>
         </div>
 
       </div>
-
 
     </div>
   );

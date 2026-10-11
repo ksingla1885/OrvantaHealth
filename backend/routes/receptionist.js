@@ -46,7 +46,29 @@ router.get('/appointments', async (req, res) => {
       orderBy: [{ date: 'desc' }]
     });
 
-    res.json({ success: true, data: { appointments } });
+    const formattedAppointments = appointments.map(appt => {
+      const doctorObj = appt.doctor ? {
+        ...appt.doctor,
+        user: appt.doctor.user,
+        userId: appt.doctor.user ? { ...appt.doctor.user, id: appt.doctor.userId } : appt.doctor.userId
+      } : null;
+
+      const patientObj = appt.patient ? {
+        ...appt.patient,
+        user: appt.patient.user,
+        userId: appt.patient.user ? { ...appt.patient.user, id: appt.patient.userId } : appt.patient.userId
+      } : null;
+
+      return {
+        ...appt,
+        doctor: doctorObj,
+        doctorId: doctorObj || appt.doctorId,
+        patient: patientObj,
+        patientId: patientObj || appt.patientId
+      };
+    });
+
+    res.json({ success: true, data: { appointments: formattedAppointments } });
   } catch (error) {
     console.error('Get appointments error:', error);
     res.status(500).json({ success: false, message: 'Server error fetching appointments' });
@@ -145,7 +167,7 @@ router.patch('/appointment/:appointmentId/cancel', [
 router.get('/doctors/availability', async (req, res) => {
   try {
     const doctors = await prisma.doctor.findMany({
-      include: { user: { select: { profile: true, isActive: true, isOffboarded: true } } }
+      include: { user: { select: { id: true, email: true, profile: true, isActive: true, isOffboarded: true } } }
     });
 
     const activeDoctors = doctors.filter(doc => doc.user && doc.user.isActive && !doc.user.isOffboarded).map(doc => ({
@@ -155,7 +177,8 @@ router.get('/doctors/availability', async (req, res) => {
       consultationFee: doc.consultationFee,
       isAvailable: doc.isAvailable,
       dutyStatus: doc.dutyStatus,
-      user: doc.user
+      user: doc.user,
+      userId: doc.user ? { ...doc.user, id: doc.userId } : doc.userId
     }));
 
     res.json({ success: true, data: { doctors: activeDoctors } });
@@ -421,7 +444,35 @@ router.get('/bills', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json({ success: true, data: { bills } });
+    const formattedBills = bills.map(bill => {
+      const patientObj = bill.patient ? {
+        ...bill.patient,
+        user: bill.patient.user,
+        userId: bill.patient.user ? { ...bill.patient.user, id: bill.patient.userId } : bill.patient.userId
+      } : null;
+
+      const doctorObj = bill.appointment?.doctor ? {
+        ...bill.appointment.doctor,
+        user: bill.appointment.doctor.user,
+        userId: bill.appointment.doctor.user ? { ...bill.appointment.doctor.user, id: bill.appointment.doctor.userId } : bill.appointment.doctor.userId
+      } : null;
+
+      const appointmentObj = bill.appointment ? {
+        ...bill.appointment,
+        doctor: doctorObj,
+        doctorId: doctorObj || bill.appointment.doctorId
+      } : null;
+
+      return {
+        ...bill,
+        patient: patientObj,
+        patientId: patientObj || bill.patientId,
+        appointment: appointmentObj,
+        appointmentId: appointmentObj || bill.appointmentId
+      };
+    });
+
+    res.json({ success: true, data: { bills: formattedBills } });
   } catch (error) {
     console.error('Get bills error:', error);
     res.status(500).json({ success: false, message: 'Server error fetching bills' });
@@ -463,7 +514,29 @@ router.get('/lab-reports', async (req, res) => {
       orderBy: { reportDate: 'desc' }
     });
 
-    res.json({ success: true, data: { labReports } });
+    const formattedLabReports = labReports.map(lr => {
+      const doctorObj = lr.doctor ? {
+        ...lr.doctor,
+        user: lr.doctor.user,
+        userId: lr.doctor.user ? { ...lr.doctor.user, id: lr.doctor.userId } : lr.doctor.userId
+      } : null;
+
+      const patientObj = lr.patient ? {
+        ...lr.patient,
+        user: lr.patient.user,
+        userId: lr.patient.user ? { ...lr.patient.user, id: lr.patient.userId } : lr.patient.userId
+      } : null;
+
+      return {
+        ...lr,
+        doctor: doctorObj,
+        doctorId: doctorObj || lr.doctorId,
+        patient: patientObj,
+        patientId: patientObj || lr.patientId
+      };
+    });
+
+    res.json({ success: true, data: { labReports: formattedLabReports } });
   } catch (error) {
     console.error('Get lab reports error:', error);
     res.status(500).json({ success: false, message: 'Server error fetching lab reports' });
@@ -510,11 +583,29 @@ router.get('/patient/:patientId/prescriptions', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    const mappedPrescriptions = prescriptions.map(p => ({
-      ...p,
-      medications: p.medicines,
-      instructions: p.advice
-    }));
+    const mappedPrescriptions = prescriptions.map(p => {
+      const doctorObj = p.doctor ? {
+        ...p.doctor,
+        user: p.doctor.user,
+        userId: p.doctor.user ? { ...p.doctor.user, id: p.doctor.userId } : p.doctor.userId
+      } : null;
+
+      const patientObj = p.patient ? {
+        ...p.patient,
+        user: p.patient.user,
+        userId: p.patient.user ? { ...p.patient.user, id: p.patient.userId } : p.patient.userId
+      } : null;
+
+      return {
+        ...p,
+        medications: p.medicines,
+        instructions: p.advice,
+        doctor: doctorObj,
+        doctorId: doctorObj || p.doctorId,
+        patient: patientObj,
+        patientId: patientObj || p.patientId
+      };
+    });
 
     res.json({ success: true, data: { prescriptions: mappedPrescriptions } });
   } catch (error) {

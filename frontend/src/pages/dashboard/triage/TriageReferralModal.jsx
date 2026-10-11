@@ -50,9 +50,11 @@ const TriageReferralModal = ({ isOpen, onClose, record, onSuccess }) => {
 
     if (!isOpen) return null;
 
-    const filteredDoctors = doctors.filter(doc => 
-        `${doc.userId?.profile?.firstName} ${doc.userId?.profile?.lastName} ${doc.specialization}`.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredDoctors = doctors.filter(doc => {
+        const u = doc.user || (typeof doc.userId === 'object' ? doc.userId : null) || {};
+        const p = u.profile || {};
+        return `${p.firstName || ''} ${p.lastName || ''} ${doc.specialization || ''}`.toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -107,46 +109,54 @@ const TriageReferralModal = ({ isOpen, onClose, record, onSuccess }) => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                            {filteredDoctors.map((doc) => (
+                            {filteredDoctors.map((doc) => {
+                                const u = doc.user || (typeof doc.userId === 'object' ? doc.userId : null) || {};
+                                const p = u.profile || {};
+                                const dFirst = p.firstName || '';
+                                const dLast = p.lastName || '';
+                                const targetUserId = u.id || doc.user?.id || (typeof doc.userId === 'string' ? doc.userId : doc.userId?.id);
+
+                                return (
                                 <button
                                     key={doc.id}
-                                    onClick={() => setSelectedDoctorId(doc.user.id)}
+                                    onClick={() => setSelectedDoctorId(targetUserId)}
                                     className={`group relative flex items-start gap-4 p-6 rounded-[2rem] border transition-all duration-300 text-left ${
-                                        selectedDoctorId === doc.user.id 
+                                        selectedDoctorId === targetUserId 
                                         ? 'bg-brand-dark border-brand-dark shadow-xl -translate-y-1' 
                                         : 'bg-white border-slate-100 hover:border-brand-teal/30 hover:shadow-lg'
                                     }`}
                                 >
                                     <div className={`h-14 w-14 rounded-2xl flex items-center justify-center text-xl font-black shrink-0 transition-transform group-hover:scale-105 ${
-                                        selectedDoctorId === doc.user.id ? 'bg-brand-teal text-white' : 'bg-slate-100 text-brand-dark'
+                                        selectedDoctorId === targetUserId ? 'bg-brand-teal text-white' : 'bg-slate-100 text-brand-dark'
                                     }`}>
-                                        {doc.userId?.profile?.firstName[0]}{doc.userId?.profile?.lastName[0]}
+                                        {dFirst[0] || 'D'}{dLast[0] || 'R'}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-2 mb-1">
                                             <h4 className={`font-black text-sm transition-colors truncate ${
-                                                selectedDoctorId === doc.user.id ? 'text-white' : 'text-brand-dark'
-                                            }`}>Dr. {doc.userId?.profile?.firstName} {doc.userId?.profile?.lastName}</h4>
-                                            {selectedDoctorId === doc.user.id && <CheckCircle className="h-4 w-4 text-brand-teal shrink-0" />}
+                                                selectedDoctorId === targetUserId ? 'text-white' : 'text-brand-dark'
+                                            }`}>Dr. {dFirst} {dLast}</h4>
+                                            {selectedDoctorId === targetUserId && <CheckCircle className="h-4 w-4 text-brand-teal shrink-0" />}
                                         </div>
                                         <p className={`text-[10px] font-black uppercase tracking-widest transition-colors mb-3 ${
-                                            selectedDoctorId === doc.user.id ? 'text-teal-100/50' : 'text-brand-teal'
+                                            selectedDoctorId === targetUserId ? 'text-teal-100/50' : 'text-brand-teal'
                                         }`}>{doc.specialization}</p>
                                         
                                         <div className="flex gap-2">
                                             <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter ${
-                                                selectedDoctorId === doc.user.id ? 'bg-white/10 text-white' : 'bg-slate-50 text-slate-500'
+                                                selectedDoctorId === targetUserId ? 'bg-white/10 text-white' : 'bg-slate-50 text-slate-500'
                                             }`}>₹{doc.consultationFee} Fee</span>
                                             <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-tighter flex items-center gap-1">
                                                 <Star className="h-2 w-2 fill-emerald-500" /> 4.9
                                             </span>
                                         </div>
                                     </div>
-                                    {selectedDoctorId === doc.user.id && (
+                                    {selectedDoctorId === targetUserId && (
                                         <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-brand-teal animate-pulse" />
                                     )}
                                 </button>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>

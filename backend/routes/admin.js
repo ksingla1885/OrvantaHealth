@@ -98,11 +98,17 @@ router.get('/doctors', authorizeRoles('superadmin', 'receptionist', 'doctor'), a
   try {
     const doctors = await prisma.doctor.findMany({
       include: {
-        user: { select: { email: true, profile: true, isActive: true, isOffboarded: true, lastLogin: true } }
+        user: { select: { id: true, email: true, profile: true, isActive: true, isOffboarded: true, lastLogin: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json({ success: true, data: { doctors } });
+
+    const formattedDoctors = doctors.map(doc => ({
+      ...doc,
+      userId: doc.user ? { ...doc.user, id: doc.userId } : doc.userId
+    }));
+
+    res.json({ success: true, data: { doctors: formattedDoctors } });
   } catch (error) {
     console.error('Get doctors error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -292,7 +298,13 @@ router.get('/analytics', async (req, res) => {
       _count: true
     });
     
-    const formattedStats = appointmentStats.map(s => ({ _id: s.status, count: s._count }));
+    const formattedStats = appointmentStats.map(s => ({
+      id: s.status,
+      _id: s.status,
+      status: s.status,
+      name: s.status.charAt(0).toUpperCase() + s.status.slice(1).replace('_', ' '),
+      count: s._count
+    }));
 
     const topDoctorAgg = await prisma.appointment.groupBy({
       by: ['doctorId'],
@@ -308,6 +320,13 @@ router.get('/analytics', async (req, res) => {
         where: { id: topDoctorAgg[0].doctorId },
         include: { user: { select: { id: true, email: true, profile: true } } }
       });
+      if (topDoctor) {
+        topDoctor = {
+          ...topDoctor,
+          consultationsCount: topDoctorAgg[0]._count,
+          consultsCount: topDoctorAgg[0]._count
+        };
+      }
     }
 
     const newPatientsDate = await prisma.user.count({

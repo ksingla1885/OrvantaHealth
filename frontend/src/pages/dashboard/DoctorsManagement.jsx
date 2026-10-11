@@ -243,14 +243,14 @@ const DoctorsManagement = () => {
   };
 
   const filteredDoctors = doctors.filter(doctor => {
-    // Basic null check for doctor and user data
-    if (!doctor || !doctor.userId || !doctor.user.profile) return false;
-
-    const profile = doctor.user.profile;
-    const email = doctor.user.email || '';
+    if (!doctor) return false;
+    const userObj = doctor.user || (typeof doctor.userId === 'object' ? doctor.userId : null) || {};
+    const profile = userObj.profile || {};
+    const email = userObj.email || '';
     const firstName = profile.firstName || '';
     const lastName = profile.lastName || '';
     const specialization = doctor.specialization || '';
+    const isActive = userObj.isActive ?? true;
 
     const matchesSearch =
       firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -259,7 +259,7 @@ const DoctorsManagement = () => {
       specialization.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesDepartment = filterDepartment === 'all' || doctor.department === filterDepartment;
-    const matchesTab = activeTab === 'active' ? doctor.user.isActive : !doctor.user.isActive;
+    const matchesTab = activeTab === 'active' ? isActive : !isActive;
     return matchesSearch && matchesDepartment && matchesTab;
   });
 
@@ -363,26 +363,37 @@ const DoctorsManagement = () => {
             <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No practitioners matched your filter</p>
           </div>
         ) : (
-          filteredDoctors.map((doctor) => (
-            <div key={doctor.id} className="card group hover:-translate-y-2 transition-all duration-300 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-brand-light rounded-full -mr-16 -mt-16 group-hover:bg-brand-teal/10 transition-colors"></div>
+          filteredDoctors.map((doctor) => {
+            const userObj = doctor.user || (typeof doctor.userId === 'object' ? doctor.userId : null) || {};
+            const profile = userObj.profile || {};
+            const firstName = profile.firstName || '';
+            const lastName = profile.lastName || '';
+            const email = userObj.email || '';
+            const isActive = userObj.isActive ?? true;
+            const isOffboarded = Boolean(userObj.isOffboarded);
+            const initials = `${firstName[0] || 'D'}${lastName[0] || 'R'}`;
+            const displayName = firstName ? `Dr. ${firstName} ${lastName}`.trim() : (doctor.name || 'Dr. Practitioner');
 
-              <div className="relative z-10">
-                <div className="flex items-center gap-5 mb-6">
-                  <div className="h-16 w-16 rounded-2xl bg-brand-dark flex items-center justify-center text-white text-xl font-black shadow-lg shadow-brand-dark/20 transform group-hover:rotate-6 transition-transform">
-                    {doctor.userId?.profile?.firstName?.[0] || 'D'}{doctor.userId?.profile?.lastName?.[0] || 'C'}
-                  </div>
+            return (
+              <div key={doctor.id} className="card group hover:-translate-y-2 transition-all duration-300 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-light rounded-full -mr-16 -mt-16 group-hover:bg-brand-teal/10 transition-colors"></div>
+
+                <div className="relative z-10">
+                  <div className="flex items-center gap-5 mb-6">
+                    <div className="h-16 w-16 rounded-2xl bg-brand-dark flex items-center justify-center text-white text-xl font-black shadow-lg shadow-brand-dark/20 transform group-hover:rotate-6 transition-transform">
+                      {initials}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-xl font-black font-display text-brand-dark leading-tight truncate">
-                          Dr. {doctor.userId?.profile?.firstName || 'Unknown'} {doctor.userId?.profile?.lastName || 'Doctor'}
+                          {displayName}
                         </h3>
-                        {doctor.userId?.isOffboarded ? (
+                        {isOffboarded ? (
                           <div className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-500 text-[8px] font-black uppercase tracking-widest border border-rose-100 flex items-center gap-1">
                             <div className="w-1 h-1 rounded-full bg-rose-500"></div>
                             Left Institution
                           </div>
-                        ) : !doctor.userId?.isActive ? (
+                        ) : !isActive ? (
                           <div className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-500 text-[8px] font-black uppercase tracking-widest border border-amber-100 flex items-center gap-1">
                             <div className="w-1 h-1 rounded-full bg-amber-500"></div>
                             Deactivated
@@ -393,28 +404,28 @@ const DoctorsManagement = () => {
                     </div>
                   </div>
 
-                <div className="space-y-4 mb-8">
-                  <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
-                    <Mail className="h-4 w-4 text-slate-300" />
-                    <span className="truncate">{doctor.userId?.email || 'No email provided'}</span>
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
+                      <Mail className="h-4 w-4 text-slate-300" />
+                      <span className="truncate">{email || 'No email provided'}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
+                      <Calendar className="h-4 w-4 text-slate-300" />
+                      <span>{doctor.experience}Y Practice Experience</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-slate-500 font-medium text-sm">
-                    <Calendar className="h-4 w-4 text-slate-300" />
-                    <span>{doctor.experience}Y Practice Experience</span>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between pt-6 border-t border-slate-50">
-                  <div className="text-2xl font-black text-brand-dark font-display tracking-tight">
-                    <span className="text-sm font-bold text-slate-400 mr-1 italic">₹</span>{doctor.consultationFee}
-                  </div>
+                  <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                    <div className="text-2xl font-black text-brand-dark font-display tracking-tight">
+                      <span className="text-sm font-bold text-slate-400 mr-1 italic">₹</span>{doctor.consultationFee}
+                    </div>
                     <div className="flex gap-2">
-                       <button
-                        onClick={() => toggleUserStatus(doctor.user.id, doctor.user.isActive)}
-                        className={`p-3 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all bg-white border border-slate-100 ${doctor.user.isActive ? 'text-rose-400 hover:text-rose-600' : 'text-emerald-400 hover:text-emerald-600'}`}
-                        title={doctor.user.isActive ? 'Deactivate Doctor' : 'Activate Doctor'}
+                      <button
+                        onClick={() => toggleUserStatus(userObj.id || doctor.user?.id || doctor.userId, isActive)}
+                        className={`p-3 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all bg-white border border-slate-100 ${isActive ? 'text-rose-400 hover:text-rose-600' : 'text-emerald-400 hover:text-emerald-600'}`}
+                        title={isActive ? 'Deactivate Doctor' : 'Activate Doctor'}
                       >
-                        {doctor.user.isActive ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
+                        {isActive ? <UserX className="h-5 w-5" /> : <UserCheck className="h-5 w-5" />}
                       </button>
                       <button
                         onClick={() => handleDeleteClick(doctor.id)}
@@ -440,10 +451,11 @@ const DoctorsManagement = () => {
                         <Edit className="h-5 w-5" />
                       </button>
                     </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -467,7 +479,7 @@ const DoctorsManagement = () => {
               </div>
 
               <div className="absolute -bottom-8 left-10 h-28 w-28 rounded-full bg-brand-teal shadow-2xl flex items-center justify-center text-white text-3xl font-black border-[6px] border-white z-10">
-                {selectedDoctor.userId?.profile?.firstName?.[0] || 'D'}
+                {(selectedDoctor.user?.profile?.firstName || selectedDoctor.userId?.profile?.firstName)?.[0] || 'D'}
               </div>
             </div>
 
@@ -475,7 +487,7 @@ const DoctorsManagement = () => {
               <div className="flex justify-between items-start mb-8">
                 <div>
                   <h2 className="text-4xl font-black font-display text-brand-dark leading-none mb-2">
-                    Dr. {selectedDoctor.userId?.profile?.firstName} {selectedDoctor.userId?.profile?.lastName}
+                    Dr. {selectedDoctor.user?.profile?.firstName || selectedDoctor.userId?.profile?.firstName || ''} {selectedDoctor.user?.profile?.lastName || selectedDoctor.userId?.profile?.lastName || ''}
                   </h2>
                   <div className="flex items-center gap-3">
                     <span className="text-brand-teal font-black uppercase text-[10px] tracking-[0.2em]">{selectedDoctor.specialization} specialist</span>
@@ -522,12 +534,12 @@ const DoctorsManagement = () => {
 
                 <div className="p-5 bg-slate-50 hover:bg-slate-100 transition-colors rounded-2xl flex items-center gap-4 border border-slate-100">
                   <div className="h-10 w-10 shrink-0 rounded-xl bg-white shadow-sm flex items-center justify-center">
-                    {selectedDoctor.user.isActive ? <UserCheck className="h-5 w-5 text-emerald-500" /> : <UserX className="h-5 w-5 text-rose-500" />}
+                    {(selectedDoctor.user?.isActive ?? selectedDoctor.userId?.isActive) ? <UserCheck className="h-5 w-5 text-emerald-500" /> : <UserX className="h-5 w-5 text-rose-500" />}
                   </div>
                   <div className="min-w-0">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Unit Status</p>
-                    <span className={`text-sm font-black uppercase truncate block ${selectedDoctor.user.isActive ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {selectedDoctor.user.isActive ? 'Active' : 'Locked'}
+                    <span className={`text-sm font-black uppercase truncate block ${(selectedDoctor.user?.isActive ?? selectedDoctor.userId?.isActive) ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {(selectedDoctor.user?.isActive ?? selectedDoctor.userId?.isActive) ? 'Active' : 'Locked'}
                     </span>
                   </div>
                 </div>
@@ -538,13 +550,13 @@ const DoctorsManagement = () => {
                   <div className="w-8 h-8 rounded-lg bg-brand-light flex items-center justify-center text-brand-teal">
                     <Mail className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-bold tracking-tight">{selectedDoctor.user.email?.toLowerCase()}</span>
+                  <span className="text-sm font-bold tracking-tight">{(selectedDoctor.user?.email || selectedDoctor.userId?.email || '')?.toLowerCase()}</span>
                 </div>
                 <div className="flex items-center gap-4 text-slate-600">
                   <div className="w-8 h-8 rounded-lg bg-brand-light flex items-center justify-center text-brand-teal">
                     <Phone className="h-4 w-4" />
                   </div>
-                  <span className="text-sm font-bold uppercase tracking-tight">{selectedDoctor.userId?.profile?.phone || 'Emergency Contact Unavailable'}</span>
+                  <span className="text-sm font-bold uppercase tracking-tight">{selectedDoctor.user?.profile?.phone || selectedDoctor.userId?.profile?.phone || 'Emergency Contact Unavailable'}</span>
                 </div>
               </div>
 

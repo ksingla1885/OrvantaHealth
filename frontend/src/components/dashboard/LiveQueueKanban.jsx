@@ -65,8 +65,10 @@ const LiveQueueKanban = () => {
   }, [doctors, walkinForm.doctor]);
 
   const cabins = doctors.map((doc, idx) => {
-    const activePatient = dbQueue.find(p => p.status === 'in-consultation' && p.doctorReferred?.id === doc.userId?.id);
-    const doctorName = `Dr. ${doc.userId?.profile?.firstName || ''} ${doc.userId?.profile?.lastName || ''}`.trim();
+    const userObj = doc.user || (typeof doc.userId === 'object' ? doc.userId : null) || {};
+    const docUserId = userObj.id || (typeof doc.userId === 'string' ? doc.userId : doc.userId?.id) || doc.id;
+    const activePatient = dbQueue.find(p => p.status === 'in-consultation' && (p.doctorReferred?.id === docUserId || p.doctorReferred?.id === doc.id));
+    const doctorName = `Dr. ${userObj.profile?.firstName || ''} ${userObj.profile?.lastName || ''}`.trim() || 'Dr. Specialist';
     let status = 'available';
     let patient = 'None';
     
@@ -109,7 +111,7 @@ const LiveQueueKanban = () => {
 
     return {
       id: p.id,
-      id: p.triageId,
+      triageId: p.triageId,
       name: p.patientName,
       age: p.age,
       gender: p.gender === 'male' ? 'Male' : p.gender === 'female' ? 'Female' : 'Other',
@@ -216,7 +218,7 @@ const LiveQueueKanban = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-[3rem] p-8 md:p-10 border border-slate-100 shadow-premium flex flex-col items-center justify-center min-h-[300px]">
+      <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/90 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
         <div className="w-12 h-12 border-4 border-brand-teal/20 border-t-brand-teal rounded-full animate-spin"></div>
         <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-4">Loading central clinic queue...</p>
       </div>
@@ -224,23 +226,23 @@ const LiveQueueKanban = () => {
   }
 
   return (
-    <div className="bg-white rounded-[3rem] p-8 md:p-10 border border-slate-100 shadow-premium space-y-8 animate-fade-in relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-cyan-500 via-amber-400 to-emerald-500" />
+    <div className="bg-white rounded-2xl p-6 md:p-8 border border-slate-200/90 shadow-sm space-y-6 animate-fade-in relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-500 via-amber-400 to-emerald-500" />
 
       {/* Header & Quick Action Buttons */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Building className="h-4 w-4 text-brand-teal" />
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Front-Desk Operational Control</span>
           </div>
-          <h2 className="text-2xl md:text-3xl font-black text-brand-dark font-display">Live Patient Queue Kanban</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-900 font-display">Live Patient Queue Kanban</h2>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowWalkinModal(true)}
-            className="px-6 py-3.5 bg-brand-teal hover:bg-brand-dark text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-md transition-all flex items-center gap-2"
+            className="px-5 py-2.5 bg-brand-teal hover:bg-teal-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-2"
           >
             <Plus className="h-4 w-4 stroke-[3]" /> Express Walk-In Registration
           </button>
@@ -249,36 +251,36 @@ const LiveQueueKanban = () => {
 
       {/* ── DOCTOR CABIN AVAILABILITY GRID ── */}
       <div className="space-y-3">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Doctor Cabin Telemetry</p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Doctor Cabin Telemetry</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {cabins.length === 0 ? (
-            <div className="col-span-3 text-center p-6 bg-slate-50 border border-dashed border-slate-200 rounded-[2rem]">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No Active Clinician Cabins Telemetry Detected</p>
+            <div className="col-span-3 text-center p-6 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No Active Clinician Cabins Telemetry Detected</p>
             </div>
           ) : (
             cabins.map(cabin => (
               <div 
                 key={cabin.name} 
                 onClick={() => setEditingDoctorStatus(cabin.rawDoctor)}
-                className="p-5 rounded-[2rem] bg-slate-50 hover:bg-slate-100/75 border-2 border-slate-200/50 hover:border-brand-teal/40 flex items-center justify-between cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group"
+                className="p-4 rounded-xl bg-slate-50/80 hover:bg-slate-100/90 border border-slate-200/90 hover:border-brand-teal/40 flex items-center justify-between cursor-pointer transition-all duration-200 hover:shadow-sm group"
                 title="Click to update clinician availability status"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${
+                    <span className={`w-2 h-2 rounded-full ${
                       cabin.status === 'available' ? 'bg-emerald-500 animate-pulse' :
                       cabin.status === 'busy' ? 'bg-rose-500' : 'bg-amber-500'
                     }`} />
-                    <h4 className="text-xs font-black text-brand-dark group-hover:text-brand-teal transition-colors">{cabin.name}</h4>
+                    <h4 className="text-xs font-bold text-slate-900 group-hover:text-brand-teal transition-colors">{cabin.name}</h4>
                   </div>
-                  <p className="text-[11px] font-bold text-slate-500">{cabin.doctor}</p>
-                  <p className="text-[10px] text-slate-400">Current: <span className="font-bold text-slate-700">{cabin.patient}</span></p>
+                  <p className="text-xs font-medium text-slate-600">{cabin.doctor}</p>
+                  <p className="text-[10px] text-slate-400">Current: <span className="font-semibold text-slate-700">{cabin.patient}</span></p>
                 </div>
 
-                <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider transition-colors ${
-                  cabin.status === 'available' ? 'bg-emerald-100 text-emerald-700 group-hover:bg-emerald-500 group-hover:text-white' :
-                  cabin.status === 'busy' ? 'bg-rose-100 text-rose-700 group-hover:bg-rose-500 group-hover:text-white' : 
-                  'bg-amber-100 text-amber-700 group-hover:bg-amber-500 group-hover:text-white'
+                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-colors ${
+                  cabin.status === 'available' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                  cabin.status === 'busy' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 
+                  'bg-amber-50 text-amber-700 border border-amber-200'
                 }`}>
                   {cabin.status.toUpperCase()}
                 </span>
@@ -289,25 +291,25 @@ const LiveQueueKanban = () => {
       </div>
 
       {/* ── KANBAN BOARD SWIMLANES ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
         {columns.map(col => {
           const colPatients = mappedQueue.filter(p => p.stage === col.id);
           return (
-            <div key={col.id} className="bg-slate-50/70 rounded-[2.5rem] p-5 border border-slate-200/60 space-y-4 min-h-[380px] flex flex-col">
+            <div key={col.id} className="bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/80 space-y-3 min-h-[360px] flex flex-col">
               
               {/* Column Badge Header */}
-              <div className={`p-3.5 rounded-2xl border ${col.color} flex items-center justify-between font-black text-xs uppercase tracking-wider`}>
+              <div className={`p-2.5 rounded-lg border ${col.color} flex items-center justify-between font-bold text-xs uppercase tracking-wider`}>
                 <span>{col.title}</span>
-                <span className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-[11px] shadow-xs">
+                <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[10px] font-bold shadow-xs">
                   {colPatients.length}
                 </span>
               </div>
 
               {/* Cards in Column */}
-              <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+              <div className="space-y-2.5 flex-1 overflow-y-auto pr-0.5">
                 {colPatients.length > 0 ? (
                   colPatients.map(patient => (
-                    <div key={patient.id} className="bg-white p-5 rounded-[2rem] border border-slate-200/80 shadow-sm hover:shadow-md transition-all space-y-3 group relative">
+                    <div key={patient.id} className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-xs hover:shadow-sm transition-all space-y-2.5 group relative">
                       
                       <div className="flex items-center justify-between">
                         <span className="px-2.5 py-1 bg-brand-light text-brand-teal font-mono text-[10px] font-black rounded-lg">
@@ -370,58 +372,58 @@ const LiveQueueKanban = () => {
 
       {/* ── WALK-IN REGISTRATION MODAL ── */}
       {showWalkinModal && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[3rem] p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6 animate-scale-in">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-xl space-y-5 animate-scale-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-brand-light text-brand-teal rounded-xl">
+                <div className="p-2 bg-teal-50 text-brand-teal rounded-lg">
                   <UserCheck className="h-5 w-5" />
                 </div>
-                <h3 className="text-xl font-black text-brand-dark font-display">Express Walk-In Register</h3>
+                <h3 className="text-lg font-bold text-slate-900 font-display">Express Walk-In Register</h3>
               </div>
               <button onClick={() => setShowWalkinModal(false)} className="text-slate-400 hover:text-rose-500 text-lg font-bold">✕</button>
             </div>
 
-            <form onSubmit={handleRegisterWalkin} className="space-y-4">
+            <form onSubmit={handleRegisterWalkin} className="space-y-3.5">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase">Patient Full Name</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Patient Full Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. John Doe"
                   value={walkinForm.name}
                   onChange={(e) => setWalkinForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-brand-dark outline-none focus:border-brand-teal mt-1 font-bold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:border-brand-teal mt-1 font-semibold"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase">Phone Number</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Phone Number</label>
                   <input
                     type="tel"
                     required
                     placeholder="+1 555-0192"
                     value={walkinForm.phone}
                     onChange={(e) => setWalkinForm(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-brand-dark outline-none focus:border-brand-teal mt-1 font-bold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:border-brand-teal mt-1 font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase">Age & Gender</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Age & Gender</label>
                   <div className="flex gap-2 mt-1">
                     <input
                       type="number"
                       placeholder="Age"
                       value={walkinForm.age}
                       onChange={(e) => setWalkinForm(prev => ({ ...prev, age: e.target.value }))}
-                      className="w-16 bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-brand-dark outline-none focus:border-brand-teal font-bold"
+                      className="w-16 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none focus:border-brand-teal font-semibold"
                     />
                     <select
                       value={walkinForm.gender}
                       onChange={(e) => setWalkinForm(prev => ({ ...prev, gender: e.target.value }))}
-                      className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-brand-dark outline-none font-bold"
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none font-semibold"
                     >
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
@@ -432,18 +434,18 @@ const LiveQueueKanban = () => {
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase">Assigned Practitioner</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Assigned Practitioner</label>
                 <select
                   value={walkinForm.doctor}
                   onChange={(e) => setWalkinForm(prev => ({ ...prev, doctor: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-brand-dark outline-none font-bold mt-1"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none font-semibold mt-1"
                 >
                   {doctors.length === 0 ? (
                     <option value="">No available clinicians</option>
                   ) : (
                     doctors.map((doc, idx) => (
-                      <option key={doc.id} value={doc.userId?.id}>
-                        Dr. {doc.userId?.profile?.firstName} {doc.userId?.profile?.lastName} ({doc.specialization || doc.department} - Cabin {idx + 1})
+                      <option key={doc.id} value={(doc.user || doc.userId)?.id || doc.id}>
+                        Dr. {(doc.user || doc.userId)?.profile?.firstName || ''} {(doc.user || doc.userId)?.profile?.lastName || ''} ({doc.specialization || doc.department} - Cabin {idx + 1})
                       </option>
                     ))
                   )}
@@ -451,11 +453,11 @@ const LiveQueueKanban = () => {
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase">Priority Triage Level</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Priority Triage Level</label>
                 <select
                   value={walkinForm.priority}
                   onChange={(e) => setWalkinForm(prev => ({ ...prev, priority: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-brand-dark outline-none font-bold mt-1"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 outline-none font-semibold mt-1"
                 >
                   <option value="Standard">🟢 Standard Walk-In</option>
                   <option value="Urgent">⚡ Priority / Urgent</option>
@@ -464,7 +466,7 @@ const LiveQueueKanban = () => {
 
               <button
                 type="submit"
-                className="w-full py-4 bg-brand-teal hover:bg-brand-dark text-white font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-md mt-2"
+                className="w-full py-3 bg-brand-teal hover:bg-teal-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm mt-2"
               >
                 Generate Desk Token & Receipt
               </button>
@@ -475,29 +477,29 @@ const LiveQueueKanban = () => {
 
       {/* ── DOCTOR STATUS EDIT MODAL ── */}
       {editingDoctorStatus && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[3rem] p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6 animate-scale-in">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-xl space-y-5 animate-scale-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-brand-light text-brand-teal rounded-xl">
+                <div className="p-2 bg-teal-50 text-brand-teal rounded-lg">
                   <Stethoscope className="h-5 w-5" />
                 </div>
-                <h3 className="text-xl font-black text-brand-dark font-display">Update Duty Status</h3>
+                <h3 className="text-lg font-bold text-slate-900 font-display">Update Duty Status</h3>
               </div>
               <button onClick={() => setEditingDoctorStatus(null)} className="text-slate-400 hover:text-rose-500 text-lg font-bold">✕</button>
             </div>
             
             <div className="space-y-4">
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selected Practitioner</p>
-                <p className="text-sm font-black text-brand-dark mt-1">
-                  Dr. {editingDoctorStatus.userId?.profile?.firstName} {editingDoctorStatus.userId?.profile?.lastName}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Selected Practitioner</p>
+                <p className="text-sm font-bold text-slate-900 mt-0.5">
+                  Dr. {(editingDoctorStatus.user || editingDoctorStatus.userId)?.profile?.firstName || ''} {(editingDoctorStatus.user || editingDoctorStatus.userId)?.profile?.lastName || ''}
                 </p>
-                <p className="text-xs text-slate-500 mt-0.5">{editingDoctorStatus.specialization || editingDoctorStatus.department}</p>
+                <p className="text-xs text-slate-500">{editingDoctorStatus.specialization || editingDoctorStatus.department}</p>
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Select Shift Status</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Select Shift Status</label>
                 <select
                   value={editingDoctorStatus.dutyStatus || 'available'}
                   onChange={async (e) => {
@@ -513,7 +515,7 @@ const LiveQueueKanban = () => {
                       toast.error('Failed to update duty status');
                     }
                   }}
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-xs text-brand-dark outline-none font-bold mt-1 focus:border-brand-teal focus:ring-4 focus:ring-brand-teal/10 transition-all shadow-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 outline-none font-bold mt-1 focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/10 transition-all shadow-sm"
                 >
                   <option value="available">🟢 Available for Consults</option>
                   <option value="rounds">🟡 On Ward Rounds / Surgery</option>
@@ -527,29 +529,29 @@ const LiveQueueKanban = () => {
 
       {/* ── CLINICIAN REFERRAL MODAL ── */}
       {referralTarget && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-[3rem] p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6 animate-scale-in">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-7 max-w-md w-full border border-slate-200 shadow-xl space-y-5 animate-scale-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-brand-light text-brand-teal rounded-xl">
+                <div className="p-2 bg-teal-50 text-brand-teal rounded-lg">
                   <Stethoscope className="h-5 w-5" />
                 </div>
-                <h3 className="text-xl font-black text-brand-dark font-display">Clinician Handover</h3>
+                <h3 className="text-lg font-bold text-slate-900 font-display">Clinician Handover</h3>
               </div>
               <button onClick={() => setReferralTarget(null)} className="text-slate-400 hover:text-rose-500 text-lg font-bold">✕</button>
             </div>
             <div className="space-y-4">
-              <p className="text-xs font-bold text-slate-500">Select practitioner for <span className="text-brand-dark font-black">{referralTarget.patientName}</span>:</p>
+              <p className="text-xs font-medium text-slate-600">Select practitioner for <span className="text-slate-900 font-bold">{referralTarget.patientName}</span>:</p>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                 {doctors.map((doc, idx) => (
                   <button
                     key={doc.id}
                     onClick={() => handleSelectClinician(doc.userId?.id)}
-                    className="w-full text-left p-4 rounded-2xl border border-slate-200 hover:border-brand-teal/30 hover:bg-slate-50 transition-all flex items-center justify-between font-bold text-xs"
+                    className="w-full text-left p-3.5 rounded-xl border border-slate-200 hover:border-brand-teal/40 hover:bg-slate-50 transition-all flex items-center justify-between font-semibold text-xs"
                   >
                     <div>
-                      <p className="text-brand-dark font-black">Dr. {doc.userId?.profile?.firstName} {doc.userId?.profile?.lastName}</p>
-                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">{doc.specialization} - Cabin {idx + 1}</p>
+                      <p className="text-slate-900 font-bold">Dr. {(doc.user || doc.userId)?.profile?.firstName || ''} {(doc.user || doc.userId)?.profile?.lastName || ''}</p>
+                      <p className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">{doc.specialization} - Cabin {idx + 1}</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-slate-400" />
                   </button>
