@@ -35,3 +35,7 @@ coverage/
 # Misc
 .env.production.local
 .cache/
+backend/seed.js
+backend/seedNeon.js
+seed.js
+
