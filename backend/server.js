@@ -116,13 +116,27 @@ app.get('/', (req, res) => {
   });
 });
 
-// Database connection
-prisma.$connect()
-  .then(() => console.log('✓ Connected to Neon PostgreSQL via Prisma'))
-  .catch(err => {
-    console.error('✗ Prisma connection error:', err.message);
-    process.exit(1);
-  });
+// Database connection with retry mechanism for Neon compute cold-starts
+async function connectWithRetry(retries = 5, delay = 2500) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await prisma.$connect();
+      console.log('✓ Connected to Neon PostgreSQL via Prisma');
+      return;
+    } catch (err) {
+      console.warn(`⚠️ Prisma connection attempt ${attempt}/${retries} failed: ${err.message}`);
+      if (attempt < retries) {
+        console.log(`Waiting ${delay / 1000}s for Neon database compute to resume...`);
+        await new Promise(res => setTimeout(res, delay));
+      } else {
+        console.error('✗ Prisma connection error: Could not reach database after multiple attempts.');
+        process.exit(1);
+      }
+    }
+  }
+}
+
+connectWithRetry();
 
 const adminModule = require('./routes/admin');
 app.use('/api/auth', require('./routes/auth'));
